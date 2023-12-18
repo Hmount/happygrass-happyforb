@@ -4,6 +4,7 @@
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(emmeans)
 
 ## load in data, clean and modify columns
 # WY
@@ -29,13 +30,6 @@ fornativecover <- comp.wy %>% filter(species!="BG"&
   group_by(year,block,trt,subplot) %>% 
   summarize(nativecov = sum(cover, na.rm=T)) #summarize total live veg per subplot
 comp.wy <- merge(comp.wy,fornativecover, all.x = T)
-# calculate cover native per PLOT (averaged per subplot)
-forplotcover <- comp.wy %>% filter(species!="BG"&
-                                       species!="Litter"&
-                                       native == "N") %>% #only native live veg
-  group_by(year,block,trt) %>% 
-  summarize(nativecov.plotmean = sum(cover, na.rm=T)/2) #summarize total live veg per PLOT
-comp.wy <- merge(comp.wy,fornativecover, all.x = T)
 # make wide for analysis and matching CA data
 comp.wy.wide <- comp.wy %>% select(-c("prob","native","graminoid")) #columns to drop 
 comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","subplot","drought",
@@ -43,6 +37,18 @@ comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","s
                                 names_from = "species", 
                                 values_from = "cover")
 comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
+
+# calculate cover native per PLOT (averaged per subplot)
+forplotcover <- comp.wy %>% group_by(year,block,trt,species) %>% 
+  mutate(species.plotmean = mean(cover)) #mean per species per PLOT
+forplotcover2 <- forplotcover %>% filter(species!="BG"&
+           species!="Litter"&
+           native == "N" &
+             subplot == "n") %>% #only native live veg
+  group_by(year,block,trt) %>% 
+  summarize(plot.tveg = sum(species.plotmean, na.rm=T)) #summarize total live veg per PLOT
+comp.wy.wide <- merge(comp.wy.wide,forplotcover2, by=c("year","block","trt"),all.x = T)
+comp.wy.wide$plot.tveg <- comp.wy.wide$plot.tveg/100  # make native live veg % a proportion to match CA data
 
 # CA
 comp.ca <- read.csv("data/Species_Composition_allyears.csv") #read in California comp data
@@ -63,6 +69,8 @@ comp.ca$block <- as.factor(comp.ca$block)
 # look at response variable in each dataset
 hist(comp.wy.wide$nativecov) # native cover in WY is left skewed
 hist(sqrt(comp.wy.wide$nativecov)) # good transformation for normalizing data
+hist(comp.wy.wide$plot.tveg) # native cover (mean plot) in WY is also skewed
+hist(sqrt(comp.wy.wide$plot.tveg)) # same transformation works for normalizing data
 
 hist(comp.ca$native.cover) # native cover in CA is not skewed
 hist(sqrt(comp.ca$native.cover)) # but transform to match
@@ -71,7 +79,11 @@ hist(sqrt(comp.ca$native.cover)) # but transform to match
 ### visualize
 # WY
 droughtcolswy <- c("0"="skyblue", "1"="red") #create variable for color
-ggplot(comp.wy.wide, aes(y=nativecov, x=trt, fill=drought))+
+ggplot(comp.wy.wide, aes(y=nativecov, x=trt, fill=drought))+ #subplot 
+  geom_boxplot()+
+  scale_fill_manual(values = droughtcolswy)+
+  facet_wrap(~year)
+ggplot(comp.wy.wide, aes(y=plot.tveg, x=trt, fill=drought))+ #plot
   geom_boxplot()+
   scale_fill_manual(values = droughtcolswy)+
   facet_wrap(~year)
@@ -114,17 +126,36 @@ icc <- between_group_variance / total_variance
 icc_random_effect1 <- var_components$year[1] / total_variance #.582
 icc_random_effect2 <- var_components$block[1] / total_variance #.066
 
+## test for differences when using plot instead of subplot (more like CA)
+m1.wy.plot <- lmer(sqrt(plot.tveg) ~ trt * drought + (1 | year) + (1|plot), data = comp.wy.wide)
+summary(m1.wy.plot) # plot or block, but not both (plot matches subplot model)
+# appears to be little to no difference when using plot in WY 
+# plus, using plot matches what I was using for smaller sample size CA models
+anova(m1.wy.plot,m1.wy.plotb)
+AIC(m1.wy.plot)
 
-# CA
-comp.ca$trt <- relevel(comp.ca$trt, ref = "R") # random as refernce level
-comp.ca$water <- relevel(comp.ca$water, ref = "1.25") # water as refernece level (drought = treatment)
+# new best model
+summary(m1.wy.plot)
+anova(m1.wy.plot)
+emm.wy <- emmeans(m1.wy.plot, c("trt","drought"))
+pairs(emm.wy) # significant differences between most groups (but not much in drought)
+
+### CA
+comp.ca$trt <- relevel(comp.ca$trt, ref = "R") # random as reference level
+comp.ca$water <- relevel(comp.ca$water, ref = "1.25") # water as reference level (drought = treatment)
 
 m0.ca <- lmer(sqrt(native.cover) ~ trt * water + (1 | Year) + (1 | block) + (1| plot), data = comp.ca)
 summary(m0.ca) # this matches WY model, but not converging (can't have block + plot)
 m1.ca <- lmer(sqrt(native.cover) ~ trt * water + (1 | Year) + (1 | plot), data = comp.ca)
 summary(m1.ca) 
 # plot probably makes more sense given design and more variance is explained in plot than block
-# but do these models match? WHY?
+anova(m1.ca,m1.cab)
+
+# best model
+summary(m1.ca) 
+anova(m1.ca)
+emm.ca <- emmeans(m1.ca, c("trt","water"))
+pairs(emm.ca) # not really significant differences between any groups
 
 # assess random effects
 var_componentsca <- VarCorr(m1.ca)
