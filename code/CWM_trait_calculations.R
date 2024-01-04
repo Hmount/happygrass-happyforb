@@ -32,6 +32,21 @@ CWM_trait_plot <- function(data, trait, points_data) {
     theme(legend.position = "none")
 }
 
+## functions for traits functional diversity (RoaQ).
+CWM_trait_FD_plot <- function(data, trait, ylab) {
+  ggplot(data, aes_string("trt", trait)) +
+    geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
+    geom_boxplot(width = 0.25) +
+    geom_jitter(width = 0.12, height = 0, size = 1, alpha = 0.3) +
+    scale_fill_viridis_d(option = "D", begin = 0.1, end = 1, alpha = 0.7) +
+    theme_classic() +
+    ylab(paste("FD (RaoQ) of ", ylab)) +
+    xlab("") +
+    ylim(0,max(trait+.5)) +
+    theme(legend.position = "none")
+}
+
+## functions for trait plots 
 CWM_trait_plot <- function(data, trait, ylab) {
   ggplot(data, aes_string("trt", trait)) +
     geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
@@ -164,7 +179,7 @@ ldmc <- FD::dbFD(as.matrix(trait.matrix.wy[,"ldmc"]), as.matrix(comms21.wy))
 srl <- FD::dbFD(as.matrix(trait.matrix.wy[,"srl"]), as.matrix(comms21.wy))
 rootdiam <- FD::dbFD(as.matrix(trait.matrix.wy[,"rootdiam"]), as.matrix(comms21.wy))
 veg <- FD::dbFD(as.matrix(trait.matrix.wy[,"veg"]), as.matrix(comms21.wy))
-cwm_roaq <- data.frame(leafn=leafn$RaoQ,
+cwm_roaq21.wy <- data.frame(leafn=leafn$RaoQ,
                        lop=lop$RaoQ,
                        ldmc=ldmc$RaoQ,
                        srl=srl$RaoQ,
@@ -172,7 +187,7 @@ cwm_roaq <- data.frame(leafn=leafn$RaoQ,
                        veg=veg$RaoQ,
                        full=raoq$RaoQ,
                        trt=factor(groups.wy))
-cwm_roaq$trt <- factor(cwm_roaq$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+cwm_roaq21.wy$trt <- factor(cwm_roaq21.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
 cwm21.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm21.wy)," ")),ncol=2, byrow=T)[,2])
 # Define drought treatment at block level
@@ -182,7 +197,8 @@ cwm21.wy <- cwm21.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
 ## figures
 leafn.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$leafn,"Leaf N") +
   geom_point(aes(y=quantile(cwm21.wy$leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-  
+test <- CWM_trait_FD_plot(cwm_roaq21.wy, cwm_roaq21.wy$leafn, "Leaf N")  
+
 srl.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$srl,"Specific root length") +
   geom_point(aes(y=quantile(cwm21.wy$srl,.7557),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5)
   
@@ -197,14 +213,14 @@ lop.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$lop,"Leaf osmotic potential") +
 
 rootdiam.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$rootdiam,"Root diameter")
 
-FD.wy.21 <- cwm_roaq %>% 
+FD.wy.21 <- cwm_roaq21.wy %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=trt), width=1, trim=F) +
   geom_boxplot(width=.25) +
   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
+  ylim(0,max(cwm_roaq21.wy$full+3)) +
   theme(legend.position  = "none")
 
 
@@ -228,8 +244,8 @@ groups.wy <- c(rep("dt",N), rep("fd",N), rep("ir",N), rep("rand",N))
 
 ##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
 cwm22.wy <- cwm22.wy[rowSums(is.na(cwm22.wy)) != ncol(cwm22.wy), ]
-removed22 <- cwm22.wy[rowSums(is.na(cwm22.wy)) == ncol(cwm22.wy), ] # 3fd, 7ir, 4r
-
+#right now, changing cwm data should be fine, but if these data are needed later, use removed22.wy to progogate figures. 
+#removed22 <- cwm22.wy[rowSums(is.na(cwm22.wy)) == ncol(cwm22.wy), ] # 3fd, 7ir, 4r (see removed plots)
 groups.wy <-c(rep("dt",N), rep("fd",N-3), rep("ir",N-7), rep("rand",N-4)) # groups removing uncalculatable rows
   
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
@@ -241,7 +257,7 @@ vectors <- envfit(nms22.wy,cwm22.wy)
 plot(vectors,p.max=0.05)
 
 # Factoring the groups and providing their full names for plotting
-cwm22.wy$trt <- factor(groups)
+cwm22.wy$trt <- factor(groups.wy)
 # cwm_p$trt <- factor(groups)
 cwm22.wy$trt <- factor(cwm22.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 cwm22.wy$Treatments <- cwm22.wy$trt
@@ -259,15 +275,15 @@ ldmc <- FD::dbFD(as.matrix(trait.matrix.wy[,"ldmc"]), as.matrix(comms22.wy))
 srl <- FD::dbFD(as.matrix(trait.matrix.wy[,"srl"]), as.matrix(comms22.wy))
 rootdiam <- FD::dbFD(as.matrix(trait.matrix.wy[,"rootdiam"]), as.matrix(comms22.wy))
 veg <- FD::dbFD(as.matrix(trait.matrix.wy[,"veg"]), as.matrix(comms22.wy))
-cwm_roaq <- data.frame(leafn=leafn$RaoQ,
+cwm_roaq22.wy <- data.frame(leafn=leafn$RaoQ,
                        lop=lop$RaoQ,
                        ldmc=ldmc$RaoQ,
                        srl=srl$RaoQ,
                        rootdiam=rootdiam$RaoQ,
                        veg=veg$RaoQ,
                        full=raoq$RaoQ,
-                       trt=factor(groups))
-cwm_roaq$trt <- factor(cwm_roaq$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+                       trt=factor(groups.wy))
+cwm_roaq22.wy$trt <- factor(cwm_roaq22.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
 cwm22.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm22.wy)," ")),ncol=2, byrow=T)[,2])
 # Define drought treatment at block level
@@ -293,14 +309,14 @@ lop.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$lop,"Leaf osmotic potential") +
 
 rootdiam.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$rootdiam,"Root diameter")
 
-FD.wy.22 <- cwm_roaq %>% 
+FD.wy.22 <- cwm_roaq22.wy %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=trt), width=1, trim=F) +
   geom_boxplot(width=.25) +
   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
+  ylim(0,max(cwm_roaq22.wy$full+3)) +
   theme(legend.position  = "none")
 
 ## 2023
@@ -320,11 +336,12 @@ cwm23.wy <- FD::functcomp(as.matrix(trait.matrix.wy), as.matrix(comms23.wy), bin
 N <- 64*2
 groups <- c(rep("dt",N), rep("fd",N), rep("ir",N), rep("rand",N))
 
-##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
-cwm23.wy <- cwm23.wy[rowSums(is.na(cwm23.wy)) != ncol(cwm23.wy), ]
-
-removed23.wy <- cwm23.wy[rowSums(is.na(cwm23.wy)) == ncol(cwm23.wy), ] # 3fd, 7ir, 4r
-groups.wy <-c(rep("dt",N), rep("fd",N-3), rep("ir",N-7), rep("rand",N-4)) # groups removing uncalculatable rows
+## REMOVE
+# ##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
+# cwm23.wy <- cwm23.wy[rowSums(is.na(cwm23.wy)) != ncol(cwm23.wy), ] 
+# #right now, changing cwm data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
+# #removed23.wy <- cwm23.wy[rowSums(is.na(cwm23.wy)) == ncol(cwm23.wy), ] # 3fd, 7ir, 4r (see removed plots)
+# groups.wy <-c(rep("dt",N), rep("fd",N-3), rep("ir",N-7), rep("rand",N-4)) # groups removing uncalculatable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms23.wy <- vegan::metaMDS(cwm23.wy, distance="euclidean")
@@ -341,7 +358,7 @@ cwm23.wy$trt <- factor(cwm23.wy$trt, levels = c('ir','dt','fd','rand'),ordered =
 cwm23.wy$Treatments <- cwm23.wy$trt
 levels(cwm23.wy$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functionally Diverse","Random")
 
-#remove species not occurring in any community this year
+#remove species not occurring in any community this year from comms and trait matrix
 colSums(comms23.wy) #find species
 comms23.wy <- comms23.wy %>% select(-ARPU)
 remove23.wy <- "ARPU"
@@ -355,7 +372,7 @@ ldmc <- FD::dbFD(as.matrix(trait.matrix.wy21[,"ldmc"]), as.matrix(comms23.wy))
 srl <- FD::dbFD(as.matrix(trait.matrix.wy21[,"srl"]), as.matrix(comms23.wy))
 rootdiam <- FD::dbFD(as.matrix(trait.matrix.wy21[,"rootdiam"]), as.matrix(comms23.wy))
 veg <- FD::dbFD(as.matrix(trait.matrix.wy21[,"veg"]), as.matrix(comms23.wy))
-cwm_roaq <- data.frame(leafn=leafn$RaoQ,
+cwm_roaq23.wy <- data.frame(leafn=leafn$RaoQ,
                        lop=lop$RaoQ,
                        ldmc=ldmc$RaoQ,
                        srl=srl$RaoQ,
@@ -363,7 +380,7 @@ cwm_roaq <- data.frame(leafn=leafn$RaoQ,
                        veg=veg$RaoQ,
                        full=raoq$RaoQ,
                        trt=factor(groups))
-cwm_roaq$trt <- factor(cwm_roaq$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+cwm_roaq23.wy$trt <- factor(cwm_roaq23.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
 cwm23.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm23.wy)," ")),ncol=2, byrow=T)[,2])
 # Define drought treatment at block level
@@ -389,181 +406,73 @@ lop.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$lop,"Leaf osmotic potential") +
 
 rootdiam.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$rootdiam,"Root diameter")
 
-FD.wy.23 <- cwm_roaq %>% 
+FD.wy.23 <- cwm_roaq23.wy %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=trt), width=1, trim=F) +
   geom_boxplot(width=.25) +
   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
+  ylim(0,max(cwm_roaq23.wy$full+3)) +
   theme(legend.position  = "none")
+
+#FD of traits if desired:
+#leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
+w21 <- cwm21.wy %>% mutate(year = "2021") #add year
+w22 <- cwm21.wy %>% mutate(year = "2022") #add year
+w23 <- cwm21.wy %>% mutate(year = "2023") #add year
 
-## PLOTS together
-leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
+cwm.wy <- bind_rows(w21, w22) #bind 1st
+cwm.wy <- bind_rows(cwm.wy, w23) #bind again
 
+#save 
+write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
 
+## Produce a .tiff file of our plots together!
+library(patchwork)
+# export 21
+tiff("figures/cwm WY/traits_2021.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.wy.21 + srl.wy.21 + veg.wy.21) / (ldmc.wy.21 + lop.wy.21 + rootdiam.wy.21)
+dev.off()
+tiff("figures/cwm WY/FD_2021.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.wy.21
+dev.off()
+# export 22
+tiff("figures/cwm WY/traits_2022.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.wy.22 + srl.wy.22 + veg.wy.22) / (ldmc.wy.22 + lop.wy.22 + rootdiam.wy.22)
+dev.off()
+tiff("figures/cwm WY/FD_2022.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.wy.22
+dev.off()
+# export 23
+tiff("figures/cwm WY/traits_2023.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.wy.23 + srl.wy.23 + veg.wy.23) / (ldmc.wy.23 + lop.wy.23 + rootdiam.wy.23)
+dev.off()
+tiff("figures/cwm WY/FD_2023.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.wy.23
+dev.off()
 
-
-# Make making plots into function
-# Code to build violin plots. Each plots is assigned a letter (i.e. object name) to allow for easy stacking using grid.arrange or patchwork.
-a <- cwm21.wy %>% # Dataframe
-  ggplot(aes(trt,leafn)) + # Trait and treatment of interest
-  geom_violin(aes(fill=trt), width=1, trim=F) + # Specific color for in the violin
-  geom_boxplot(width=.25) + #Boxplot of trait by treatment
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) + # Jitter points and reduce transparency for clarity
-  geom_point(aes(y=quantile(leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) + # Specifying the target object (red dot).
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) + # Setting a color scheme
-  theme_classic() + ylab("Leaf N") + xlab("") + # Setting a theme and X-Y labels
-  theme(legend.position  = "none") # Removing the legend (only keep if you are combining figures in a known pattern)
-
-b <- cwm23 %>% 
-  ggplot(aes(trt,srl)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  geom_point(aes(y=quantile(srl,.7557),x="ir"),data=traits, col= "red", shape=18, size=3.5) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("Specific root length") + xlab("") +
-  theme(legend.position  = "none")
-
-
-c <- cwm23 %>% 
-  ggplot(aes(trt,veg)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("Vegetative spread potential") + xlab("")+ 
-  ylim(0,1) +
-  theme(legend.position  = "none")
-
-d <- cwm23 %>% 
-  ggplot(aes(trt,ldmc)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  geom_point(aes(y=quantile(ldmc,.75),x="dt"),data=traits, col= "red", shape=18, size=3.5) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("Leaf dry matter content") + xlab("") +
-  theme(legend.position  = "none")
-
-e <- cwm23 %>% 
-  ggplot(aes(trt,lop)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  geom_point(aes(y=quantile(lop,.25),x="dt"),data=traits, col= "red", shape=18, size=3.5) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("Leaf osmotic pressure") + xlab("Treatment") +
-  theme(legend.position  = "none")
-
-f <- cwm21.wy %>% 
-  ggplot(aes(trt,rootdiam)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("Root diameter") + xlab("") +
-  theme(legend.position  = "none")
-
-# leg <- cwm %>% 
-#   ggplot(aes(Treatments,rootdiam)) +
-#   geom_violin(aes(fill=Treatments), width=1, trim=F) +
-#   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-#   theme_classic()
-# leg
-# 
-# tiff("trait_legend.tiff", width = 3, height = 2, "in", res=400, compression = "lzw")
-# grid::grid.newpage()
-# grid::grid.draw(cowplot::get_legend(leg))
+# tiff("figures/cwm/traits_2020.tiff", width=8.5, height=6, "in", res=400, compression = "lzw")
+# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
+# dev.off()
+# tiff("figures/trait_raoq_2023.tiff",  width=8.5, height=6, "in", res=400, compression = "lzw")
+# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
 # dev.off()
 # 
-# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
-
-# Produce a .tiff file of our plots!
-tiff("figures/cwm/traits_2020.tiff", width=8.5, height=6, "in", res=400, compression = "lzw")
-gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
-dev.off()
-
-# Same as above but for functional diversity (RoaQ).
-# NOTE the lazy use of the same letters.
-a <- cwm_roaq %>% 
-  ggplot(aes(trt,leafn)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Leaf N") + xlab("") + ylim(0,max(cwm_roaq$leafn+.5)) +
-  theme(legend.position  = "none")
-
-b <- cwm_roaq %>% 
-  ggplot(aes(trt,srl)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Specific root length") + xlab("") + ylim(0,max(cwm_roaq$srl+.5)) +
-  theme(legend.position  = "none")
-
-c <- cwm_roaq %>% 
-  ggplot(aes(trt,veg)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Vegetative spread") + xlab("")+ 
-  ylim(0,max(cwm_roaq$veg+.5)) +
-  theme(legend.position  = "none")
-
-d <- cwm_roaq %>% 
-  ggplot(aes(trt,ldmc)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Leaf dry matter content") + xlab("") +
-  ylim(0,max(cwm_roaq$ldmc +.5)) +
-  theme(legend.position  = "none")
-
-e <- cwm_roaq %>% 
-  ggplot(aes(trt,lop)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Leaf osmotic pressure") + xlab("Treatment") + 
-  ylim(0,max(cwm_roaq$lop +.5)) +
-  theme(legend.position  = "none")
-
-f <- cwm_roaq %>% 
-  ggplot(aes(trt,rootdiam)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of Root diameter") + xlab("") + 
-  ylim(0,max(cwm_roaq$rootdiam+.5)) +
-  theme(legend.position  = "none")
-
-tiff("figures/trait_raoq_2023.tiff",  width=8.5, height=6, "in", res=400, compression = "lzw")
-gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
-dev.off()
-
-tiff("figures/multivariate_raoq_2023.tiff",  width=4, height=4, "in", res=400, compression = "lzw")
-cwm_roaq %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
-  theme(legend.position  = "none")
-
-dev.off()
+# tiff("figures/multivariate_raoq_2023.tiff",  width=4, height=4, "in", res=400, compression = "lzw")
+# cwm_roaq %>% 
+#   ggplot(aes(trt,full)) +
+#   geom_violin(aes(fill=trt), width=1, trim=F) +
+#   geom_boxplot(width=.25) +
+#   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
+#   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
+#   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
+#   ylim(0,max(cwm_roaq$full+3)) +
+#   theme(legend.position  = "none")
+# 
+# dev.off()
 
 
 #### CA ####
@@ -621,7 +530,7 @@ trait.matrix.ca <- trait.matrix.ca %>%
   filter(Code != "AVBA") %>% 
   filter(Code != "BRNI") %>%
   filter(Code != "CAME") %>%
-  filter(Code != "FEMY") %>% 
+  #filter(Code != "FEMY") %>% 
   filter(Code != "LUAL") %>%
   filter(Code != "MASA") %>% 
   filter(Code != "PEHE") %>% 
@@ -647,10 +556,10 @@ hpf21 <- comp.ca %>% filter(Year == "2021") %>% arrange(trt,block)
 hpf21 <- hpf21 %>% unite(trt.b, c(trt, block), sep = ".", remove=F) # make unique plot variable
 
 #select cover columns only for matrix
-comms21.ca <- hpf21[,c(4,19:56)]
+comms21.ca <- hpf21[,c(4,19:57)]
 
 # make comms21.ca the long to add 4-letter codes
-comms21.ca.long <- comms21.ca %>% pivot_longer(cols = c(2:39),names_to = "X6letter", values_to = "cover")
+comms21.ca.long <- comms21.ca %>% pivot_longer(cols = c(2:40),names_to = "X6letter", values_to = "cover")
 comms21.ca.long <- comms21.ca.long %>% mutate(sppcodes = paste0(substr(X6letter, 1, 2), substr(X6letter, 4, 5))) # make 4 letter code to get cwm's
 
 # return to wide matrix
@@ -658,12 +567,15 @@ comms21.ca.long <- comms21.ca.long %>% mutate(sppcodes = paste0(substr(X6letter,
 comms21.ca <- labdsv::matrify(data.frame(comms21.ca.long$trt.b,comms21.ca.long$sppcodes,comms21.ca.long$cover))
 comms21.ca <- comms21.ca[,order(colnames(comms21.ca))]
 
-# remove columns not present in trait.matrix.ca
+# remove columns from comms (communties) that are not present in trait.matrix (can we get these? too small proportion?)
 comms21.ca <- comms21.ca %>% select(-c("CACI", "BRHO", "BRDI", "HOMU"))
-
+#remove species from matrix with NA in all communities this year (not present yet) 
+trait.matrix.ca21 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
+# rownames(trait.matrix.ca22)
+# colnames(comms21.ca)
 
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
-cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
+cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca21), as.matrix(comms21.ca), bin.num=c("graminoid"))
 
 # Building out treatment identification which was absent from our original csv.
 N <- 53
@@ -685,10 +597,10 @@ cwm21.ca$Treatments <- cwm21.ca$trt
 levels(cwm21.ca$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functionally Diverse","Random")
 
 #remove species not occurring in any community this year
-colSums(comms21.ca) #find species
+sort(colSums(comms21.ca)) #find species
 comms21.ca <- comms21.ca %>% select(-c(ELCO,LAPL,MEIM))
 remove21 <- c("ELCO", "LAPL", "MEIM")
-trait.matrix.ca21 <- trait.matrix.ca[!row.names(trait.matrix.ca)%in%remove21,]
+trait.matrix.ca21 <- trait.matrix.ca21[!row.names(trait.matrix.ca21)%in%remove21,]
 
 #Calculating functional diversity of each trait and extracting RaoQ on L115
 raoq <- FD::dbFD(as.matrix(trait.matrix.ca21), as.matrix(comms21.ca))
@@ -698,7 +610,7 @@ seedmass <- FD::dbFD(as.matrix(trait.matrix.ca21[,"seed.mass"]), as.matrix(comms
 srl <- FD::dbFD(as.matrix(trait.matrix.ca21[,"SRL"]), as.matrix(comms21.ca))
 rootdiam <- FD::dbFD(as.matrix(trait.matrix.ca21[,"Rdiam"]), as.matrix(comms21.ca))
 rmf <- FD::dbFD(as.matrix(trait.matrix.ca21[,"RMF"]), as.matrix(comms21.ca))
-cwm_roaq <- data.frame(leafn=leafn$RaoQ,
+cwm_roaq21.ca <- data.frame(leafn=leafn$RaoQ,
                        lma=lma$RaoQ,
                        seedmass=seedmass$RaoQ,
                        srl=srl$RaoQ,
@@ -706,14 +618,14 @@ cwm_roaq <- data.frame(leafn=leafn$RaoQ,
                        rmf=rmf$RaoQ,
                        full=raoq$RaoQ,
                        trt=factor(groups.ca))
-cwm_roaq$trt <- factor(cwm_roaq$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+cwm_roaq21.ca$trt <- factor(cwm_roaq21.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
 cwm21.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm21.ca),"[.]")),ncol=2, byrow=T)[,2])
 # Define drought treatment at block level
 block.water <- hpf21 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
-test <- merge(cwm21.ca, block.water, by = c("block","trt"), all.x=T) #merge
+cwm21.ca <- merge(cwm21.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
 
 ## figures
@@ -734,14 +646,14 @@ seedmass.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$seed.mass,"Seed mass") +
 
 rootdiam.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$Rdiam,"Root diameter") #FD
 
-FD.ca.21 <- cwm_roaq %>% 
+FD.ca.21 <- cwm_roaq21.ca %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=trt), width=1, trim=F) +
   geom_boxplot(width=.25) +
   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
+  ylim(0,max(cwm_roaq21.ca$full+3)) +
   theme(legend.position  = "none")
 
 
@@ -751,10 +663,10 @@ hpf22 <- comp.ca %>% filter(Year == "2022") %>% arrange(trt,block)
 hpf22 <- hpf22 %>% unite(trt.b, c(trt, block), sep = ".", remove=F) # make unique plot variable
 
 #select cover columns only for matrix
-comms22.ca <- hpf22[,c(4,19:56)]
+comms22.ca <- hpf22[,c(4,19:57)]
 
 # make comms22.ca the long to add 4-letter codes
-comms22.ca.long <- comms22.ca %>% pivot_longer(cols = c(2:39),names_to = "X6letter", values_to = "cover")
+comms22.ca.long <- comms22.ca %>% pivot_longer(cols = c(2:40),names_to = "X6letter", values_to = "cover")
 comms22.ca.long <- comms22.ca.long %>% mutate(sppcodes = paste0(substr(X6letter, 1, 2), substr(X6letter, 4, 5))) # make 4 letter code to get cwm's
 
 # return to wide matrix
@@ -762,26 +674,30 @@ comms22.ca.long <- comms22.ca.long %>% mutate(sppcodes = paste0(substr(X6letter,
 comms22.ca <- labdsv::matrify(data.frame(comms22.ca.long$trt.b,comms22.ca.long$sppcodes,comms22.ca.long$cover))
 comms22.ca <- comms22.ca[,order(colnames(comms22.ca))]
 
-# remove columns not present in trait.matrix.ca
+# remove columns from comms (communties) that are not present in trait.matrix (can we get these? too small proportion?)
 comms22.ca <- comms22.ca %>% select(-c("CACI", "BRDI"))
-rownames(trait.matrix.ca)
-colnames(comms22.ca)
+#remove species from matrix with NA in all communities this year (not present yet) 
+trait.matrix.ca22 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
+ rownames(trait.matrix.ca22)
+ colnames(comms22.ca)
 
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
-cwm22.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms22.ca), bin.num=c("graminoid"))
+cwm22.ca <- FD::functcomp(as.matrix(trait.matrix.ca22), as.matrix(comms22.ca), bin.num=c("graminoid"))
 
 # Building out treatment identification which was absent from our original csv.
 N <- 53
-groups.ca <- c(rep("dt",N), rep("fd",N-1), rep("ir",N-1), rep("rand",N))
-
-test <- !is.na #### need to filter out NA to make nmds22 work
+# plots with all 0 (no spp in community) need to be removed to run nms2,
+cwm22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) != ncol(cwm22.ca), ] 
+#right now, changing cwm22.ca data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
+#removed22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) == ncol(cwm22.ca), ] # fd.36 and ir.47 (see removed plots)
+groups.ca <-c(rep("dt",N), rep("fd",N-2), rep("ir",N-2), rep("rand",N)) # groups removing uncalculatable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
-nms22 <- vegan::metaMDS(cwm22.ca, distance="euclidean")
-nms22
-plot(nms22, type="t", main="euclidean")
-ordiellipse(nms22, groups.ca, col=c("orange","green","red","darkgray"), conf=0.95)
-vectors <- envfit(nms22,cwm22.ca)
+nms22.ca <- vegan::metaMDS(cwm22.ca, distance="euclidean")
+nms22.ca
+plot(nms22.ca, type="t", main="euclidean")
+ordiellipse(nms22.ca, groups.ca, col=c("orange","green","red","darkgray"), conf=0.95)
+vectors <- envfit(nms22.ca,cwm22.ca)
 plot(vectors,p.max=0.05)
 
 # Factoring the groups and providing their full names for plotting
@@ -791,11 +707,15 @@ cwm22.ca$trt <- factor(cwm22.ca$trt, levels = c('ir','dt','fd','rand'),ordered =
 cwm22.ca$Treatments <- cwm22.ca$trt
 levels(cwm22.ca$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functionally Diverse","Random")
 
+#remove communities that do not have any species data in 2022
+comms22.ca <- comms22.ca %>%
+  filter(rowSums(comms22.ca) != 0) #remove comms that sum to 0
+
 #remove species not occurring in any community this year
-colSums(comms22.ca) #find species
-comms22.ca <- comms22.ca %>% select(-c(ELCO,LAPL,MEIM))
-remove22 <- c("ELCO", "LAPL", "MEIM")
-trait.matrix.ca22 <- trait.matrix.ca[!row.names(trait.matrix.ca)%in%remove22,]
+sort(colSums(comms22.ca)) #find species, 5 spp = 0
+comms22.ca <- comms22.ca %>% select(-c(ARPU,KOMA,MURI,TRWI,MEIM))
+remove22.ca <- c("ARPU", "KOMA", "MURI", "TRWI", "MEIM")
+trait.matrix.ca22 <- trait.matrix.ca22[!row.names(trait.matrix.ca22)%in%remove22.ca,]
 
 #Calculating functional diversity of each trait and extracting RaoQ on L115
 raoq <- FD::dbFD(as.matrix(trait.matrix.ca22), as.matrix(comms22.ca))
@@ -805,7 +725,7 @@ seedmass <- FD::dbFD(as.matrix(trait.matrix.ca22[,"seed.mass"]), as.matrix(comms
 srl <- FD::dbFD(as.matrix(trait.matrix.ca22[,"SRL"]), as.matrix(comms22.ca))
 rootdiam <- FD::dbFD(as.matrix(trait.matrix.ca22[,"Rdiam"]), as.matrix(comms22.ca))
 rmf <- FD::dbFD(as.matrix(trait.matrix.ca22[,"RMF"]), as.matrix(comms22.ca))
-cwm_roaq <- data.frame(leafn=leafn$RaoQ,
+cwm_roaq22.ca <- data.frame(leafn=leafn$RaoQ,
                        lma=lma$RaoQ,
                        seedmass=seedmass$RaoQ,
                        srl=srl$RaoQ,
@@ -813,14 +733,14 @@ cwm_roaq <- data.frame(leafn=leafn$RaoQ,
                        rmf=rmf$RaoQ,
                        full=raoq$RaoQ,
                        trt=factor(groups.ca))
-cwm_roaq$trt <- factor(cwm_roaq$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+cwm_roaq22.ca$trt <- factor(cwm_roaq22.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
 cwm22.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm22.ca),"[.]")),ncol=2, byrow=T)[,2])
 # Define drought treatment at block level
 block.water <- hpf22 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
-test <- merge(cwm22.ca, block.water, by = c("block","trt"), all.x=T) #merge
+cwm22.ca <- merge(cwm22.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
 
 ## figures
@@ -841,12 +761,180 @@ seedmass.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$seed.mass,"Seed mass") +
 
 rootdiam.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$Rdiam,"Root diameter") #FD
 
-FD.ca.22 <- cwm_roaq %>% 
+FD.ca.22 <- cwm_roaq22.ca %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=trt), width=1, trim=F) +
   geom_boxplot(width=.25) +
   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq$full+3)) +
+  ylim(0,max(cwm_roaq22.ca$full+3)) +
   theme(legend.position  = "none")
+
+
+## 2023
+#Arrange cover estimates for field data by year
+hpf23 <- comp.ca %>% filter(Year == "2023") %>% arrange(trt,block) 
+hpf23 <- hpf23 %>% unite(trt.b, c(trt, block), sep = ".", remove=F) # make unique plot variable
+
+#select cover columns only for matrix
+comms23.ca <- hpf23[,c(4,19:57)]
+
+# make comms23.ca the long to add 4-letter codes
+comms23.ca.long <- comms23.ca %>% pivot_longer(cols = c(2:40),names_to = "X6letter", values_to = "cover")
+comms23.ca.long <- comms23.ca.long %>% mutate(sppcodes = paste0(substr(X6letter, 1, 2), substr(X6letter, 4, 5))) # make 4 letter code to get cwm's
+
+# return to wide matrix
+# Reshape field data into a matrix and arrange alphabetically
+comms23.ca <- labdsv::matrify(data.frame(comms23.ca.long$trt.b,comms23.ca.long$sppcodes,comms23.ca.long$cover))
+comms23.ca <- comms23.ca[,order(colnames(comms23.ca))]
+
+# remove columns not present in communities this year
+comms23.ca <- comms23.ca %>% select(-c("CACI", "BRDI", "BRHO", "HOMU", "POMO"))
+rownames(trait.matrix.ca)
+colnames(comms23.ca)
+
+#Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
+cwm23.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms23.ca), bin.num=c("graminoid"))
+
+# Building out treatment identification which was absent from our original csv.
+N <- 53
+
+##plots with all 0 (no spp in community) need to be removed to run nms2,
+cwm23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) != ncol(cwm23.ca), ] 
+#right now, changing cwm data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
+#removed23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) == ncol(cwm23.ca), ] # fd.36 (see removed plot)
+groups.ca <-c(rep("dt",N), rep("fd",N-2), rep("ir",N-1), rep("rand",N)) # groups removing uncalculatable rows
+
+#nonmetric multidimensional scaling and ploting of ellipses by treatment
+nms23.ca <- vegan::metaMDS(cwm23.ca, distance="euclidean")
+nms23.ca
+plot(nms23.ca, type="t", main="euclidean")
+ordiellipse(nms23.ca, groups.ca, col=c("orange","green","red","darkgray"), conf=0.95)
+vectors <- envfit(nms23.ca,cwm23.ca)
+plot(vectors,p.max=0.05)
+
+# Factoring the groups and providing their full names for plotting
+cwm23.ca$trt <- factor(groups.ca)
+# cwm_p$trt <- factor(groups)
+cwm23.ca$trt <- factor(cwm23.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+cwm23.ca$Treatments <- cwm23.ca$trt
+levels(cwm23.ca$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functionally Diverse","Random")
+
+#remove communities that do not have any species data in 2023
+comms23.ca <- comms23.ca %>%
+  filter(rowSums(comms23.ca) != 0)
+
+#remove species not occurring in any community this year
+sort(colSums(comms23.ca)) #find species, 5 spp = 0
+comms23.ca <- comms23.ca %>% select(-c(ARPU,KOMA,LAPL,MURI,TRWI,MEIM))
+remove23.ca <- c("ARPU", "KOMA","LAPL", "MURI", "TRWI", "MEIM")
+trait.matrix.ca23 <- trait.matrix.ca[!row.names(trait.matrix.ca)%in%remove23.ca,]
+
+#Calculating functional diversity of each trait and extracting RaoQ on L115
+raoq <- FD::dbFD(as.matrix(trait.matrix.ca23), as.matrix(comms23.ca))
+leafn <- FD::dbFD(as.matrix(trait.matrix.ca23[,"N"]), as.matrix(comms23.ca))
+lma <- FD::dbFD(as.matrix(trait.matrix.ca23[,"LMA"]), as.matrix(comms23.ca))
+seedmass <- FD::dbFD(as.matrix(trait.matrix.ca23[,"seed.mass"]), as.matrix(comms23.ca))
+srl <- FD::dbFD(as.matrix(trait.matrix.ca23[,"SRL"]), as.matrix(comms23.ca))
+rootdiam <- FD::dbFD(as.matrix(trait.matrix.ca23[,"Rdiam"]), as.matrix(comms23.ca))
+rmf <- FD::dbFD(as.matrix(trait.matrix.ca23[,"RMF"]), as.matrix(comms23.ca))
+cwm_roaq23.ca <- data.frame(leafn=leafn$RaoQ,
+                       lma=lma$RaoQ,
+                       seedmass=seedmass$RaoQ,
+                       srl=srl$RaoQ,
+                       rootdiam=rootdiam$RaoQ,
+                       rmf=rmf$RaoQ,
+                       full=raoq$RaoQ,
+                       trt=factor(groups.ca))
+cwm_roaq23.ca$trt <- factor(cwm_roaq23.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+#Define block by extracting the numeric from the cwm rownames
+cwm23.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm23.ca),"[.]")),ncol=2, byrow=T)[,2])
+# Define drought treatment at block level
+block.water <- hpf23 %>% select(c(block,trt,water))# get data from OG dataframe
+block.water$trt <- tolower(block.water$trt) #make lowercase to match
+block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
+cwm23.ca <- merge(cwm23.ca, block.water, by = c("block","trt"), all.x=T) #merge
+
+
+## figures
+leafn.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$N,"Leaf N") +
+  geom_point(aes(y=quantile(cwm23.ca$N,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
+
+srl.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$SRL,"Specific root length") +
+  geom_point(aes(y=quantile(cwm23.ca$SRL,.7557),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5)
+
+rmf.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$RMF,"Root mass fraction") +
+  geom_point(aes(y=quantile(cwm23.ca$RMF,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
+
+lma.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$LMA,"Leaf mass per area") +
+  geom_point(aes(y=quantile(cwm23.ca$LMA,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) 
+
+seedmass.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$seed.mass,"Seed mass") +
+  geom_point(aes(y=quantile(cwm23.ca$seed.mass,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5)
+
+rootdiam.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$Rdiam,"Root diameter") #FD
+
+FD.ca.23 <- cwm_roaq23.ca %>% 
+  ggplot(aes(trt,full)) +
+  geom_violin(aes(fill=trt), width=1, trim=F) +
+  geom_boxplot(width=.25) +
+  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
+  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
+  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
+  ylim(0,max(cwm_roaq23.ca$full+3)) +
+  theme(legend.position  = "none")
+
+#FD of traits if desired:
+#leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
+
+## merge cwm's together for storing
+c21 <- cwm21.ca %>% mutate(year = "2021") #add year
+c22 <- cwm21.ca %>% mutate(year = "2022") #add year
+c23 <- cwm21.ca %>% mutate(year = "2023") #add year
+
+cwm.ca <- bind_rows(c21, c22) #bind 1st
+cwm.ca <- bind_rows(cwm.ca, c23) #bind again
+
+#save 
+write.csv(cwm.ca, "data/cwm_ca.csv", row.names = F)
+
+## Produce a .tiff file of our plots together!
+library(patchwork)
+# export 21
+tiff("figures/cwm CA/traits_2021.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.ca.21 + srl.ca.21 + rmf.ca.21) / (lma.ca.21 + seedmass.ca.21 + rootdiam.ca.21)
+dev.off()
+tiff("figures/cwm CA/FD_2021.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.ca.21
+dev.off()
+# export 22
+tiff("figures/cwm CA/traits_2022.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.ca.22 + srl.ca.22 + rmf.ca.22) / (lma.ca.22 + seedmass.ca.22 + rootdiam.ca.22)
+dev.off()
+tiff("figures/cwm CA/FD_2022.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.ca.22
+dev.off()
+# export 23
+tiff("figures/cwm CA/traits_2023.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
+(leafn.ca.23 + srl.ca.23 + rmf.ca.23) / (lma.ca.23 + seedmass.ca.23 + rootdiam.ca.23)
+dev.off()
+tiff("figures/cwm CA/FD_2023.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
+FD.ca.23
+dev.off()
+
+
+#### add a legent to plots?
+# leg <- cwm %>% 
+#   ggplot(aes(Treatments,rootdiam)) +
+#   geom_violin(aes(fill=Treatments), width=1, trim=F) +
+#   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
+#   theme_classic()
+# leg
+# 
+# tiff("trait_legend.tiff", width = 3, height = 2, "in", res=400, compression = "lzw")
+# grid::grid.newpage()
+# grid::grid.draw(cowplot::get_legend(leg))
+# dev.off()
+# 
+# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
