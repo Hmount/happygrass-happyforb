@@ -132,12 +132,13 @@ trait.matrix.wy <- traits.wy[order(rownames(traits.wy)),]
 #Select colons of interest
 trait.matrix.wy <- as.matrix(trait.matrix.wy[,2:11])
 
-## pretreatment (not done)
-#Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
-# preds <- preds %>% arrange(trt,block)
-# comms_p <- labdsv::matrify(data.frame(preds$trt,preds$species,preds$prob))
-# comms_p <- comms_p[,order(colnames(comms_p))]
-# cwm_p <- FD::functcomp(as.matrix(trait.matrix), as.matrix(comms_p), bin.num=c("graminoid","veg","c4"))
+## pretreatment/ seeding probability 
+# Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
+preds.wy <- read.csv("data/allplot.assemblages.csv") #data
+preds.wy <- preds.wy %>% arrange(trt,block)
+comms_p.wy <- labdsv::matrify(data.frame(preds.wy$trt,preds.wy$species,preds.wy$prob))
+comms_p.wy <- comms_p.wy[,order(colnames(comms_p.wy))]
+cwm_p.wy <- FD::functcomp(as.matrix(trait.matrix.wy), as.matrix(comms_p.wy), bin.num=c("graminoid","veg","c4"))
 
 ## 2021
 #Arrange cover estimates for field data by year
@@ -420,11 +421,13 @@ FD.wy.23 <- cwm_roaq23.wy %>%
 #leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
+wpre <- cwm21.wy %>% mutate(year = "0")
 w21 <- cwm21.wy %>% mutate(year = "2021") #add year
 w22 <- cwm21.wy %>% mutate(year = "2022") #add year
 w23 <- cwm21.wy %>% mutate(year = "2023") #add year
 
-cwm.wy <- bind_rows(w21, w22) #bind 1st
+cwm.wy <- bind_rows(wpre, w21) #bind 1st
+cwm.wy <- bind_rows(cwm.wy, w22) #bind again
 cwm.wy <- bind_rows(cwm.wy, w23) #bind again
 
 #save 
@@ -542,6 +545,30 @@ rownames(test)
 trait.matrix.ca <- as.matrix(test)
 trait.matrix.ca <- trait.matrix.ca[order(rownames(trait.matrix.ca)),]
 
+## pretreatment/ seeding probability 
+# Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
+preds.ca <- read.csv("data/calgrass.allplot.assemblages.csv") #data
+preds.ca$trt.b <- paste(preds.ca$trt, preds.ca$block)
+preds.ca <- preds.ca %>% arrange(trt.b,block)
+comms_p.ca <- labdsv::matrify(data.frame(preds.ca$trt.b,preds.ca$species,preds.ca$prob))
+comms_p.ca <- comms_p.ca[,order(colnames(comms_p.ca))]
+comms_p.ca <- comms_p.ca %>% select(-CAME)
+trait.matrix.ca.pred <- traits.ca[order(rownames(traits.ca)),]
+# remove species not present in other comp dataframe
+trait.matrix.ca.pred <- trait.matrix.ca.pred %>% 
+  filter(Code != "AVBA") %>% 
+  filter(Code != "BRNI") %>%
+  filter(Code != "LUAL") %>%
+  filter(Code != "MASA") %>% 
+  filter(Code != "PEHE") %>% 
+  filter(Code != "SACO")
+test <- data.frame(trait.matrix.ca.pred[,2:8], row.names = trait.matrix.ca.pred[,1])
+rownames(test)
+trait.matrix.ca.pred <- as.matrix(test)
+trait.matrix.ca.pred <- trait.matrix.ca.pred[order(rownames(trait.matrix.ca.pred)),]
+remove22.pred <- c("FEMY","FEPE","BRMA","CAME")
+trait.matrix.ca.pred <- trait.matrix.ca.pred[!row.names(trait.matrix.ca.pred)%in%remove22.pred,]
+cwm_p.ca <- FD::functcomp(as.matrix(trait.matrix.ca.pred), as.matrix(comms_p.ca), bin.num=c("graminoid"))
 
 ## pretreatment (not done)
 #Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
@@ -889,11 +916,13 @@ FD.ca.23 <- cwm_roaq23.ca %>%
 #leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
+cpre <- cwm21.ca %>% mutate(year = "0") #add prob
 c21 <- cwm21.ca %>% mutate(year = "2021") #add year
 c22 <- cwm21.ca %>% mutate(year = "2022") #add year
 c23 <- cwm21.ca %>% mutate(year = "2023") #add year
 
-cwm.ca <- bind_rows(c21, c22) #bind 1st
+cwm.ca <- bind_rows(cpre, c21) #bind 1st
+cwm.ca <- bind_rows(cwm.ca, c22) #bind again
 cwm.ca <- bind_rows(cwm.ca, c23) #bind again
 
 #save 
