@@ -16,6 +16,21 @@ cwm.wy$yrorder <- as.numeric(cwm.wy$yrorder)
 cwm.wy <- cwm.wy %>% 
   mutate(plot = ifelse(!is.na(subplot), paste(block, trt, subplot, sep = "."), NA))
 
+# CSV of species-trait combinations (for OG 25)
+traits.wy <- read.csv("data/mixedgrass.csv", header=TRUE, row.names=1)
+traits.wy <- traits.wy[traits.wy$use==1,] # subset use=1
+traits.wy$PLSg.m2.mono <- traits.wy$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
+
+#scale traits
+traits.wy$srl = scale(log(traits.wy$srl))
+traits.wy$ldmc = scale(log(traits.wy$ldmc))
+traits.wy$leafn = scale(log(traits.wy$leafn))
+traits.wy$lop = scale(traits.wy$lop)
+traits.wy$rootdiam = scale(log(traits.wy$rootdiam))
+traits.wy$sla = scale(log(traits.wy$sla))
+traits.wy$rdmc = scale(log(traits.wy$rdmc))
+
+
 cwm.ca <- read.csv("data/cwm_ca.csv")
 #make new sequence column
 cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
@@ -70,34 +85,83 @@ ggplot(test, aes(x=yrorder, y=leafn, group=plot, color=trt))+
 ## how similar are plots to target annually? 
 ## how different are plots year to year?
 
+#similarity to target
+# Trait targets
+quantile(traits.wy$leafn,.25) #IR
+# -0.565257 
+quantile(traits.wy$srl,.7557) #IR
+# 0.6536232 
+quantile(traits.wy$ldmc,.75) # DT
+# 0.6766338 
+quantile(traits.wy$lop,.25) #DT
+# -0.7420366 
+
+# Determine how far off from the targets we were for EVERY treatment (refined in next steps)
+cwm.wy$dist_leafn <- abs(cwm.wy$leafn - quantile(traits.wy$leafn,.25))
+cwm.wy$dist_srl <- abs(cwm.wy$srl - quantile(traits.wy$srl,.7557))
+cwm.wy$dist_ldmc <- abs(cwm.wy$ldmc - quantile(traits.wy$ldmc,.75))
+cwm.wy$dist_lop <- abs(cwm.wy$lop - quantile(traits.wy$lop,.25))
+
+# Calculate how far we were from the dt, ir, and fd objective. fd objective is simply highest diversity after normalization.
+cwm.wy$dist_dt <- rowSums(cbind(cwm.wy$dist_ldmc,cwm.wy$dist_lop))
+cwm.wy$dist_ir <- rowSums(cbind(cwm.wy$dist_leafn,cwm.wy$dist_srl))
+cwm.wy_roaq <- read.csv("data/cwm_raoq_wy.csv")
+cwm.wy$raoq <- cwm.wy_roaq$full
+
 #dissimilarity between years 
 library(vegan)
+# find dissimilrity to tareget for each plot each year
+# in loop for each trait for each plot 
+# subset data for one year at a time 
+# make into matrixes
+# calculate dist from target
+# save in dataframe
 # Calculate dissimilarity for each year
-dissimilarity_list <- lapply(1:3, function(i) {
-  target <- cwm_p.wy[, 2:9]  # Assuming columns 2:8 are the traits in preds
-  actual <- get(paste0("cwm2", i))[, 2:9]  # Assuming columns 2:8 are the traits in cwm21, cwm22, cwm23
-  calculate_bray_curtis(target, actual)
-})
-# Assuming preds, cwm21, cwm22, cwm23 are your dataframes
 
-# Define a function to calculate Bray-Curtis dissimilarity
+for (i in length(comp.wy$plot)){
+  for (j in length(comp.wy$year)){
+    currentyr <- comp.wy %>% filter(year==j)
+    rownames(currentyr) <- currentyr$plot
+    commatrix <- as.matrix(currentyr[,c(11:66)])
+  }
+}
+test <- vegdist(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
+
+
+# Identify columns for target values and actual values for each year
+target_cols <- c("target_trait_1", "target_trait_2", ...)  # replace with your actual column names
+actual_cols_year1 <- c("actual_trait_1_year1", "actual_trait_2_year1", ...)
+actual_cols_year2 <- c("actual_trait_1_year2", "actual_trait_2_year2", ...)
+actual_cols_year3 <- c("actual_trait_1_year3", "actual_trait_2_year3", ...)
+
+# Extract the relevant columns
+target_data <- cwm.wy %>% filter(year=="0")
+coms21.n <- cwm.wy %>% filter(year=="2021" & subplot == "n")
+coms22 <- cwm.wy %>% filter(year=="2022")
+coms23 <- cwm.wy %>% filter(year=="2023")
+
+# Function to calculate Bray-Curtis dissimilarity
 calculate_bray_curtis <- function(target, actual) {
-  vegdist(data.frame(target, actual), method = "bray")
+  vegdist_matrix <- ?vegdist(rbind(target, actual), method = "bray")
+  return(vegdist_matrix[1, 2])
 }
 
-# Calculate dissimilarity for each year
-dissimilarity_list <- lapply(1:3, function(i) {
-  target <- preds[, 2:8]  # Assuming columns 2:8 are the traits in preds
-  actual <- get(paste0("cwm2", i))[, 2:8]  # Assuming columns 2:8 are the traits in cwm21, cwm22, cwm23
-  calculate_bray_curtis(target, actual)
-})
-?vegdist
-# Bind the dissimilarity matrices into a single dataframe
-dissimilarity_df <- do.call(cbind, dissimilarity_list)
+# Apply the function for each row and each year
+dissimilarity_year1 <- mapply(calculate_bray_curtis, target_data[,c(1:9)], coms21[,c(1:9)])
+dissimilarity_year2 <- mapply(calculate_bray_curtis, target_data, actual_data_year2)
+dissimilarity_year3 <- mapply(calculate_bray_curtis, target_data, actual_data_year3)
 
-# Attach PlotID (assuming it's a column in preds) to the dissimilarity matrix
-dissimilarity_df <- cbind(PlotID = preds$PlotID, dissimilarity_df)
+# Combine the results into a new dataframe if needed
+result_df <- data.frame(
+  Plot = rownames(df),
+  Dissimilarity_Year1 = dissimilarity_year1,
+  Dissimilarity_Year2 = dissimilarity_year2,
+  Dissimilarity_Year3 = dissimilarity_year3
+)
 
+
+test <- cwm.wy %>% filter(plot=="1.dt.n")
+?diversity()
 
 ggplot(cwm.wy, aes(x=trt, y=leafn), color=yrorder)+
   geom_point()+

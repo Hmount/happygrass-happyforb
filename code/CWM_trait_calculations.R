@@ -61,7 +61,7 @@ CWM_trait_plot <- function(data, trait, ylab) {
 
 #### WY ####
 ## load in composition data, clean and modify columns as usual
-comp.wy <- read.csv("data/hpg_total.csv") #Wyoming species comp data 
+comp.wy <- read.csv("data/raw_cover/hpg_total.csv") #Wyoming species comp data 
 comp.wy <- comp.wy %>% filter(year != "2020") #keep only 2023 data 
 comp.wy$subplot <- as.factor(comp.wy$subplot)
 comp.wy$drought <- as.factor(comp.wy$drought)
@@ -140,6 +140,15 @@ comms_p.wy <- labdsv::matrify(data.frame(preds.wy$trt,preds.wy$species,preds.wy$
 comms_p.wy <- comms_p.wy[,order(colnames(comms_p.wy))]
 cwm_p.wy <- FD::functcomp(as.matrix(trait.matrix.wy), as.matrix(comms_p.wy), bin.num=c("graminoid","veg","c4"))
 
+#Define block by extracting the numeric from the cwm rownames
+cwm_p.wy$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(cwm_p.wy)))
+#Define trt by extracting the subplot from the cwm rownames
+cwm_p.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(cwm_p.wy))))
+# Define drought treatment at block level
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+cwm_p.wy <- cwm_p.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
+                                                    !block %in% covered ~ "cntl")) 
+
 ## 2021
 #Arrange cover estimates for field data by year
 hpg21 <- comp.wy %>% filter(year == "2021") %>% arrange(trt,block)%>%
@@ -190,7 +199,10 @@ cwm_roaq21.wy <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.wy))
 cwm_roaq21.wy$trt <- factor(cwm_roaq21.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm21.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm21.wy)," ")),ncol=2, byrow=T)[,2])
+cwm21.wy$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(cwm21.wy)))
+#cwm21.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm21.wy),"[.]")),ncol=2, byrow=T)[,2])
+#Define subplot by extracting the subplot from the cwm rownames
+cwm21.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm21.wy)))
 # Define drought treatment at block level
 covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 cwm21.wy <- cwm21.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
@@ -286,7 +298,10 @@ cwm_roaq22.wy <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.wy))
 cwm_roaq22.wy$trt <- factor(cwm_roaq22.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm22.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm22.wy)," ")),ncol=2, byrow=T)[,2])
+cwm22.wy$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(cwm22.wy)))
+#cwm22.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm22.wy)," ")),ncol=2, byrow=T)[,2])
+#Define subplot by extracting the subplot from the cwm rownames
+cwm22.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm22.wy)))
 # Define drought treatment at block level
 covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 cwm22.wy <- cwm22.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
@@ -335,7 +350,7 @@ cwm23.wy <- FD::functcomp(as.matrix(trait.matrix.wy), as.matrix(comms23.wy), bin
 
 # Building out treatment identification which was absent from our original csv.
 N <- 64*2
-groups <- c(rep("dt",N), rep("fd",N), rep("ir",N), rep("rand",N))
+groups.wy <- c(rep("dt",N), rep("fd",N), rep("ir",N), rep("rand",N))
 
 ## REMOVE
 # ##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
@@ -348,12 +363,12 @@ groups <- c(rep("dt",N), rep("fd",N), rep("ir",N), rep("rand",N))
 nms23.wy <- vegan::metaMDS(cwm23.wy, distance="euclidean")
 nms23.wy
 plot(nms23.wy, type="t", main="euclidean")
-ordiellipse(nms23.wy, groups, col=c("orange","green","red","darkgray"), conf=0.95)
+ordiellipse(nms23.wy, groups.wy, col=c("orange","green","red","darkgray"), conf=0.95)
 vectors <- envfit(nms23.wy,cwm23.wy)
 plot(vectors,p.max=0.05)
 
 # Factoring the groups and providing their full names for plotting
-cwm23.wy$trt <- factor(groups)
+cwm23.wy$trt <- factor(groups.wy)
 # cwm_p$trt <- factor(groups)
 cwm23.wy$trt <- factor(cwm23.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 cwm23.wy$Treatments <- cwm23.wy$trt
@@ -380,10 +395,13 @@ cwm_roaq23.wy <- data.frame(leafn=leafn$RaoQ,
                        rootdiam=rootdiam$RaoQ,
                        veg=veg$RaoQ,
                        full=raoq$RaoQ,
-                       trt=factor(groups))
+                       trt=factor(groups.wy))
 cwm_roaq23.wy$trt <- factor(cwm_roaq23.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm23.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm23.wy)," ")),ncol=2, byrow=T)[,2])
+cwm23.wy$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(cwm23.wy)))
+#cwm23.wy$block <- as.factor(matrix(unlist(strsplit(rownames(cwm23.wy),"[.]")),ncol=2, byrow=T)[,2])
+#Define subplot by extracting the subplot from the cwm rownames
+cwm23.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm23.wy)))
 # Define drought treatment at block level
 covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 cwm23.wy <- cwm23.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
@@ -421,17 +439,45 @@ FD.wy.23 <- cwm_roaq23.wy %>%
 #leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
-wpre <- cwm21.wy %>% mutate(year = "0")
+wpre <- cwm_p.wy %>% mutate(year = "0") 
+wpre$trt <- as.factor(as.character(wpre$trt))
+rownames(wpre) <- NULL
 w21 <- cwm21.wy %>% mutate(year = "2021") #add year
-w22 <- cwm21.wy %>% mutate(year = "2022") #add year
-w23 <- cwm21.wy %>% mutate(year = "2023") #add year
+w21$trt <- as.factor(as.character(w21$trt))
+rownames(w21) <- NULL
+w22 <- cwm22.wy %>% mutate(year = "2022") #add year
+w22$trt <- as.factor(as.character(w22$trt))
+rownames(w22) <- NULL
+w23 <- cwm23.wy %>% mutate(year = "2023") #add year
+w23$trt <- as.factor(as.character(w23$trt))
+rownames(w23) <- NULL
 
 cwm.wy <- bind_rows(wpre, w21) #bind 1st
 cwm.wy <- bind_rows(cwm.wy, w22) #bind again
 cwm.wy <- bind_rows(cwm.wy, w23) #bind again
-
 #save 
 write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
+
+## merge cwm's together for storing
+wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") 
+wfd2 <- cwm_roaq22.wy %>% mutate(year = "2022") #add year
+wfd3 <- cwm_roaq23.wy %>% mutate(year = "2023") #add year
+
+# #Define block by extracting the numeric from the cwm rownames
+# cwm23.wy$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(cwm23.wy)))
+# #Define subplot by extracting the subplot from the cwm rownames
+# cwm23.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm23.wy)))
+# # Define drought treatment at block level
+# covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+# cwm23.wy <- cwm23.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
+#                                                     !block %in% covered ~ "cntl")) 
+
+
+cwm.wyfd <- bind_rows(wfd1, wfd2) #bind 1st
+cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
+#save 
+write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
+write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
 
 ## Produce a .tiff file of our plots together!
 library(patchwork)
@@ -480,7 +526,7 @@ dev.off()
 
 #### CA ####
 ## load in composition data, clean and modify columns as usual
-comp.ca <- read.csv("data/Species_Composition_allyears.csv") #read in California comp data
+comp.ca <- read.csv("data/raw_cover/Species_Composition_allyears.csv") #read in California comp data
 comp.ca <- comp.ca[,c(1:57)]
 #comp.ca <- comp.ca %>% filter(Year == "2022") #keep only 2022 data right now
 comp.ca$fesper.seeded <- as.factor(comp.ca$fesper.seeded)
@@ -489,6 +535,17 @@ comp.ca$water <- as.factor(comp.ca$water)
 comp.ca$year<-as.factor(comp.ca$Year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
+
+###how many WY 2022+2023 data need to be dropped from CWM calculations (until we get trait data)
+subca <- comp.ca %>% #[,-c(18:56)]
+  mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>% 
+  filter(propnative < 80)
+table(subca$year)
+table(comp.ca$year)
+62/210*100
+#clean environment
+# rm(subwy)
+# rm(comp.wy.wide)
 
 # CSV of species-trait combinations (for OG 25)
 traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1)
@@ -510,6 +567,18 @@ traits.ca$Rdiam = scale(log(traits.ca$Rdiam))
 #traits.ca$sla = scale(log(traits.ca$sla))
 traits.ca$RMF = scale(log(traits.ca$RMF))
 
+#filter for species used
+traits.ca <- traits.ca %>% 
+  filter(Code != "AVBA") %>% 
+  filter(Code != "BRNI") %>%
+  filter(Code != "LUAL") %>%
+  filter(Code != "MASA") %>% 
+  filter(Code != "PEHE") %>% 
+  filter(Code != "SACO") %>%
+  filter(Code != "FEPE") %>%  # this one appears in communities, just not OG preds
+  filter(Code != "FEMY") %>%  # this one appears in communities, just not OG preds
+  filter(Code != "BRMA")      # this one appears in communities, just not OG preds
+
 ### pca
 pca <- princomp(traits.ca[,2:8], cor=TRUE)
 summary(pca)
@@ -528,16 +597,16 @@ forbs <- subset(traits.ca, graminoid==0)
 # Arrange trait matrix alphabetically
 #trait.matrix.ca <- traits.ca[order(traits.ca$Code),]
 trait.matrix.ca <- traits.ca[order(rownames(traits.ca)),]
-# remove species not present in other comp dataframe
-trait.matrix.ca <- trait.matrix.ca %>% 
-  filter(Code != "AVBA") %>% 
-  filter(Code != "BRNI") %>%
-  filter(Code != "CAME") %>%
-  #filter(Code != "FEMY") %>% 
-  filter(Code != "LUAL") %>%
-  filter(Code != "MASA") %>% 
-  filter(Code != "PEHE") %>% 
-  filter(Code != "SACO") 
+# # remove species not present in other comp dataframe
+# trait.matrix.ca <- trait.matrix.ca %>% 
+#   filter(Code != "AVBA") %>% 
+#   filter(Code != "BRNI") %>%
+#   filter(Code != "CAME") %>%
+#   #filter(Code != "FEMY") %>% 
+#   filter(Code != "LUAL") %>%
+#   filter(Code != "MASA") %>% 
+#   filter(Code != "PEHE") %>% 
+#   filter(Code != "SACO") 
 
 #Select columns of interest, make into matrix
 test <- data.frame(trait.matrix.ca[,2:8], row.names = trait.matrix.ca[,1])
@@ -552,30 +621,23 @@ preds.ca$trt.b <- paste(preds.ca$trt, preds.ca$block)
 preds.ca <- preds.ca %>% arrange(trt.b,block)
 comms_p.ca <- labdsv::matrify(data.frame(preds.ca$trt.b,preds.ca$species,preds.ca$prob))
 comms_p.ca <- comms_p.ca[,order(colnames(comms_p.ca))]
-comms_p.ca <- comms_p.ca %>% select(-CAME)
+#comms_p.ca <- comms_p.ca %>% select(-CAME)
 trait.matrix.ca.pred <- traits.ca[order(rownames(traits.ca)),]
 # remove species not present in other comp dataframe
-trait.matrix.ca.pred <- trait.matrix.ca.pred %>% 
-  filter(Code != "AVBA") %>% 
-  filter(Code != "BRNI") %>%
-  filter(Code != "LUAL") %>%
-  filter(Code != "MASA") %>% 
-  filter(Code != "PEHE") %>% 
-  filter(Code != "SACO")
+# trait.matrix.ca.pred <- trait.matrix.ca.pred %>% 
+#   filter(Code != "AVBA") %>% 
+#   filter(Code != "BRNI") %>%
+#   filter(Code != "LUAL") %>%
+#   filter(Code != "MASA") %>% 
+#   filter(Code != "PEHE") %>% 
+#   filter(Code != "SACO")
 test <- data.frame(trait.matrix.ca.pred[,2:8], row.names = trait.matrix.ca.pred[,1])
 rownames(test)
 trait.matrix.ca.pred <- as.matrix(test)
 trait.matrix.ca.pred <- trait.matrix.ca.pred[order(rownames(trait.matrix.ca.pred)),]
-remove22.pred <- c("FEMY","FEPE","BRMA","CAME")
-trait.matrix.ca.pred <- trait.matrix.ca.pred[!row.names(trait.matrix.ca.pred)%in%remove22.pred,]
+# remove22.pred <- c("FEMY","FEPE","BRMA")
+# trait.matrix.ca.pred <- trait.matrix.ca.pred[!row.names(trait.matrix.ca.pred)%in%remove22.pred,]
 cwm_p.ca <- FD::functcomp(as.matrix(trait.matrix.ca.pred), as.matrix(comms_p.ca), bin.num=c("graminoid"))
-
-## pretreatment (not done)
-#Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
-# preds <- preds %>% arrange(trt,block)
-# comms_p <- labdsv::matrify(data.frame(preds$trt,preds$species,preds$prob))
-# comms_p <- comms_p[,order(colnames(comms_p))]
-# cwm_p <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms_p), bin.num=c("graminoid","veg","c4"))
 
 ## 2021
 #Arrange cover estimates for field data by year
@@ -593,20 +655,27 @@ comms21.ca.long <- comms21.ca.long %>% mutate(sppcodes = paste0(substr(X6letter,
 # Reshape field data into a matrix and arrange alphabetically
 comms21.ca <- labdsv::matrify(data.frame(comms21.ca.long$trt.b,comms21.ca.long$sppcodes,comms21.ca.long$cover))
 comms21.ca <- comms21.ca[,order(colnames(comms21.ca))]
+colnames(comms21.ca)[colnames(comms21.ca) == "CACI"] <- "CAME" #change name of CACI to CAME
 
 # remove columns from comms (communties) that are not present in trait.matrix (can we get these? too small proportion?)
-comms21.ca <- comms21.ca %>% select(-c("CACI", "BRHO", "BRDI", "HOMU"))
+comms21.ca <- comms21.ca %>% select(-c("BRHO", "BRDI", "HOMU", "BRMA", "FEPE"))
 #remove species from matrix with NA in all communities this year (not present yet) 
-trait.matrix.ca21 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
+#trait.matrix.ca21 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
 # rownames(trait.matrix.ca22)
 # colnames(comms21.ca)
 
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
-cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca21), as.matrix(comms21.ca), bin.num=c("graminoid"))
+cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
+test <- vegdist(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"), method="bray")
 
+##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
+cwm21.ca <- cwm21.ca[rowSums(is.na(cwm21.ca)) != ncol(cwm21.ca), ]
+#right now, changing cwm data should be fine, but if these data are needed later, use removed22.wy to progogate figures. 
+#removed21.ca <- cwm21.ca[rowSums(is.na(cwm21.ca)) == ncol(cwm21.ca), ] # 2fd, 2ir, 2r, 1dt (see removed plots)
 # Building out treatment identification which was absent from our original csv.
 N <- 53
-groups.ca <- c(rep("dt",N), rep("fd",N-1), rep("ir",N-1), rep("rand",N))
+#groups.ca <- c(rep("dt",N), rep("fd",N-1), rep("ir",N-1), rep("rand",N))
+groups.ca <-c(rep("dt",N-2), rep("fd",N-3), rep("ir",N-3), rep("rand",N-2)) # groups removing uncalculatable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms21 <- vegan::metaMDS(cwm21.ca, distance="euclidean")
@@ -627,7 +696,11 @@ levels(cwm21.ca$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functi
 sort(colSums(comms21.ca)) #find species
 comms21.ca <- comms21.ca %>% select(-c(ELCO,LAPL,MEIM))
 remove21 <- c("ELCO", "LAPL", "MEIM")
-trait.matrix.ca21 <- trait.matrix.ca21[!row.names(trait.matrix.ca21)%in%remove21,]
+trait.matrix.ca21 <- trait.matrix.ca[!row.names(trait.matrix.ca)%in%remove21,]
+
+#remove communities that do not have any species data in 2021
+comms21.ca <- comms21.ca %>%
+  filter(rowSums(comms21.ca) != 0)
 
 #Calculating functional diversity of each trait and extracting RaoQ on L115
 raoq <- FD::dbFD(as.matrix(trait.matrix.ca21), as.matrix(comms21.ca))
@@ -647,7 +720,7 @@ cwm_roaq21.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq21.ca$trt <- factor(cwm_roaq21.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm21.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm21.ca),"[.]")),ncol=2, byrow=T)[,2])
+cwm21.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm21.ca)))
 # Define drought treatment at block level
 block.water <- hpf21 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
@@ -700,24 +773,25 @@ comms22.ca.long <- comms22.ca.long %>% mutate(sppcodes = paste0(substr(X6letter,
 # Reshape field data into a matrix and arrange alphabetically
 comms22.ca <- labdsv::matrify(data.frame(comms22.ca.long$trt.b,comms22.ca.long$sppcodes,comms22.ca.long$cover))
 comms22.ca <- comms22.ca[,order(colnames(comms22.ca))]
+colnames(comms22.ca)[colnames(comms22.ca) == "CACI"] <- "CAME" #change name of CACI to CAME
 
 # remove columns from comms (communties) that are not present in trait.matrix (can we get these? too small proportion?)
-comms22.ca <- comms22.ca %>% select(-c("CACI", "BRDI"))
+comms22.ca <- comms22.ca %>% select(-c("BRMA", "BRDI","FEPE"))
 #remove species from matrix with NA in all communities this year (not present yet) 
-trait.matrix.ca22 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
- rownames(trait.matrix.ca22)
+#trait.matrix.ca22 <- trait.matrix.ca[!row.names(trait.matrix.ca)=="FEMY",]
+ rownames(trait.matrix.ca)
  colnames(comms22.ca)
 
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
-cwm22.ca <- FD::functcomp(as.matrix(trait.matrix.ca22), as.matrix(comms22.ca), bin.num=c("graminoid"))
+cwm22.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms22.ca), bin.num=c("graminoid"))
 
 # Building out treatment identification which was absent from our original csv.
 N <- 53
 # plots with all 0 (no spp in community) need to be removed to run nms2,
 cwm22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) != ncol(cwm22.ca), ] 
 #right now, changing cwm22.ca data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
-#removed22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) == ncol(cwm22.ca), ] # fd.36 and ir.47 (see removed plots)
-groups.ca <-c(rep("dt",N), rep("fd",N-2), rep("ir",N-2), rep("rand",N)) # groups removing uncalculatable rows
+removed22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) == ncol(cwm22.ca), ] # 2fd,3ir,1dt (see removed plots)
+groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-4), rep("rand",N)) # groups removing uncalculatable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms22.ca <- vegan::metaMDS(cwm22.ca, distance="euclidean")
@@ -742,7 +816,7 @@ comms22.ca <- comms22.ca %>%
 sort(colSums(comms22.ca)) #find species, 5 spp = 0
 comms22.ca <- comms22.ca %>% select(-c(ARPU,KOMA,MURI,TRWI,MEIM))
 remove22.ca <- c("ARPU", "KOMA", "MURI", "TRWI", "MEIM")
-trait.matrix.ca22 <- trait.matrix.ca22[!row.names(trait.matrix.ca22)%in%remove22.ca,]
+trait.matrix.ca22 <- trait.matrix.ca[!row.names(trait.matrix.ca)%in%remove22.ca,]
 
 #Calculating functional diversity of each trait and extracting RaoQ on L115
 raoq <- FD::dbFD(as.matrix(trait.matrix.ca22), as.matrix(comms22.ca))
@@ -762,7 +836,7 @@ cwm_roaq22.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq22.ca$trt <- factor(cwm_roaq22.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm22.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm22.ca),"[.]")),ncol=2, byrow=T)[,2])
+cwm22.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm22.ca)))
 # Define drought treatment at block level
 block.water <- hpf22 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
@@ -815,9 +889,10 @@ comms23.ca.long <- comms23.ca.long %>% mutate(sppcodes = paste0(substr(X6letter,
 # Reshape field data into a matrix and arrange alphabetically
 comms23.ca <- labdsv::matrify(data.frame(comms23.ca.long$trt.b,comms23.ca.long$sppcodes,comms23.ca.long$cover))
 comms23.ca <- comms23.ca[,order(colnames(comms23.ca))]
+colnames(comms23.ca)[colnames(comms23.ca) == "CACI"] <- "CAME" #change name of CACI to CAME
 
 # remove columns not present in communities this year
-comms23.ca <- comms23.ca %>% select(-c("CACI", "BRDI", "BRHO", "HOMU", "POMO"))
+comms23.ca <- comms23.ca %>% select(-c("BRMA", "BRDI", "BRHO", "HOMU", "POMO","FEMY","FEPE"))
 rownames(trait.matrix.ca)
 colnames(comms23.ca)
 
@@ -831,7 +906,7 @@ N <- 53
 cwm23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) != ncol(cwm23.ca), ] 
 #right now, changing cwm data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
 #removed23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) == ncol(cwm23.ca), ] # fd.36 (see removed plot)
-groups.ca <-c(rep("dt",N), rep("fd",N-2), rep("ir",N-1), rep("rand",N)) # groups removing uncalculatable rows
+groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-3), rep("rand",N-1)) # groups removing uncalculatable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms23.ca <- vegan::metaMDS(cwm23.ca, distance="euclidean")
@@ -876,7 +951,7 @@ cwm_roaq23.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq23.ca$trt <- factor(cwm_roaq23.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm23.ca$block <- as.factor(matrix(unlist(strsplit(rownames(cwm23.ca),"[.]")),ncol=2, byrow=T)[,2])
+cwm23.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm23.ca)))
 # Define drought treatment at block level
 block.water <- hpf23 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
@@ -916,10 +991,10 @@ FD.ca.23 <- cwm_roaq23.ca %>%
 #leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
-cpre <- cwm21.ca %>% mutate(year = "0") #add prob
+cpre <- cwm_p.ca %>% mutate(year = "0") #add prob
 c21 <- cwm21.ca %>% mutate(year = "2021") #add year
-c22 <- cwm21.ca %>% mutate(year = "2022") #add year
-c23 <- cwm21.ca %>% mutate(year = "2023") #add year
+c22 <- cwm22.ca %>% mutate(year = "2022") #add year
+c23 <- cwm23.ca %>% mutate(year = "2023") #add year
 
 cwm.ca <- bind_rows(cpre, c21) #bind 1st
 cwm.ca <- bind_rows(cwm.ca, c22) #bind again
