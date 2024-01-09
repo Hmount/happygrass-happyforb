@@ -459,24 +459,29 @@ cwm.wy <- bind_rows(cwm.wy, w23) #bind again
 write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
 
 ## merge cwm's together for storing
-wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") 
+wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") #add year
+wfd1$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd1))) #Define block by extracting the numeric from the cwm rownames
+wfd1$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd1))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd1 <- wfd1 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
 wfd2 <- cwm_roaq22.wy %>% mutate(year = "2022") #add year
+wfd2$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd2))) #Define block by extracting the numeric from the cwm rownames
+wfd2$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd2))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd2 <- wfd2 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
 wfd3 <- cwm_roaq23.wy %>% mutate(year = "2023") #add year
-
-# #Define block by extracting the numeric from the cwm rownames
-# cwm23.wy$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(cwm23.wy)))
-# #Define subplot by extracting the subplot from the cwm rownames
-# cwm23.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm23.wy)))
-# # Define drought treatment at block level
-# covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-# cwm23.wy <- cwm23.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
-#                                                     !block %in% covered ~ "cntl")) 
+wfd3$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd3))) #Define block by extracting the numeric from the cwm rownames
+wfd3$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd3))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd3 <- wfd3 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
 
 
 cwm.wyfd <- bind_rows(wfd1, wfd2) #bind 1st
 cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
 #save 
-write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
 write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
 
 ## Produce a .tiff file of our plots together!
@@ -666,7 +671,6 @@ comms21.ca <- comms21.ca %>% select(-c("BRHO", "BRDI", "HOMU", "BRMA", "FEPE"))
 
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
 cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
-test <- vegdist(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"), method="bray")
 
 ##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
 cwm21.ca <- cwm21.ca[rowSums(is.na(cwm21.ca)) != ncol(cwm21.ca), ]
@@ -989,6 +993,54 @@ FD.ca.23 <- cwm_roaq23.ca %>%
 
 #FD of traits if desired:
 #leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
+
+## merge cwm's together for storing
+cpre <- cwm_p.ca %>% mutate(year = "0") 
+cpre$trt <- as.factor(as.character(cpre$trt))
+rownames(cpre) <- NULL
+c21 <- cwm21.ca %>% mutate(year = "2021") #add year
+c21$trt <- as.factor(as.character(c21$trt))
+rownames(c21) <- NULL
+c22 <- cwm22.ca %>% mutate(year = "2022") #add year
+c22$trt <- as.factor(as.character(c22$trt))
+rownames(c22) <- NULL
+c23 <- cwm23.ca %>% mutate(year = "2023") #add year
+c23$trt <- as.factor(as.character(c23$trt))
+rownames(c23) <- NULL
+
+cwm.wy <- bind_rows(wpre, w21) #bind 1st
+cwm.wy <- bind_rows(cwm.wy, w22) #bind again
+cwm.wy <- bind_rows(cwm.wy, w23) #bind again
+#save 
+write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
+
+## merge cwm's together for storing
+wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") #add year
+wfd1$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd1))) #Define block by extracting the numeric from the cwm rownames
+wfd1$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd1))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd1 <- wfd1 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
+wfd2 <- cwm_roaq22.wy %>% mutate(year = "2022") #add year
+wfd2$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd2))) #Define block by extracting the numeric from the cwm rownames
+wfd2$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd2))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd2 <- wfd2 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
+wfd3 <- cwm_roaq23.wy %>% mutate(year = "2023") #add year
+wfd3$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd3))) #Define block by extracting the numeric from the cwm rownames
+wfd3$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd3))) #Define subplot by extracting the subplot from the cwm rownames
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd3 <- wfd3 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
+
+
+cwm.wyfd <- bind_rows(wfd1, wfd2) #bind 1st
+cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
+#save 
+write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
+
+
 
 ## merge cwm's together for storing
 cpre <- cwm_p.ca %>% mutate(year = "0") #add prob

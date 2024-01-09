@@ -7,6 +7,7 @@ library(tidyverse)
 
 ## load in CWM data
 cwm.wy <- read.csv("data/cwm_wy.csv")
+cwm.wy$year <- as.factor(cwm.wy$year)
 #make new sequence column
 cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
                                              ifelse(year=="2022","2",
@@ -30,8 +31,14 @@ traits.wy$rootdiam = scale(log(traits.wy$rootdiam))
 traits.wy$sla = scale(log(traits.wy$sla))
 traits.wy$rdmc = scale(log(traits.wy$rdmc))
 
-
+# CA
 cwm.ca <- read.csv("data/cwm_ca.csv")
+cwm.ca$trt <- as.factor(cwm.ca$trt)
+cwm.ca$year <- as.factor(cwm.ca$year)
+#add plot ID column (but give NA to seedling/predicted communities)
+cwm.ca <- cwm.ca %>% 
+  mutate(plot = paste(block, trt, sep = "."), NA)
+
 #make new sequence column
 cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
                                              ifelse(year=="2022","2",
@@ -39,54 +46,73 @@ cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
 cwm.ca$yrorder <- as.numeric(cwm.ca$yrorder)
 
 
-#### How did CWM's change overtime? 
-## did trt's differ annually? 
-## Did certain traits fluxuate more or less? (how to test?)
-## did plots fluxuate a lot? (how to test?)
-ggplot(test, aes(x=yrorder, y=leafn), color=plot)+
+library(emmeans)
+#### CWM's change overtime
+cwm.wy2 <- cwm.wy %>% filter(year!="0") # subset predicted/target data 
+## Did CWM's differ significantly across years? (anova's) 
+## ~ yes, mostly groups differ signifigantly
+m1 <- aov(leafn ~ year*trt, data=cwm.wy2)
+TukeyHSD(m1)
+m2 <- aov(srl ~ year*trt, data=cwm.wy2)
+TukeyHSD(m2)
+m3 <- aov(ldmc ~ year*trt, data=cwm.wy2)
+TukeyHSD(m3)
+m4 <- aov(lop ~ year*trt, data=cwm.wy2)
+TukeyHSD(m4)
+
+cwm.ca2 <- cwm.ca %>% filter(year!="0") # subset predicted/target data 
+cwm.ca2$trt <- as.factor(cwm.ca2$trt)
+cwm.ca2$year <- as.factor(cwm.ca2$year)
+## Did CWM's differ significantly across years? (anova's) 
+## ~ yes, mostly groups differ signifigantly
+m1c <- aov(N ~ year*trt, data=cwm.ca2)
+TukeyHSD(m1c)
+m2c <- aov(SRL ~ year*trt, data=cwm.ca2)
+TukeyHSD(m2c)
+m3c <- aov(LMA ~ year*trt, data=cwm.ca2)
+TukeyHSD(m3c)
+m4c <- aov(seed.mass ~ year*trt, data=cwm.ca2)
+TukeyHSD(m4c)
+
+## How did CWM's change overtime? (line plots)
+# change in X trait CWM over 3 years (all together) 
+# for some traits there may be general trends 
+ggplot(cwm.wy2, aes(x=yrorder, y=rootdiam, group=plot, color=trt))+
   geom_point()+
   geom_line()
-  #geom_smooth(method = "lm")
-test <- cwm.wy %>% filter(year!="0") 
-test[,c(11:18)] <- as.factor(test[,c(11:18)])
-ggplot(test, aes(x=yrorder, y=sla, group=plot), color=trt)+
+ggplot(cwm.ca2, aes(x=year, y=SRL, group=plot, color=trt))+
   geom_point()+
-  geom_line()#+
-facet_wrap(~yrorder)
-test <- cwm.wy %>% filter(subplot =="s") 
-test$plot <- as.factor(test$plot)
+  geom_line()
 
-plot(cwm.wy$sla~cwm.wy$yrorder)
-test[,c(11:18)] <- lapply(test[,c(11:18)], as.factor)
-
-ggplot(test, aes(x=yrorder, y=sla, group=plot), color=trt)+
-  geom_point()+
-  geom_line()+
-  scale_color_identity(name="trt",
-                       labels=c("dt","ir","rand","fd"), 
-                       guide="legend")
-
-ggplot(test, aes(x=yrorder, y=leafn, group=plot, color=trt))+
+# change in X trait CWM over 3 years separated by seeding trt 
+# looks like seeding trt may influence how much CWMs change overtime
+ggplot(cwm.wy2, aes(x=yrorder, y=leafn, group=plot, color=trt))+
   geom_point()+
   geom_line()+
   facet_wrap(~trt)
 
-ggplot(test, aes(x=yrorder, y=rootdiam, group=plot, color=trt))+
-  geom_point()+
-  geom_line()
-
-ggplot(test, aes(x=yrorder, y=leafn, group=plot, color=trt))+
+# change in X trait CWM over 3 years separated by seeding trt AND drought trt
+# drought also seems to influence how much CWM's changed 
+ggplot(cwm.wy2, aes(x=yrorder, y=leafn, group=plot, color=trt))+
   geom_point()+
   geom_line()+
   facet_grid(trt~drought)
 
+## did plots fluxuate a lot? Were certain communities more stable? (how to test?)
+## Did certain traits fluxuate more or less? (how to test?)
 
 #### CWM dissimilarity
+## NMDS on community trt differences preformed in "CWM_trait_calculations.R"
 ## how similar are plots to target annually? 
 ## how different are plots year to year?
 
-#similarity to target
-# Trait targets
+# absolute differences between plot CWM and targets
+# this is the only way to compare all communities to a single target (other dissimilarity
+# could still be calculated for composition data as well as similarity between all plots
+# based on trt (also NMDS on other script), or within trt by block or drought)
+# how dissimilar are drought and control blocks of the same trt? (effect of drought on CWM) 
+
+# define trait targets
 quantile(traits.wy$leafn,.25) #IR
 # -0.565257 
 quantile(traits.wy$srl,.7557) #IR
@@ -95,6 +121,26 @@ quantile(traits.wy$ldmc,.75) # DT
 # 0.6766338 
 quantile(traits.wy$lop,.25) #DT
 # -0.7420366 
+
+## load in data, clean and modify columns (check this)
+# WY
+comp.wy <- read.csv("data/hpg_total.csv") #Wyoming species comp data 
+comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
+comp.wy$subplot <- as.factor(comp.wy$subplot)
+comp.wy$drought <- as.factor(comp.wy$drought)
+comp.wy$year<-as.factor(comp.wy$year)
+comp.wy$trt <- as.factor(comp.wy$trt)
+comp.wy$block <- as.factor(comp.wy$block)
+
+comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
+
+comp.wy.wide$plot.tveg <- comp.wy.wide$plot.tveg/100  # make native live veg % a proportion to match CA data
+
+# merge with CWM data
+cwm.wy <- read.csv("data/cwm_wy") #cwm data
+alldat.wy <- merge(comp.wy.wide, cwm.wy, by = "block") #combine
+
+
 
 # Determine how far off from the targets we were for EVERY treatment (refined in next steps)
 cwm.wy$dist_leafn <- abs(cwm.wy$leafn - quantile(traits.wy$leafn,.25))
@@ -106,124 +152,70 @@ cwm.wy$dist_lop <- abs(cwm.wy$lop - quantile(traits.wy$lop,.25))
 cwm.wy$dist_dt <- rowSums(cbind(cwm.wy$dist_ldmc,cwm.wy$dist_lop))
 cwm.wy$dist_ir <- rowSums(cbind(cwm.wy$dist_leafn,cwm.wy$dist_srl))
 cwm.wy_roaq <- read.csv("data/cwm_raoq_wy.csv")
-cwm.wy$raoq <- cwm.wy_roaq$full
+cwm.wy <- merge(cwm.wy, cwm.wy_roaq[,c(7:12)], all=T)
+# cwm.wy_roaq <- cwm.wy_roaq
+# cwm.wy$raoq <- cwm.wy_roaq$full
 
-#dissimilarity between years 
-library(vegan)
-# find dissimilrity to tareget for each plot each year
-# in loop for each trait for each plot 
-# subset data for one year at a time 
-# make into matrixes
-# calculate dist from target
-# save in dataframe
-# Calculate dissimilarity for each year
-
-for (i in length(comp.wy$plot)){
-  for (j in length(comp.wy$year)){
-    currentyr <- comp.wy %>% filter(year==j)
-    rownames(currentyr) <- currentyr$plot
-    commatrix <- as.matrix(currentyr[,c(11:66)])
-  }
-}
-test <- vegdist(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
-
-
-# Identify columns for target values and actual values for each year
-target_cols <- c("target_trait_1", "target_trait_2", ...)  # replace with your actual column names
-actual_cols_year1 <- c("actual_trait_1_year1", "actual_trait_2_year1", ...)
-actual_cols_year2 <- c("actual_trait_1_year2", "actual_trait_2_year2", ...)
-actual_cols_year3 <- c("actual_trait_1_year3", "actual_trait_2_year3", ...)
-
-# Extract the relevant columns
-target_data <- cwm.wy %>% filter(year=="0")
-coms21.n <- cwm.wy %>% filter(year=="2021" & subplot == "n")
-coms22 <- cwm.wy %>% filter(year=="2022")
-coms23 <- cwm.wy %>% filter(year=="2023")
-
-# Function to calculate Bray-Curtis dissimilarity
-calculate_bray_curtis <- function(target, actual) {
-  vegdist_matrix <- ?vegdist(rbind(target, actual), method = "bray")
-  return(vegdist_matrix[1, 2])
-}
-
-# Apply the function for each row and each year
-dissimilarity_year1 <- mapply(calculate_bray_curtis, target_data[,c(1:9)], coms21[,c(1:9)])
-dissimilarity_year2 <- mapply(calculate_bray_curtis, target_data, actual_data_year2)
-dissimilarity_year3 <- mapply(calculate_bray_curtis, target_data, actual_data_year3)
-
-# Combine the results into a new dataframe if needed
-result_df <- data.frame(
-  Plot = rownames(df),
-  Dissimilarity_Year1 = dissimilarity_year1,
-  Dissimilarity_Year2 = dissimilarity_year2,
-  Dissimilarity_Year3 = dissimilarity_year3
-)
-
-
-test <- cwm.wy %>% filter(plot=="1.dt.n")
-?diversity()
-
-ggplot(cwm.wy, aes(x=trt, y=leafn), color=yrorder)+
+ggplot(cwm.wy, aes(y=sqrt(nativecov), x=srl, col = trt))+ #plot
   geom_point()+
-  geom_smooth(method = "lm")
-ggplot(cwm.wy, aes(x=block, y=leafn), color=yrorder)+
-  geom_point()+
-  geom_smooth(method = "lm")
-ggplot(cwm.wy, aes(x=yrorder, y=leafn), color=trt)+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  facet_wrap(~trt)
-ggplot(cwm.wy, aes(x=yrorder, y=leafn), color=block)+
-  geom_point()+
-  geom_smooth(method = "lm")
+  geom_smooth(method="lm")+
+  facet_grid(drought~year)
 
-## load in data, clean and modify columns (check this)
-# WY
-comp.wy <- read.csv("data/hpg_total.csv") #Wyoming species comp data 
-comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
-comp.wy$subplot <- as.factor(comp.wy$subplot)
-comp.wy$drought <- as.factor(comp.wy$drought)
-comp.wy$year<-as.factor(comp.wy$year)
-comp.wy$trt <- as.factor(comp.wy$trt)
-comp.wy$block <- as.factor(comp.wy$block)
-# add invaded locations as 0/1 variable (2023 only)
-wy.invaded.23 <- read.csv("data/invasion_loc23.csv") # load data
-wy.invaded.23$invaded <-tolower(wy.invaded.23$invaded)
-comp.wy <- comp.wy %>%
-  mutate(invaded = ifelse(year == 2023, as.integer(paste(block, trt, subplot) %in% paste(wy.invaded.23$block, wy.invaded.23$trt, wy.invaded.23$invaded)), NA_integer_))
-rm(wy.invaded.23)# remove invasion data
-# make unique plot variable
-comp.wy <- comp.wy %>% unite(plot, c(block, trt, subplot), sep = ".", remove=F) 
-# calculate cover native per subplot and add to data
-fornativecover <- comp.wy %>% filter(species!="BG"&
-                                       species!="Litter"&
-                                       native == "N") %>% #only native live veg
-  group_by(year,block,trt,subplot) %>% 
-  summarize(nativecov = sum(cover, na.rm=T)) #summarize total live veg per subplot
-comp.wy <- merge(comp.wy,fornativecover, all.x = T)
-# make wide for analysis and matching CA data
-comp.wy.wide <- comp.wy %>% select(-c("prob","native","graminoid")) #columns to drop 
-comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","subplot","drought",
-                                                         "nativecov","BG", "Litter","plot", "invaded"), 
-                                             names_from = "species", 
-                                             values_from = "cover")
-comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
+ggplot(cwm.wy, aes(y=sqrt(nativecov), x=dist_dt, col = trt))+ #plot
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_grid(drought~year)
 
-# calculate cover native per PLOT (averaged per subplot)
-forplotcover <- comp.wy %>% group_by(year,block,trt,species) %>% 
-  mutate(species.plotmean = mean(cover)) #mean per species per PLOT
-forplotcover2 <- forplotcover %>% filter(species!="BG"&
-                                           species!="Litter"&
-                                           native == "N" &
-                                           subplot == "n") %>% #only native live veg
-  group_by(year,block,trt) %>% 
-  summarize(plot.tveg = sum(species.plotmean, na.rm=T)) #summarize total live veg per PLOT
-comp.wy.wide <- merge(comp.wy.wide,forplotcover2, by=c("year","block","trt"),all.x = T)
-comp.wy.wide$plot.tveg <- comp.wy.wide$plot.tveg/100  # make native live veg % a proportion to match CA data
+allwy$dist_leafn <- abs(allwy$leafn - quantile(traits.wy$leafn,.25))
+allwy$dist_srl <- abs(allwy$srl - quantile(traits.wy$srl,.7557))
+allwy$dist_ldmc <- abs(allwy$ldmc - quantile(traits.wy$ldmc,.75))
+allwy$dist_lop <- abs(allwy$lop - quantile(traits.wy$lop,.25))
 
-# merge with CWM data
-cwm.wy <- read.csv("data/cwm_wy") #cwm data
-alldat.wy <- merge(comp.wy.wide, cwm.wy, by = "block") #combine
+# Calculate how far we were from the dt, ir, and fd objective. fd objective is simply highest diversity after normalization.
+allwy$dist_dt <- rowSums(cbind(allwy$dist_ldmc,allwy$dist_lop))
+allwy$dist_ir <- rowSums(cbind(allwy$dist_leafn,allwy$dist_srl))
+allwy_roaq <- read.csv("data/cwm_raoq_wy.csv")
+allwy <- merge(allwy, allwy_roaq[,c(7:12)], all=T)
+
+justdt <- allwy %>% filter(trt=="dt")
+ggplot(justdt, aes(y=sqrt(nativecov), x=dist_dt, col = trt))+ #plot
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_grid(drought.y~year)
+
+justir <- allwy %>% filter(trt=="ir")
+ggplot(justir, aes(y=sqrt(nativecov), x=dist_ir, col = trt))+ #plot
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_grid(drought.y~year)
+
+ggplot(allwy, aes(y=sqrt(nativecov), x=full, col = trt))+ #plot
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_grid(drought.y~year)
+
+# # euclidean distances (dissimilarity) between plot CWM and targets
+# # could do this with trt group means, but why? previous method is only applicable to 
+# # trait values (although compositional dissimilarity could be examined)
+# #subset communities by trt
+# allsub <- allwy %>% filter(trt=="ir")
+# #calculate distance from target for relvent traits
+# #ir.cwm.dist <- dist(allsub$)
+# #recombine
+# 
+# #dissimilarity between years 
+# library(vegan)
+# # find dissimilrity to tareget for each plot each year
+# # in loop for each trait for each plot 
+# # subset data for one year at a time 
+# # make into matrixes
+# # calculate dist from target
+# # save in dataframe
+# # Calculate dissimilarity for each year
+
+
+
+
 
 
 # CA
