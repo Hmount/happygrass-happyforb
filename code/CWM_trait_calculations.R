@@ -12,52 +12,6 @@ library(vegan)
 library(sads)
 library(erer)
 
-## functions for traits plots 
-CWM_trait_plot <- function(data, trait, points_data) {
-  ggplot(data, aes_string("trt", trait)) +
-    geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
-    geom_boxplot(width = 0.25) +
-    geom_jitter(width = 0.12, height = 0, size = 1, alpha = 0.3) +
-    geom_point(
-      aes_string(y = paste0("quantile(", trait, ",.25)"), x = "ir"),
-      data = points_data,
-      col = "red",
-      shape = 18,
-      size = 3.5
-    ) +
-    scale_fill_viridis_d(option = "D", begin = 0.1, end = 1, alpha = 0.7) +
-    theme_classic() +
-    ylab(trait) +
-    xlab("") +
-    theme(legend.position = "none")
-}
-
-## functions for traits functional diversity (RoaQ).
-CWM_trait_FD_plot <- function(data, trait, ylab) {
-  ggplot(data, aes_string("trt", trait)) +
-    geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
-    geom_boxplot(width = 0.25) +
-    geom_jitter(width = 0.12, height = 0, size = 1, alpha = 0.3) +
-    scale_fill_viridis_d(option = "D", begin = 0.1, end = 1, alpha = 0.7) +
-    theme_classic() +
-    ylab(paste("FD (RaoQ) of ", ylab)) +
-    xlab("") +
-    ylim(0,max(trait+.5)) +
-    theme(legend.position = "none")
-}
-
-## functions for trait plots 
-CWM_trait_plot <- function(data, trait, ylab) {
-  ggplot(data, aes_string("trt", trait)) +
-    geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
-    geom_boxplot(width = 0.25) +
-    geom_jitter(width = 0.12, height = 0, size = 1, alpha = 0.3) +
-    scale_fill_viridis_d(option = "D", begin = 0.1, end = 1, alpha = 0.7) +
-    theme_classic() +
-    ylab(ylab) +
-    xlab("") +
-    theme(legend.position = "none")
-}
 
 #### WY ####
 ## load in composition data, clean and modify columns as usual
@@ -181,7 +135,7 @@ cwm21.wy$trt <- factor(cwm21.wy$trt, levels = c('ir','dt','fd','rand'),ordered =
 cwm21.wy$Treatments <- cwm21.wy$trt
 levels(cwm21.wy$Treatments) <- c("Invasion Resistant","Drought Tolerant","Functionally Diverse","Random")
 
-#Calculating functional diversity of each trait and extracting RaoQ on L115
+#Calculating functional diversity of each trait and extracting RaoQ (RoaQ is not scaled here, needs to be done when using these columns)
 raoq <- FD::dbFD(as.matrix(trait.matrix.wy), as.matrix(comms21.wy))
 leafn <- FD::dbFD(as.matrix(trait.matrix.wy[,"leafn"]), as.matrix(comms21.wy))
 lop <- FD::dbFD(as.matrix(trait.matrix.wy[,"lop"]), as.matrix(comms21.wy))
@@ -207,34 +161,6 @@ cwm21.wy$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(cwm21.
 covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 cwm21.wy <- cwm21.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                               !block %in% covered ~ "cntl")) 
-## figures
-leafn.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$leafn,"Leaf N") +
-  geom_point(aes(y=quantile(cwm21.wy$leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-test <- CWM_trait_FD_plot(cwm_roaq21.wy, cwm_roaq21.wy$leafn, "Leaf N")  
-
-srl.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$srl,"Specific root length") +
-  geom_point(aes(y=quantile(cwm21.wy$srl,.7557),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5)
-  
-veg.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$veg,"Vegetative spread potential") +
-  ylim(0,1)
-
-ldmc.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$ldmc,"Leaf dry matter content") +
-  geom_point(aes(y=quantile(cwm21.wy$ldmc,.75),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5) 
-  
-lop.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$lop,"Leaf osmotic potential") +
-  geom_point(aes(y=quantile(cwm21.wy$lop,.25),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5)
-
-rootdiam.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$rootdiam,"Root diameter")
-
-FD.wy.21 <- cwm_roaq21.wy %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq21.wy$full+3)) +
-  theme(legend.position  = "none")
 
 
 ## 2022
@@ -307,33 +233,6 @@ covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39
 cwm22.wy <- cwm22.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                               !block %in% covered ~ "cntl")) 
 
-## figures
-leafn.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$leafn,"Leaf N") +
-  geom_point(aes(y=quantile(cwm22.wy$leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-srl.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$srl,"Specific root length") +
-  geom_point(aes(y=quantile(cwm22.wy$srl,.7557),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5)
-
-veg.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$veg,"Vegetative spread potential") +
-  ylim(0,1)
-
-ldmc.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$ldmc,"Leaf dry matter content") +
-  geom_point(aes(y=quantile(cwm22.wy$ldmc,.75),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5) 
-
-lop.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$lop,"Leaf osmotic potential") +
-  geom_point(aes(y=quantile(cwm22.wy$lop,.25),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5)
-
-rootdiam.wy.22 <- CWM_trait_plot(cwm22.wy,cwm22.wy$rootdiam,"Root diameter")
-
-FD.wy.22 <- cwm_roaq22.wy %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq22.wy$full+3)) +
-  theme(legend.position  = "none")
 
 ## 2023
 #Arrange cover estimates for field data by year
@@ -407,36 +306,6 @@ covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39
 cwm23.wy <- cwm23.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                               !block %in% covered ~ "cntl")) 
 
-## figures
-leafn.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$leafn,"Leaf N") +
-  geom_point(aes(y=quantile(cwm23.wy$leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-srl.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$srl,"Specific root length") +
-  geom_point(aes(y=quantile(cwm23.wy$srl,.7557),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5)
-
-veg.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$veg,"Vegetative spread potential") +
-  ylim(0,1)
-
-ldmc.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$ldmc,"Leaf dry matter content") +
-  geom_point(aes(y=quantile(cwm23.wy$ldmc,.75),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5) 
-
-lop.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$lop,"Leaf osmotic potential") +
-  geom_point(aes(y=quantile(cwm23.wy$lop,.25),x="dt"),data=traits.wy, col= "red", shape=18, size=3.5)
-
-rootdiam.wy.23 <- CWM_trait_plot(cwm23.wy,cwm23.wy$rootdiam,"Root diameter")
-
-FD.wy.23 <- cwm_roaq23.wy %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq23.wy$full+3)) +
-  theme(legend.position  = "none")
-
-#FD of traits if desired:
-#leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
 wpre <- cwm_p.wy %>% mutate(year = "0") 
@@ -484,49 +353,6 @@ cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
 #save 
 write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
 
-## Produce a .tiff file of our plots together!
-library(patchwork)
-# export 21
-tiff("figures/cwm WY/traits_2021.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.wy.21 + srl.wy.21 + veg.wy.21) / (ldmc.wy.21 + lop.wy.21 + rootdiam.wy.21)
-dev.off()
-tiff("figures/cwm WY/FD_2021.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.wy.21
-dev.off()
-# export 22
-tiff("figures/cwm WY/traits_2022.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.wy.22 + srl.wy.22 + veg.wy.22) / (ldmc.wy.22 + lop.wy.22 + rootdiam.wy.22)
-dev.off()
-tiff("figures/cwm WY/FD_2022.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.wy.22
-dev.off()
-# export 23
-tiff("figures/cwm WY/traits_2023.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.wy.23 + srl.wy.23 + veg.wy.23) / (ldmc.wy.23 + lop.wy.23 + rootdiam.wy.23)
-dev.off()
-tiff("figures/cwm WY/FD_2023.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.wy.23
-dev.off()
-
-# tiff("figures/cwm/traits_2020.tiff", width=8.5, height=6, "in", res=400, compression = "lzw")
-# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
-# dev.off()
-# tiff("figures/trait_raoq_2023.tiff",  width=8.5, height=6, "in", res=400, compression = "lzw")
-# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
-# dev.off()
-# 
-# tiff("figures/multivariate_raoq_2023.tiff",  width=4, height=4, "in", res=400, compression = "lzw")
-# cwm_roaq %>% 
-#   ggplot(aes(trt,full)) +
-#   geom_violin(aes(fill=trt), width=1, trim=F) +
-#   geom_boxplot(width=.25) +
-#   geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-#   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-#   theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-#   ylim(0,max(cwm_roaq$full+3)) +
-#   theme(legend.position  = "none")
-# 
-# dev.off()
 
 
 #### CA ####
@@ -643,6 +469,17 @@ trait.matrix.ca.pred <- trait.matrix.ca.pred[order(rownames(trait.matrix.ca.pred
 # remove22.pred <- c("FEMY","FEPE","BRMA")
 # trait.matrix.ca.pred <- trait.matrix.ca.pred[!row.names(trait.matrix.ca.pred)%in%remove22.pred,]
 cwm_p.ca <- FD::functcomp(as.matrix(trait.matrix.ca.pred), as.matrix(comms_p.ca), bin.num=c("graminoid"))
+#Define block by extracting the numeric from the cwm rownames
+cwm_p.ca$block <- as.factor(sub("^[a-z]+ (\\d+)$", "\\1", rownames(cwm_p.ca)))
+#Define seeding trt by extracting the letters from the cwm rownames
+cwm_p.ca$trt <- as.factor(sub("(^[a-z]+) \\d+$", "\\1", rownames(cwm_p.ca)))
+cwm_p.ca <- cwm_p.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
+# Define drought treatment at block level
+block.water <- hpf23 %>% select(c(block,trt,water))# get data from OG dataframe
+block.water$trt <- tolower(block.water$trt) #make lowercase to match
+block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
+cwm_p.ca <- merge(cwm_p.ca, block.water, by = c("block","trt"), all.x=T) #merge
+
 
 ## 2021
 #Arrange cover estimates for field data by year
@@ -724,41 +561,13 @@ cwm_roaq21.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq21.ca$trt <- factor(cwm_roaq21.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm21.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm21.ca)))
+cwm21.ca$block <- as.factor(sub(".*\\.(\\d+)$", "\\1", rownames(cwm21.ca)))
 # Define drought treatment at block level
 block.water <- hpf21 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
 cwm21.ca <- merge(cwm21.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
-
-## figures
-leafn.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$N,"Leaf N") +
-  geom_point(aes(y=quantile(cwm21.ca$N,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-srl.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$SRL,"Specific root length") +
-  geom_point(aes(y=quantile(cwm21.ca$SRL,.7557),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5)
-
-rmf.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$RMF,"Root mass fraction") +
-  geom_point(aes(y=quantile(cwm21.ca$RMF,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-lma.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$LMA,"Leaf mass per area") +
-  geom_point(aes(y=quantile(cwm21.ca$LMA,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) 
-
-seedmass.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$seed.mass,"Seed mass") +
-  geom_point(aes(y=quantile(cwm21.ca$seed.mass,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5)
-
-rootdiam.ca.21 <- CWM_trait_plot(cwm21.ca,cwm21.ca$Rdiam,"Root diameter") #FD
-
-FD.ca.21 <- cwm_roaq21.ca %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq21.ca$full+3)) +
-  theme(legend.position  = "none")
 
 
 ## 2022
@@ -840,41 +649,13 @@ cwm_roaq22.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq22.ca$trt <- factor(cwm_roaq22.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm22.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm22.ca)))
+cwm22.ca$block <- as.factor(sub(".*\\.(\\d+)$", "\\1", rownames(cwm22.ca)))
 # Define drought treatment at block level
 block.water <- hpf22 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
 cwm22.ca <- merge(cwm22.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
-
-## figures
-leafn.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$N,"Leaf N") +
-  geom_point(aes(y=quantile(cwm22.ca$N,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-srl.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$SRL,"Specific root length") +
-  geom_point(aes(y=quantile(cwm22.ca$SRL,.7557),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5)
-
-rmf.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$RMF,"Root mass fraction") +
-  geom_point(aes(y=quantile(cwm22.ca$RMF,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-lma.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$LMA,"Leaf mass per area") +
-  geom_point(aes(y=quantile(cwm22.ca$LMA,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) 
-
-seedmass.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$seed.mass,"Seed mass") +
-  geom_point(aes(y=quantile(cwm22.ca$seed.mass,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5)
-
-rootdiam.ca.22 <- CWM_trait_plot(cwm22.ca,cwm22.ca$Rdiam,"Root diameter") #FD
-
-FD.ca.22 <- cwm_roaq22.ca %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq22.ca$full+3)) +
-  theme(legend.position  = "none")
 
 
 ## 2023
@@ -955,44 +736,13 @@ cwm_roaq23.ca <- data.frame(leafn=leafn$RaoQ,
                        trt=factor(groups.ca))
 cwm_roaq23.ca$trt <- factor(cwm_roaq23.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 #Define block by extracting the numeric from the cwm rownames
-cwm23.ca$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cwm23.ca)))
+cwm23.ca$block <- as.factor(sub(".*\\.(\\d+)$", "\\1", rownames(cwm23.ca)))
 # Define drought treatment at block level
 block.water <- hpf23 %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
 cwm23.ca <- merge(cwm23.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
-
-## figures
-leafn.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$N,"Leaf N") +
-  geom_point(aes(y=quantile(cwm23.ca$N,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-srl.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$SRL,"Specific root length") +
-  geom_point(aes(y=quantile(cwm23.ca$SRL,.7557),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5)
-
-rmf.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$RMF,"Root mass fraction") +
-  geom_point(aes(y=quantile(cwm23.ca$RMF,.25),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) # Specifying the target object (red dot).
-
-lma.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$LMA,"Leaf mass per area") +
-  geom_point(aes(y=quantile(cwm23.ca$LMA,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) 
-
-seedmass.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$seed.mass,"Seed mass") +
-  geom_point(aes(y=quantile(cwm23.ca$seed.mass,.75),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5)
-
-rootdiam.ca.23 <- CWM_trait_plot(cwm23.ca,cwm23.ca$Rdiam,"Root diameter") #FD
-
-FD.ca.23 <- cwm_roaq23.ca %>% 
-  ggplot(aes(trt,full)) +
-  geom_violin(aes(fill=trt), width=1, trim=F) +
-  geom_boxplot(width=.25) +
-  geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
-  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
-  ylim(0,max(cwm_roaq23.ca$full+3)) +
-  theme(legend.position  = "none")
-
-#FD of traits if desired:
-#leafn.wy <- CWM_trait_plot(cwm21.wy,leafn,traits.wy)
 
 ## merge cwm's together for storing
 cpre <- cwm_p.ca %>% mutate(year = "0") 
@@ -1008,46 +758,6 @@ c23 <- cwm23.ca %>% mutate(year = "2023") #add year
 c23$trt <- as.factor(as.character(c23$trt))
 rownames(c23) <- NULL
 
-cwm.wy <- bind_rows(wpre, w21) #bind 1st
-cwm.wy <- bind_rows(cwm.wy, w22) #bind again
-cwm.wy <- bind_rows(cwm.wy, w23) #bind again
-#save 
-write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
-
-## merge cwm's together for storing
-wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") #add year
-wfd1$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd1))) #Define block by extracting the numeric from the cwm rownames
-wfd1$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd1))) #Define subplot by extracting the subplot from the cwm rownames
-covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-wfd1 <- wfd1 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
-                                            !block %in% covered ~ "cntl"))
-wfd2 <- cwm_roaq22.wy %>% mutate(year = "2022") #add year
-wfd2$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd2))) #Define block by extracting the numeric from the cwm rownames
-wfd2$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd2))) #Define subplot by extracting the subplot from the cwm rownames
-covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-wfd2 <- wfd2 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
-                                            !block %in% covered ~ "cntl"))
-wfd3 <- cwm_roaq23.wy %>% mutate(year = "2023") #add year
-wfd3$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd3))) #Define block by extracting the numeric from the cwm rownames
-wfd3$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd3))) #Define subplot by extracting the subplot from the cwm rownames
-covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-wfd3 <- wfd3 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
-                                            !block %in% covered ~ "cntl"))
-
-
-cwm.wyfd <- bind_rows(wfd1, wfd2) #bind 1st
-cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
-#save 
-write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
-
-
-
-## merge cwm's together for storing
-cpre <- cwm_p.ca %>% mutate(year = "0") #add prob
-c21 <- cwm21.ca %>% mutate(year = "2021") #add year
-c22 <- cwm22.ca %>% mutate(year = "2022") #add year
-c23 <- cwm23.ca %>% mutate(year = "2023") #add year
-
 cwm.ca <- bind_rows(cpre, c21) #bind 1st
 cwm.ca <- bind_rows(cwm.ca, c22) #bind again
 cwm.ca <- bind_rows(cwm.ca, c23) #bind again
@@ -1055,42 +765,24 @@ cwm.ca <- bind_rows(cwm.ca, c23) #bind again
 #save 
 write.csv(cwm.ca, "data/cwm_ca.csv", row.names = F)
 
-## Produce a .tiff file of our plots together!
-library(patchwork)
-# export 21
-tiff("figures/cwm CA/traits_2021.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.ca.21 + srl.ca.21 + rmf.ca.21) / (lma.ca.21 + seedmass.ca.21 + rootdiam.ca.21)
-dev.off()
-tiff("figures/cwm CA/FD_2021.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.ca.21
-dev.off()
-# export 22
-tiff("figures/cwm CA/traits_2022.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.ca.22 + srl.ca.22 + rmf.ca.22) / (lma.ca.22 + seedmass.ca.22 + rootdiam.ca.22)
-dev.off()
-tiff("figures/cwm CA/FD_2022.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.ca.22
-dev.off()
-# export 23
-tiff("figures/cwm CA/traits_2023.tiff", res=400, height = 6,width =8.5, "in",compression = "lzw")
-(leafn.ca.23 + srl.ca.23 + rmf.ca.23) / (lma.ca.23 + seedmass.ca.23 + rootdiam.ca.23)
-dev.off()
-tiff("figures/cwm CA/FD_2023.tiff", res=400, height = 4,width =4, "in",compression = "lzw")
-FD.ca.23
-dev.off()
+## merge cwm's together for storing
+cfd1 <- cwm_roaq21.ca %>% mutate(year = "2021") #add year
+cfd1$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cfd1))) #Define block by extracting the numeric from the cwm rownames
+# Define drought treatment at block level
+block.water <- hpf22 %>% select(c(block,trt,water))# get data from OG dataframe
+block.water$trt <- tolower(block.water$trt) #make lowercase to match
+block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
+cfd1 <- merge(cfd1, block.water, by = c("block","trt"), all.x=T) #merge
 
+cfd2 <- cwm_roaq22.ca %>% mutate(year = "2022") #add year
+cfd2$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cfd2))) #Define block by extracting the numeric from the cwm rownames
+cfd2 <- merge(cfd2, block.water, by = c("block","trt"), all.x=T) #merge
 
-#### add a legent to plots?
-# leg <- cwm %>% 
-#   ggplot(aes(Treatments,rootdiam)) +
-#   geom_violin(aes(fill=Treatments), width=1, trim=F) +
-#   scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
-#   theme_classic()
-# leg
-# 
-# tiff("trait_legend.tiff", width = 3, height = 2, "in", res=400, compression = "lzw")
-# grid::grid.newpage()
-# grid::grid.draw(cowplot::get_legend(leg))
-# dev.off()
-# 
-# gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
+cfd3 <- cwm_roaq23.ca %>% mutate(year = "2023") #add year
+cfd3$block <- as.numeric(sub(".*\\.(\\d+)$", "\\1", rownames(cfd3))) #Define block by extracting the numeric from the cwm rownames
+cfd3 <- merge(cfd3, block.water, by = c("block","trt"), all.x=T) #merge
+
+cwm.cafd <- bind_rows(cfd1, cfd2) #bind 1st
+cwm.cafd <- bind_rows(cwm.cafd, cfd3) #bind again
+#save 
+write.csv(cwm.cafd, "data/cwm_raoq_ca.csv", row.names = F)
