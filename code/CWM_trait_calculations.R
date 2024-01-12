@@ -93,7 +93,6 @@ preds.wy <- preds.wy %>% arrange(trt,block)
 comms_p.wy <- labdsv::matrify(data.frame(preds.wy$trt,preds.wy$species,preds.wy$prob))
 comms_p.wy <- comms_p.wy[,order(colnames(comms_p.wy))]
 cwm_p.wy <- FD::functcomp(as.matrix(trait.matrix.wy), as.matrix(comms_p.wy), bin.num=c("graminoid","veg","c4"))
-
 #Define block by extracting the numeric from the cwm rownames
 cwm_p.wy$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(cwm_p.wy)))
 #Define trt by extracting the subplot from the cwm rownames
@@ -102,6 +101,16 @@ cwm_p.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(cwm_p
 covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 cwm_p.wy <- cwm_p.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                                     !block %in% covered ~ "cntl")) 
+
+#Calculating functional diversity of each trait and extracting RaoQ (RoaQ is not scaled here, needs to be done when using these columns)
+raoq <- FD::dbFD(as.matrix(trait.matrix.wy), as.matrix(comms_p.wy))
+rootdiam <- FD::dbFD(as.matrix(trait.matrix.wy[,"rootdiam"]), as.matrix(comms_p.wy))
+veg <- FD::dbFD(as.matrix(trait.matrix.wy[,"veg"]), as.matrix(comms_p.wy))
+cwm_roaq_p.wy <- data.frame(rootdiam=rootdiam$RaoQ,
+                            veg=veg$RaoQ,
+                            full=raoq$RaoQ)
+#cwm_roaq_p.wy$trt <- factor(cwm_roaq_p.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
+
 
 ## 2021
 #Arrange cover estimates for field data by year
@@ -162,6 +171,13 @@ covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39
 cwm21.wy <- cwm21.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                               !block %in% covered ~ "cntl")) 
 
+## Calculating dissimilarity/ distance (euclidian) from targets
+#slect relevent CWM traits per DT or IR, rows are communities
+dist21.wy <- cwm21.wy %>% select()
+#add row of targets as a community
+#mnake into matrix
+#run dist or vegdist
+#make saveable dataframe
 
 ## 2022
 #Arrange cover estimates for field data by year
@@ -310,6 +326,11 @@ cwm23.wy <- cwm23.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
 ## merge cwm's together for storing
 wpre <- cwm_p.wy %>% mutate(year = "0") 
 wpre$trt <- as.factor(as.character(wpre$trt))
+wpre <- wpre %>% mutate(trt = str_replace(trt, "^r $", "rand")) #make r match rand 
+wpre <- wpre %>% mutate(trt = str_replace(trt, "^ir $", "ir")) #make r match rand 
+wpre <- wpre %>% mutate(trt = str_replace(trt, "^fd $", "fd")) #make r match rand 
+wpre <- wpre %>% mutate(trt = str_replace(trt, "^dt $", "dt")) #make r match rand 
+#wpre$trt <- factor(wpre$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE)
 rownames(wpre) <- NULL
 w21 <- cwm21.wy %>% mutate(year = "2021") #add year
 w21$trt <- as.factor(as.character(w21$trt))
@@ -328,6 +349,14 @@ cwm.wy <- bind_rows(cwm.wy, w23) #bind again
 write.csv(cwm.wy, "data/cwm_wy.csv", row.names = F)
 
 ## merge cwm's together for storing
+## I am only calculating RaoQ for preds for traits I need it, this is the only reason NA appears in the dataframe
+wfd0 <- cwm_roaq_p.wy %>% mutate(year = "0") #add year
+wfd0$block <- as.factor(sub(".*\\s(\\d+)*", "\\1", rownames(wfd0))) #Define block by extracting the numeric from the cwm rownames
+wfd0$trt <- as.factor(sub("([a-z]+)\\s(\\d+)$", "\\1", rownames(wfd0))) #Define trt by extracting the trt from the cwm rownames
+wfd0 <- wfd0 %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
+covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
+wfd0 <- wfd0 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define drought treatment at block level
+                                            !block %in% covered ~ "cntl"))
 wfd1 <- cwm_roaq21.wy %>% mutate(year = "2021") #add year
 wfd1$block <- as.factor(sub(".*\\.(\\d+)\\..*", "\\1", rownames(wfd1))) #Define block by extracting the numeric from the cwm rownames
 wfd1$subplot <- as.factor(sub(".*\\.(\\d+)\\.(\\w)$", "\\2", rownames(wfd1))) #Define subplot by extracting the subplot from the cwm rownames
@@ -348,7 +377,8 @@ wfd3 <- wfd3 %>% mutate(drought = case_when(block %in% covered ~ "drt", # Define
                                             !block %in% covered ~ "cntl"))
 
 
-cwm.wyfd <- bind_rows(wfd1, wfd2) #bind 1st
+cwm.wyfd <- bind_rows(wfd0, wfd1) #bind 1st
+cwm.wyfd <- bind_rows(cwm.wyfd, wfd2) #bind again
 cwm.wyfd <- bind_rows(cwm.wyfd, wfd3) #bind again
 #save 
 write.csv(cwm.wyfd, "data/cwm_raoq_wy.csv", row.names = F)
