@@ -171,14 +171,6 @@ covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39
 cwm21.wy <- cwm21.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
                                               !block %in% covered ~ "cntl")) 
 
-## Calculating dissimilarity/ distance (euclidian) from targets
-#slect relevent CWM traits per DT or IR, rows are communities
-dist21.wy <- cwm21.wy %>% select()
-#add row of targets as a community
-#mnake into matrix
-#run dist or vegdist
-#make saveable dataframe
-
 ## 2022
 #Arrange cover estimates for field data by year
 hpg22 <- comp.wy %>% filter(year == "2022") %>% arrange(trt,block) %>%

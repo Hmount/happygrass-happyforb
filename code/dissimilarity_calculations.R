@@ -4,11 +4,11 @@ normalize <- function(x) {
 }
 
 library(tidyverse)
-dat <- read.csv("data/cwm_wy.csv")
-dat$year <- as.factor(dat$year)
-dat$block <- as.factor(dat$block)
-dat$trt <- as.factor(dat$trt)
-dat$subplot <- as.factor(dat$subplot)
+alldat <- read.csv("data/cwm_wy.csv")
+alldat$year <- as.factor(alldat$year)
+alldat$block <- as.factor(alldat$block)
+alldat$trt <- as.factor(alldat$trt)
+alldat$subplot <- as.factor(alldat$subplot)
 FDdat <- read.csv("data/cwm_raoq_wy.csv")
 FDdat$year <- as.factor(FDdat$year)
 FDdat$block <- as.factor(FDdat$block)
@@ -29,8 +29,8 @@ traits.wy$rdmc = scale(log(traits.wy$rdmc))
 
 ## Calculating dissimilarity/ distance (euclidian) from targets
 ## select relevent CWM traits per DT or IR, rows are communities
-pred <- dat %>% filter(year=="0")#filter preds
-dat <- dat %>% filter(year!="0")#filter preds
+pred <- alldat %>% filter(year=="0")#filter preds
+dat <- alldat %>% filter(year!="0")#filter preds
 FDpred <- FDdat %>% filter(year=="0")#filter preds
 FDdat <- FDdat %>% filter(year!="0")#filter preds
 
@@ -61,7 +61,9 @@ irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
 irdistmat <-as.matrix(irdistmat)
 # save only pairwise between target 
 irdistances <- as.data.frame(irdistmat["target",])
-colnames(irdistances) <- "ir_dist"
+colnames(irdistances) <- "dist"
+irdistances <- irdistances %>% rownames_to_column("trt.b.sub.y")
+
 
 ## DT
 distdt.wy <- dat %>% select(c(block,trt,subplot,year,ldmc,lop))
@@ -87,7 +89,10 @@ dtdistmat <- vegdist(as.matrix(dtdist),method = "euclidean", upper=T)#,diag=T)
 dtdistmat <-as.matrix(dtdistmat)
 # save only pairwise between target 
 dtdistances <- as.data.frame(dtdistmat["target",])
-colnames(dtdistances) <- "dt_dist"
+colnames(dtdistances) <- "dist"
+dtdistances <- dtdistances %>% rownames_to_column("trt.b.sub.y")
+
+
 
 ## To assess similarity to highest multivariate FD we use upper 95th percentile
 ## of each years FD as the target to compare to. 
@@ -116,7 +121,7 @@ fddistmat <- vegdist(as.matrix(fddist21),method = "euclidean", upper=T)#,diag=T)
 fddistmat <-as.matrix(fddistmat)
 # save only pairwise between target 
 fddistances21 <- as.data.frame(fddistmat["target",])
-colnames(fddistances21) <- "fd_dist"
+colnames(fddistances21) <- "dist"
 
 ##2022
 # within each year subset the data
@@ -131,7 +136,7 @@ fddistmat <- vegdist(as.matrix(fddist22),method = "euclidean", upper=T)#,diag=T)
 fddistmat <-as.matrix(fddistmat)
 # save only pairwise between target 
 fddistances22 <- as.data.frame(fddistmat["target",])
-colnames(fddistances22) <- "fd_dist"
+colnames(fddistances22) <- "dist"
 
 ##2023
 # within each year subset the data
@@ -146,74 +151,105 @@ fddistmat <- vegdist(as.matrix(fddist23),method = "euclidean", upper=T)
 fddistmat <-as.matrix(fddistmat)
 # save only pairwise between target 
 fddistances23 <- as.data.frame(fddistmat["target",])
-colnames(fddistances23) <- "fd_dist"
+colnames(fddistances23) <- "dist"
 
 #bind dataframes
 fddistances <- bind_rows(fddistances21,fddistances22)
 fddistances <- bind_rows(fddistances,fddistances23)
+fddistances <- fddistances %>% rownames_to_column("trt.b.sub.y")
 
 
 ## To assess similarity to random so it can be included in models, we consider the distances 
-## in community abundance/ composition from our expected probabilities from seeding.
+## in CWM from target seeding CWM (could also look at community abundance/ composition from 
+## our expected probabilities from seeding, but the cwm matches other dist measures.)
 ## this essentially uses the random community as a measure of how well be were at making any 
-## community we sought out to make by seeding and allows us to continue using random as a control. 
+## CWM we sought out to make by seeding and allows us to continue using random as a control. 
 # Rand
-compdat <- read.csv("data/comp_wy.csv")
-compdat <- compdat[,c(1:4,11:66)]
-rdist <- compdat %>% filter(trt=="r") %>%
-  filter(year!="2020")
-rdist <- rdist %>% #select(-c(Treatments,subplot))
-  unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
 
-# combine the above subsetted data with the targets (partially done below), use jesse code 
-# to run vegdist and extract pairwise differences from mstrix. 
-### HERE ###
-
-# Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
-preds.wy <- read.csv("data/allplot.assemblages.csv") #data
-preds.wy <- preds.wy %>% arrange(trt,block)
-comms_p.wy <- labdsv::matrify(data.frame(preds.wy$trt,preds.wy$species,preds.wy$prob*100))
-comms_p.wy <- comms_p.wy[,order(colnames(comms_p.wy))]
-# comms_p.wy$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(comms_p.wy)))
-# #Define trt by extracting the subplot from the cwm rownames
-# comms_p.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(comms_p.wy))))
-# Define drought treatment at block level
-# covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-# comms_p.wy <- comms_p.wy %>% mutate(drought = case_when(block %in% covered ~ "drt",
-#                                                     !block %in% covered ~ "cntl")) 
-
+# within each year subset the data
+rdist <- alldat %>% filter(trt=="rand") #%>% filter(year=="2021")
 
 #2021
-# within each year subset the data
-fddist21 <- fddist %>% filter(year=="2021")
-fddist21 <- fddist21 %>% unite(trt.b.sub.y, c(trt, block, year), sep = ".", remove=T)
+rdist21 <- rdist %>% filter(year=="2021"| year=="0") %>% filter(subplot!="n"|is.na(subplot))
+rdist21 <- rdist21 %>% select(-c(drought, Treatments))
+rdist21 <- rdist21 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist21 <- rdist21 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
+rdist21 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist21 <-rdist21[c(1:64),]
+rdist21.s<- data.frame(
+  dist=diag(as.matrix(rdist21)),
+  id=colnames(rdist21))
+rdist21 <- rdist %>% filter(year=="2021"| year=="0") %>% filter(subplot!="s"|is.na(subplot))
+rdist21 <- rdist21 %>% select(-c(drought, Treatments))
+rdist21 <- rdist21 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist21 <- rdist21 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
+rdist21 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist21 <-rdist21[c(1:64),]
+rdist21.n<- data.frame(
+  dist=diag(as.matrix(rdist21)),
+  id=colnames(rdist21))
+rdist21 <- bind_rows(rdist21.n,rdist21.s)
 
-randdistmat <- vegdist(as.matrix(rdist),method = "euclidean", upper=T)
+#2022
+rdist22 <- rdist %>% filter(year=="2022"| year=="0") %>% filter(subplot!="n"|is.na(subplot))
+rdist22 <- rdist22 %>% select(-c(drought, Treatments))
+rdist22 <- rdist22 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist22 <- rdist22 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", diag = T)
+rdist22 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist22 <-rdist22[c(1:64),]
+rdist22.s<- data.frame(
+  dist=diag(as.matrix(rdist22)),
+  id=colnames(rdist22))
+rdist22 <- rdist %>% filter(year=="2022"| year=="0") %>% filter(subplot!="s"|is.na(subplot))
+rdist22 <- rdist22 %>% select(-c(drought, Treatments))
+rdist22 <- rdist22 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist22 <- rdist22 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", diag = T)
+rdist22 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist22 <-rdist22[c(1:64),]
+rdist22.n<- data.frame(
+  dist=diag(as.matrix(rdist22)),
+  id=colnames(rdist22))
+rdist22 <- bind_rows(rdist22.n,rdist22.s)
 
-ran <- data.frame(rbind(
-  #   cbind(str_c(hpg$trt,"E"),hpg$species,hpg$prob*100), # expected coverage from seeded probability
-  #   cbind(str_c(hpg$trt,"A"),hpg$species,hpg$cov)))     # actual coverage (was absolute, I have means)
-  # ran[,3] <- as.numeric(ran[,3])
-  # comms_ran <- labdsv::matrify(ran)
-  # comms_ran <- comms_ran[,order(colnames(comms_ran))]
-  # comms_ran <- comms_ran %>% select(-BG)
-  # 
-  # ran_exp <- vegdist(comms_ran[385:512,],upper = T)
-  # # Extract all values 1 position below diag and extract every second value
-  # ran_dist <- data.frame(
-  #   dist=diag(as.matrix(ran_exp)[, -1])[c(TRUE, FALSE)],
-  #   id=rownames(comms_ran[385:512,])[c(TRUE, FALSE)])
-  # ran_dist$id <- str_remove(ran_dist$id,"A")
-  # rownames(ran_dist) <- ran_dist$id
-  
-  # Random distances are bray curtis distances from the expected targets (prob)
-  #the target set out compositionally
-  cwm_rand <- left_join(
-    cwm %>% filter(trt == "rand") %>% 
-      mutate(id = rownames(cwm %>% filter(trt == "rand"))),
-    ran_dist, by="id") %>% #make ran_dist not just 2020
-    select(-dist_target) %>% 
-    rename(dist_target = dist) 
-  
-  rownames(cwm_rand) <- cwm_rand$id
-  cwm_rand <- cwm_rand %>% select(-id)
+#2023
+rdist23 <- rdist %>% filter(year=="2023"| year=="0") %>% filter(subplot!="n"|is.na(subplot))
+rdist23 <- rdist23 %>% select(-c(drought, Treatments))
+rdist23 <- rdist23 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist23 <- rdist23 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", diag = T)
+rdist23 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist23 <-rdist23[c(1:64),]
+rdist23.s<- data.frame(
+  dist=diag(as.matrix(rdist23)),
+  id=colnames(rdist23))
+rdist23 <- rdist %>% filter(year=="2023"| year=="0") %>% filter(subplot!="s"|is.na(subplot))
+rdist23 <- rdist23 %>% select(-c(drought, Treatments))
+rdist23 <- rdist23 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist23 <- rdist23 %>% column_to_rownames("trt.b.sub.y")
+randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", diag = T)
+rdist23 <-as.matrix(randdistmat)[,-c(1:64)]
+rdist23 <-rdist23[c(1:64),]
+rdist23.n<- data.frame(
+  dist=diag(as.matrix(rdist23)),
+  id=colnames(rdist23))
+rdist23 <- bind_rows(rdist23.n,rdist23.s)
+
+# together 
+rdistances <- bind_rows(rdist21,rdist22)
+rdistances <- bind_rows(rdistances,rdist23)
+rdistances <- rdistances %>% column_to_rownames("id")
+colnames(rdistances) <- "dist"
+rdistances <- rdistances %>% rownames_to_column("trt.b.sub.y")
+
+
+#### combine all dissimilarities 
+allwy <- bind_rows(dtdistances,irdistances)
+allwy <- bind_rows(allwy,fddistances)
+allwy <- bind_rows(allwy,rdistances)
+
+#export csv
+write.csv(allwy, "data/cwm_distances.csv")
