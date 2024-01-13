@@ -99,7 +99,7 @@ dtdistances <- dtdistances %>% rownames_to_column("trt.b.sub.y")
 #FD
 fddist <- FDdat[,c(3,4:6,12)] %>% filter(trt=="fd")
 #FD target (shifting annually)
-quantile(normalize(distfd.wy$full),.99) 
+quantile(normalize(fddist$full),.99) 
 #using max(), gives 1 in all years due to normalization, 99th quantile shows variation
 # subdatFD <- FDdat %>% group_by(year) %>% summarize(target = quantile(normalize(full),.99))
 subdatFD <- fddist %>% group_by(year) %>% summarize(target = quantile(normalize(full),.99))
@@ -170,9 +170,9 @@ fddistances <- fddistances %>% rownames_to_column("trt.b.sub.y")
 rdist <- alldat %>% filter(trt=="rand") #%>% filter(year=="2021")
 
 #2021
-rdist21 <- rdist %>% filter(year=="2021"| year=="0") %>% filter(subplot!="n"|is.na(subplot))
+rdist21 <- rdist %>% filter(year=="2021"| year=="0")
 rdist21 <- rdist21 %>% select(-c(drought, Treatments))
-rdist21 <- rdist21 %>% unite(trt.b.sub.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
+rdist21 <- rdist21 %>% unite(trt.b.sub.y, c(trt, block,subplot,year), sep = ".", remove=T) # make unique plot variable
 rdist21 <- rdist21 %>% column_to_rownames("trt.b.sub.y")
 randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
 rdist21 <-as.matrix(randdistmat)[,-c(1:64)]
@@ -241,9 +241,8 @@ rdist23 <- bind_rows(rdist23.n,rdist23.s)
 # together 
 rdistances <- bind_rows(rdist21,rdist22)
 rdistances <- bind_rows(rdistances,rdist23)
-rdistances <- rdistances %>% column_to_rownames("id")
-colnames(rdistances) <- "dist"
-rdistances <- rdistances %>% rownames_to_column("trt.b.sub.y")
+#rdistances <- rdistances %>% column_to_rownames("id")
+colnames(rdistances) <- c("dist","trt.b.sub.y")
 
 
 #### combine all dissimilarities 
@@ -252,4 +251,4 @@ allwy <- bind_rows(allwy,fddistances)
 allwy <- bind_rows(allwy,rdistances)
 
 #export csv
-write.csv(allwy, "data/cwm_distances.csv")
+write.csv(allwy, "data/cwm_distances_wy.csv")
