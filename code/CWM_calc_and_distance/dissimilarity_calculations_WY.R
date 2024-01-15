@@ -260,7 +260,7 @@ wydist <- bind_rows(wydist,rdistances)
 #wydist$dist <- normalize(wydist$dist)
 
 #export csv
-write.csv(allwy, "data/cwm_distances_wy.csv")
+write.csv(wydist, "data/cwm_distances_wy.csv")
 
 
 
