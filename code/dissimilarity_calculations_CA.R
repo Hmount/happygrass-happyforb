@@ -1,3 +1,7 @@
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+
 # Function for normalizing FD
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x)))
@@ -226,12 +230,93 @@ rdistances <- bind_rows(rdistances,rdist23)
 rdistances <- rdistances %>% column_to_rownames("id")
 colnames(rdistances) <- "dist"
 rdistances <- rdistances %>% rownames_to_column("trt.b.y")
+rdistances$dist <- normalize(rdistances$dist)
 
+irdistances$dist <- normalize(irdistances$dist)
+dtdistances$dist <- normalize(dtdistances$dist)
 
 #### combine all dissimilarities 
-allca <- bind_rows(dtdistances,irdistances)
-allca <- bind_rows(allca,fddistances)
-allca <- bind_rows(allca,rdistances)
+cadist <- bind_rows(dtdistances,irdistances)
+cadist <- bind_rows(cadist,fddistances)
+cadist <- bind_rows(cadist,rdistances)
+
+#cadist$dist <- normalize(cadist$dist)
 
 #export csv
-write.csv(allca, "data/cwm_distances_ca.csv")
+write.csv(cadist, "data/cwm_distances_ca.csv")
+
+
+
+#### Figures
+#combine with CWM to plot
+cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
+cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
+cwm.ca$year <- as.factor(cwm.ca$year)
+cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
+                                      ifelse(year=="2022","2",
+                                      ifelse(year=="2023","3","0")))) #make new sequence column
+cwm.ca$yrorder <- as.numeric(cwm.ca$yrorder)
+cwm.ca <- cwm.ca %>% 
+  mutate(plot = paste(block, trt, sep = ".")) #add plot ID column (but give NA to target/predicted communities)
+cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
+# also combine CWM_distances dataframe to master df 
+#break apart distances ID to make wider and merge together
+cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+cadist <- cadist %>% filter(trt!="target")
+#cadist <- cadist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+allca <- merge(cwm.ca,cadist, by=c("year","trt","block"), all=T)
+allca$trt <- as.factor(allca$trt)
+allca$water <- as.factor(allca$water)
+
+#make dought column
+allca <- allca %>% mutate(drought = ifelse(water=="0.5","drt","cntl"))
+
+#set reference levels for modelling
+allca$trt <- relevel(allca$trt, ref = "rand") #make random communities the reference level
+allca$drought <- as.factor(allca$drought)
+allca$drought <- relevel(allca$drought, ref = "cntl") #make random communities the reference level
+
+
+hist(allca$dist)
+shapiro.test(allca$dist) #below .05 = not normal!
+hist(sqrt(allca$dist))
+shapiro.test(sqrt(allca$dist)) #still not normal, but closer
+allca$dist_tran <- sqrt(allca$dist)
+
+#transfomed
+summary(t <- aov(dist_tran~trt*drought*year, allca))
+tuktest <- TukeyHSD(t)
+multcompView::multcompLetters4(t,tuktest)
+ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  theme_classic()
+
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought:year'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\2", rownames(letterstest)))
+letterstest$year <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\3", rownames(letterstest)))
+test <- allca %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist_tran,.8))
+test <- merge(letterstest,test, by = c("year", "drought", "trt"))
+test2 <- merge(test,allca, by = c("year", "drought", "trt"), all=T)
+
+droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
+
+#export for short report
+tiff("figures/cwm ca/distanceplot_ca.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+ggplot(test2, aes(y=dist_tran, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
+  scale_fill_manual(values = droughtcolsca)+
+  facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  theme_classic()
+dev.off()
+

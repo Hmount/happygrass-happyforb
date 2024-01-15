@@ -243,12 +243,107 @@ rdistances <- bind_rows(rdist21,rdist22)
 rdistances <- bind_rows(rdistances,rdist23)
 #rdistances <- rdistances %>% column_to_rownames("id")
 colnames(rdistances) <- c("dist","trt.b.sub.y")
+rdistances$dist <- normalize(rdistances$dist)
 
+irdistances$dist <- normalize(irdistances$dist)
+dtdistances$dist <- normalize(dtdistances$dist)
 
 #### combine all dissimilarities 
-allwy <- bind_rows(dtdistances,irdistances)
-allwy <- bind_rows(allwy,fddistances)
-allwy <- bind_rows(allwy,rdistances)
+wydist <- bind_rows(dtdistances,irdistances)
+wydist <- bind_rows(wydist,fddistances)
+wydist <- bind_rows(wydist,rdistances)
+
+#wydist$dist <- normalize(wydist$dist)
 
 #export csv
 write.csv(allwy, "data/cwm_distances_wy.csv")
+
+
+
+#### Figures
+
+#make new sequence column
+#add plot ID column (but give NA to target/predicted communities)
+
+# # combine to master df (remove spp columns for now)
+# allwy <- merge(comp.wy[,-c(11:66)],cwm.wy, by=c("year","trt","block","subplot"))
+# allwy$trt <- as.factor(allwy$trt)
+
+
+#combine with CWM to plot
+cwm.wy <- read.csv("data/cwm_wy.csv")# Wyoming CWM data
+cwm.wy$year <- as.factor(cwm.wy$year)
+cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
+                                      ifelse(year=="2022","2",
+                                      ifelse(year=="2023","3","0")))) #make new sequence column
+cwm.wy$yrorder <- as.numeric(cwm.wy$yrorder)
+cwm.wy <- cwm.wy %>% 
+  mutate(plot = ifelse(!is.na(subplot), paste(block, trt, subplot, sep = "."), NA)) #add plot ID column (but give NA to target/predicted communities)
+cwm.wy <- cwm.wy %>% filter(year != "0") #remove predicted/target communities
+# also combine CWM_distances dataframe to master df 
+#break apart distances ID to make wider and merge together
+wydist <- separate(wydist, trt.b.sub.y, into = c("trt", "block", "subplot", "year"), sep = "\\.")
+wydist <- wydist %>% filter(trt!="target")
+#wydist <- wydist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+allwy <- merge(cwm.wy,wydist, by=c("year","trt","block","subplot"), all.x=T)
+allwy$trt <- as.factor(allwy$trt)
+allwy$drought <- as.factor(allwy$drought)
+
+#set reference levels for modelling
+allwy$trt <- relevel(allwy$trt, ref = "rand") #make random communities the reference level
+allwy$drought <- relevel(allwy$drought, ref = "cntl") #make random communities the reference level
+
+
+# hist(allwy$dist)
+# hist(sqrt(allwy$dist))
+# allwy$dist_tran <- sqrt(allwy$dist)
+
+#w/out transfom
+summary(t <- aov(dist~trt*drought*year, allwy))
+tuktest <- TukeyHSD(t)
+multcompView::multcompLetters4(t,tuktest)
+ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  theme_classic()
+
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought:year'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\2", rownames(letterstest)))
+letterstest$year <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\3", rownames(letterstest)))
+test <- allwy %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist,.8))
+test <- merge(letterstest,test, by = c("year", "drought", "trt"))
+test2 <- merge(test,allwy, by = c("year", "drought", "trt"), all=T)
+
+
+ggplot(test2, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
+  facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  theme_classic()
+
+droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
+  
+#export for short report
+tiff("figures/cwm wy/distanceplot_wy.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+ggplot(test2, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
+  scale_fill_manual(values = droughtcolswy)+
+  facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  theme_classic()
+dev.off()
