@@ -22,6 +22,13 @@ comp.wy <- comp.wy %>%
 # make unique plot variable
 comp.wy <- comp.wy %>% unite(plot, c(block, trt, subplot), sep = ".", remove=F) 
 
+# calculate cover per plot and add to data
+fortotalcover <- comp.wy %>% filter(species!="BG"&
+                                       species!="Litter") %>% #only native live veg
+  group_by(year,block,trt,subplot) %>% 
+  summarize(totalcov = sum(cover, na.rm=T)) #summarize total live veg per subplot
+comp.wy <- merge(comp.wy,fortotalcover, all.x = T)
+
 # calculate cover native per subplot and add to data
 fornativecover <- comp.wy %>% filter(species!="BG"&
                                        species!="Litter"&
@@ -33,7 +40,8 @@ comp.wy <- merge(comp.wy,fornativecover, all.x = T)
 # make wide for analysis and matching CA data
 comp.wy.wide <- comp.wy %>% select(-c("prob","native","graminoid")) #columns to drop 
 comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","subplot","drought",
-                                                         "nativecov","BG", "Litter","plot", "invaded"), 
+                                                         "nativecov","totalcov","BG", "Litter",
+                                                         "plot", "invaded"), 
                                              names_from = "species", 
                                              values_from = "cover")
 #comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data

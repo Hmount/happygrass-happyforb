@@ -389,16 +389,6 @@ comp.ca$year<-as.factor(comp.ca$Year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
 
-###how many WY 2022+2023 data need to be dropped from CWM calculations (until we get trait data)
-subca <- comp.ca %>% #[,-c(18:56)]
-  mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>% 
-  filter(propnative < 80)
-table(subca$year)
-table(comp.ca$year)
-62/210*100
-#clean environment
-# rm(subwy)
-# rm(comp.wy.wide)
 
 # CSV of species-trait combinations (for OG 25)
 traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1)
@@ -497,9 +487,10 @@ cwm_p.ca$block <- as.factor(sub("^[a-z]+ (\\d+)$", "\\1", rownames(cwm_p.ca)))
 cwm_p.ca$trt <- as.factor(sub("(^[a-z]+) \\d+$", "\\1", rownames(cwm_p.ca)))
 cwm_p.ca <- cwm_p.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
 # Define drought treatment at block level
-block.water <- hpf23 %>% select(c(block,trt,water))# get data from OG dataframe
+block.water <- comp.ca %>% select(c(block,trt,water))# get data from OG dataframe
 block.water$trt <- tolower(block.water$trt) #make lowercase to match
 block.water$trt<-replace(block.water$trt,block.water$trt=="r","rand") #make r and rand match
+block.water <- block.water[c(1:210),] #repeating 3 times(?) 
 cwm_p.ca <- merge(cwm_p.ca, block.water, by = c("block","trt"), all.x=T) #merge
 
 
@@ -783,6 +774,23 @@ rownames(c23) <- NULL
 cwm.ca <- bind_rows(cpre, c21) #bind 1st
 cwm.ca <- bind_rows(cwm.ca, c22) #bind again
 cwm.ca <- bind_rows(cwm.ca, c23) #bind again
+
+### how many WY 2022+2023 data need to be dropped from CWM calculations 
+### important column unless we get trait data
+subca <- comp.ca %>% #[,-c(18:56)]
+  mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>%
+  filter(propnative < 80)
+table(subca$year)
+table(comp.ca$year)
+(13+22+62)/(210*3)*100 # only 15% total observation to remove
+(62)/(210)*100 # 30% total observation to remove for inv. models
+subca <- subca[,c(1,4,5,59)]
+subca$trt <- tolower(subca$trt) #make lowercase to match
+subca$block <- as.factor(subca$block) #make lowercase to match
+subca$Year <- as.factor(subca$Year) #make lowercase to match
+
+#merge
+test <- merge(cwm.ca,subca, by.x=c("block","trt","year"), by.y=c("block","trt","Year"), all.x=T)
 
 #save 
 write.csv(cwm.ca, "data/cwm_ca.csv", row.names = F)

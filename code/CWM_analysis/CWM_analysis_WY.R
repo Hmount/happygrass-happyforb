@@ -200,3 +200,9 @@ library(lmerTest)
 summary(lmer(sqrt(nativecov)~srl+drought.y+trt+year+(1|plot), data=allwy))
 anova(lmer(sqrt(nativecov)~srl+drought.y+trt+year+(1|plot), data=allwy))
 summary(lmer(sqrt(nativecov)~srl*drought.y*trt*year+(1|plot), data=allwy))
+
+
+
+brtetest <- comp.wy %>% filter(year=="2023")
+brtetest <- brtetest %>% filter(BRTE >= .01)
+brtetest$BRTE <- brtetest$BRTE/100 

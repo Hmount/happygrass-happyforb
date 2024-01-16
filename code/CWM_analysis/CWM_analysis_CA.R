@@ -51,6 +51,8 @@ allca$Year <- as.factor(allca$Year)
 allca$trt <- relevel(allca$trt, ref = "rand") # random as reference level
 allca$water <- relevel(allca$water, ref = "1.25") # water as reference level (drought = treatment)
 
+#for vizuals
+droughtcols <- c("cntl"="skyblue", "drt"="red") #create variable for color
 
 #### Were CWM of DT communities correlated
 #m1.ca <- lmer(sqrt(native.cover) ~ trt * water + (1 | Year) + (1 | plot.y), data = allca)
@@ -60,7 +62,8 @@ anova(m1.ca)
 emm.ca <- emmeans(m1.ca, c("trt","water"))
 pairs(emm.ca)
 ## I am getting a singularity error (probably from very small variance in random effects)
-## models runs with warning, but consider removing plot what encapsules essentially 0 variance
+## models runs with warning, but consider removing plot for now since it encapsulates 
+## essentially 0 variance
 
 m2lma.ca <- lmer(sqrt(native.cover) ~ water * LMA + (1 | Year), data = allca)
 summary(m2lma.ca) 
@@ -89,20 +92,59 @@ anova(m2lma.ca,m3.ca) #Better than CWM's alone (sm or rd)
 #water is highly correlated with out ability to hit our targets
 
 
-#### Were CWM of IR communities correlated
-allca23 <- allca %>% filter(Year=="2022")
-allca23$trt <- relevel(allca23$trt, ref = "rand") # random as reference community
-allca23$water <- relevel(allca23$water, ref = "1.25") # water as reference level (drought = treatment)
 
-hist(allca23$FESPER)
-hist(log(allca23$FESPER)) #better logged
-testca <- allca %>% mutate(log.invg = log(FESPER)) %>% 
+
+
+
+
+
+
+
+#### Were CWM of IR communities correlated
+allca22 <- allca %>% filter(Year=="2022")
+allca22$trt <- relevel(allca22$trt, ref = "rand") # random as reference community
+allca22$water <- relevel(allca22$water, ref = "1.25") # water as reference level (drought = treatment)
+
+# look at FESPER variable and across site
+hist(allca22$FESPER)
+hist(log(allca22$FESPER)) #better logged (below if needed)
+# allca22 <- allca22 %>% mutate(log.invg = log(FESPER)) %>% 
+#   mutate(log.invg = ifelse(log.invg == -Inf, NA, log.invg))
+sub <- allca22 %>% filter(FESPER!="0") #only 47 of 204 have FESPER
+table(allca22$fesper.present,allca22$fesper.seeded) #(row,column)
+# everywhere FESPER was not seeded should be removed since it does not have a paired plot
+# and will only inflate 0's. But it is present where it was not seeded (and so are other)
+# non-natives and we want to capture that those communities were subseptable to invasion
+## currently filtering for all communities FESPER was seeded (>0 = FESPER could invade and
+## how much, 0 = plot resisted invasion pressure) AND communities that ended up invaded 
+## (>0 = plot did not resist invasion, 0 = cannot assess resistence to invasion pressure 
+## must remove).
+
+## However, when considering that non-focal inv sp were left in 2022, all plots (theoretically)
+## had the same pressure of background invasion (with some facing higher via seeding)
+sub <- allca22 %>% filter(inv.grass.cov!="0")
+sub <- allca22 %>% filter(fesper.present!="0")
+sub <- allca22 %>% filter(fesper.seeded!="0")
+
+sub <- allca22 %>% filter(fesper.seeded!="0"|inv.grass.cov!="0")
+
+hist(sub$inv.grass.cov)
+hist(log(sub$inv.grass.cov)) #better logged
+sub <- sub %>% mutate(log.invg = log(inv.grass.cov)) %>% 
   mutate(log.invg = ifelse(log.invg == -Inf, NA, log.invg))
-sub <- allca23 %>% filter(inv.grass.cov!="0")
-hist(allca23$inv.grass.cov)
-hist(log(allca23$inv.grass.cov)) #better logged
-testca <- allca %>% mutate(log.invg = log(inv.grass.cov)) %>% 
-  mutate(log.invg = ifelse(log.invg == -Inf, NA, log.invg))
+
+####TEST
+mtest <- lmer(log.invg ~ trt * native.cover * water + (1|fesper.seeded), data = sub)
+summary(mtest) 
+anova(mtest)
+emm.ca <- emmeans(mtest, c("trt","water"))
+pairs(emm.ca)
+#sig. less inv in ir.water than fd.drought
+#sig. less inv in rand.water than fd.drought
+#slightly sig. less inv in dt.water than fd.drought
+#slightly sig. less inv in ir.water than ir.drought
+### cover is not important and the model without it preforms better, consider removing
+### unless to retain for matching CA/WY models. 
 
 #m1.ca <- lmer(log.invg ~ trt * native.cover + (1 | Year), data = testca)
 m1.ca <- lmer(log.invg ~ trt * native.cover * water + (1 | Year), data = testca)
@@ -155,3 +197,8 @@ ggplot(testca, aes(y=native.cover, x=dist, col=water))+
   geom_point()+
   geom_smooth(method="lm")+
   facet_grid(Year~trt, scales="free")
+
+ggplot(allca22, aes(y=log.invg, x=native.cover, col=water))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_wrap(~trt, scales="free")
