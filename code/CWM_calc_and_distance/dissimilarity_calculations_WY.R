@@ -300,7 +300,7 @@ allwy$drought <- relevel(allwy$drought, ref = "cntl") #make random communities t
 
 # hist(allwy$dist)
 # hist(sqrt(allwy$dist))
-# allwy$dist_tran <- sqrt(allwy$dist)
+#allwy$dist_tran <- sqrt(allwy$dist)
 
 #w/out transfom
 summary(t <- aov(dist~trt*drought*year, allwy))

@@ -167,16 +167,89 @@ anova(m2lop.wy,m2rd.wy) #same as lop? rd has slightly lower AIC
 m3.wy <- lmer(nativecov_tran ~ trt * dist * drought + (1 | year) + (1 | block), data = suballwy)
 summary(m3.wy)
 anova(m3.wy) #all sig! (except drought alone)
-emm.wy <- emmeans(m3.wy, c("trt","drought","dist"))
-pairs(emm.wy)
+emm.wy <- emmeans(m3.wy, c("trt","drought","dist"), )
+pairs(emm.wy,simple="dist")
+contrast(emm.wy,simple=)
 #view
-ggplot(suballwy, aes(y=nativecov_tran,x=dist,color=drought))+
-  geom_point()+
+ggplot(suballwy, aes(y=nativecov,x=dist,color=trt))+
+  #geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
-facet_grid(Year~trt)
+  #scale_color_manual(values=droughtcolswy)+
+facet_grid(~drought)
 #compare
 anova(m1.wy,m3.wy) #Better than seeding trt alone!
 anova(m2rd.ca,m3.ca) #Better than and CWM trait alone! (except rootdiam is close)
 #when not including trt w/ dist*water is a strong model
 #water is highly correlated with out ability to hit our targets
+
+
+
+
+#figures to easily view three-way interaction (one uses trt as x-axis, th other uses dist)
+library(ggeffects)
+x <- ggpredict(m3.wy,c("dist [all]","trt","drought")) #all smooths lines
+wy_threeway <- plot(x, alpha = .1, show_title = F)+
+  labs(y="cover native species", x="Euclidian distance from target", col="seeding trt")+
+  theme_classic()
+x <- ggpredict(m3.wy,c("trt","dist","drought")) #all smooths lines
+plot(x)+
+  theme_classic()
+
+#save some for presentation 1/19
+#CWM models
+#lma
+leafn.p <- ggplot(suballwy, aes(y=nativecov,x=leafn,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="cover native species")+
+  theme_classic()
+  #xlim(-.5,1.5) #+ #remove outlier?
+#seedmass
+srl.p <- ggplot(suballwy, aes(y=nativecov,x=srl,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="")+
+  theme_classic()#+
+facet_wrap(~Year)
+#rootdiam
+veg.p<- ggplot(suballwy, aes(y=nativecov,x=veg,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="")+
+  theme_classic()#+
+facet_wrap(~Year)
+
+#alltogether
+library(patchwork)
+tiff("figures/drought models/drought_cwm_wy.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+wy_threeway / (ldmc.p + lop.p + rd.p + plot_layout(guides = 'collect')) 
+dev.off()
+
+###for 1/19
+x <- ggpredict(m3.wy,c("dist [all]","drought","trt"), type = "re") #all smooths lines
+tiff("figures/drought models/drought_mod_wy.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
+plot(x, alpha = .1, show_title = F)+
+  labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
+  scale_color_manual(values=c("darkblue","red4"))+
+  theme_classic()
+dev.off()
+m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)
+capture.output(anova(m3.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+emm.ca <- emmeans(m3.wy, c("dist","trt","drought"))#,"dist"))
+?pairs(emm.wy,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
+emmeans(m3.wy,pairwise~"trt","drought")
+contrast(emm.ca)
+test(emmeans(m3.ca, pairwise ~drought*trt*dist, at = list(dist = 0)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = .36)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = 1)))
+
+###CWM figs
+tiff("figures/drought models/drought_cwm_wy.tiff", res=400, height = 2,width =7, "in",compression = "lzw")
+(leafn.p + srl.p + veg.p + plot_layout(guides = 'collect')) 
+dev.off()
+capture.output(anova(m2ldmc.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2lop.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2rd.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.

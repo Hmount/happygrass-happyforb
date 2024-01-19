@@ -69,40 +69,46 @@ table(comp.ca$year)
 allca <- allca %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100)
 
+#make dought column
+allca <- allca %>% mutate(drought = ifelse(water=="0.5","drt","cntl"))
+
 ## Ensure levels are correctly compared in models
 allca$trt <- relevel(allca$trt, ref = "rand") # random as reference level
-allca$water <- relevel(allca$water, ref = "1.25") # water as reference level (drought = treatment)
+allca$drought <- as.factor(allca$drought)
+allca$drought <- relevel(allca$drought, ref = "cntl") # water as reference level (drought = treatment)
+
 #for vizuals
-droughtcols <- c("1.25"="skyblue", "0.5"="tomato") #create variable for color
+droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 
 ### data summary
 # look at response variable in each dataset
 # CA
 hist(allca$native.cover) # native cover in CA is not skewed
-shapiro.test(allca$native.cover) #close enough to normal
-## I am transforming WY data for normality, consider doing here to match.
-# hist(sqrt(allca$native.cover)) # transform to match
-# shapiro.test(sqrt(allca$native.cover)) #even less normal than before
+## I am transforming WY data for normality, doing so here to match, little
+## to no differences in model from this change.
+# hist(sqrt(allca$native.cover)) # transform to match, but does not need (all models match both ways)
+allca <- allca %>% 
+  mutate(nativecov_tran = sqrt(native.cover))
 
 #### remove all plots where CWM could not be validly calculated
 suballca <- allca %>% filter(propnative >= 80)
 
 #### Linear models of native cover ~ treatments:
 ### Cover-only model:
-#m1.ca <- lmer(sqrt(native.cover) ~ trt * water + (1 | Year) + (1 | plot.y), data = allca)
+#m0.ca <- lmer(sqrt(native.cover) ~ trt * water + (1 | Year) + (1 | plot.y), data = test)
 ## I am getting a singularity error (probably from very small variance in random effects)
 ## models runs with warning, but removing plot for now since it encapsulates 
 ## essentially 0 variance.
 
 ### current cover-only model: (extremely similar w/ sqrt)
 ### (unsebsetted data could be used for this model)
-m1.ca <- lmer(native.cover ~ trt * water + (1 | Year), data = suballca)
+m1.ca <- lmer(sqrt(native.cover) ~ trt * drought + (1 | Year), data = suballca)
 summary(m1.ca) 
 anova(m1.ca) #effect of water
-emm.ca <- emmeans(m1.ca, c("trt","water"))
-pairs(emm.ca)
+emm.ca <- emmeans(m1.ca, c("trt","drought"))
+pairs(emm.ca,simple="trt")
 #view
-ggplot(suballca, aes(y=native.cover,x=trt,fill=water))+
+ggplot(suballca, aes(y=native.cover,x=trt,fill=drought))+
   geom_boxplot()+
   scale_fill_manual(values=droughtcols)#+
   facet_wrap(~Year)
@@ -111,13 +117,13 @@ ggplot(suballca, aes(y=native.cover,x=trt,fill=water))+
 ### These models show how CWM effected the relationship with an environmental
 ### variable across the whole site
 #lma model
-m2lma.ca <- lmer(native.cover ~ water * LMA + (1 | Year), data = suballca)
+m2lma.ca <- lmer(sqrt(native.cover) ~ drought * LMA + (1 | Year), data = suballca)
 summary(m2lma.ca) 
-anova(m2lma.ca) #water and lma important
-emm.ca <- emmeans(m2lma.ca, c("LMA","water"))
+anova(m2lma.ca) #drought and lma important
+emm.ca <- emmeans(m2lma.ca, c("drought","LMA"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=native.cover,x=LMA,color=water))+
+ggplot(suballca, aes(y=native.cover,x=LMA,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
@@ -126,13 +132,13 @@ ggplot(suballca, aes(y=native.cover,x=LMA,color=water))+
 #compare
 anova(m1.ca,m2lma.ca) #Equivalent fit as model with seeding
 #seed mass model
-m2sm.ca <- lmer(native.cover ~ water * seed.mass + (1 | Year), data = suballca)
+m2sm.ca <- lmer(sqrt(native.cover) ~ drought * seed.mass + (1 | Year), data = suballca)
 summary(m2sm.ca) 
-anova(m2sm.ca) #only water
-emm.ca <- emmeans(m2sm.ca2, c("seed.mass","water"))
+anova(m2sm.ca) #only drought
+emm.ca <- emmeans(m2sm.ca, c("seed.mass","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=native.cover,x=seed.mass,color=water))+
+ggplot(suballca, aes(y=native.cover,x=seed.mass,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)#+
@@ -142,13 +148,13 @@ anova(m1.ca,m2sm.ca) #Not as good as seeding trt
 anova(m2lma.ca,m2sm.ca) #same as lma? lma has lower AIC tho
 #rootdiam model
 suballca$rootdiam <- normalize(suballca$rootdiam) # normalize FD
-m2rd.ca <- lmer(native.cover ~ water * rootdiam + (1 | Year), data = suballca)
-summary(m2rd.ca) 
-anova(m2rd.ca) #only water important (Rdiam was, but not really relevant)
-emm.ca <- emmeans(m2rd.ca, c("rootdiam","water"))
+m2rd.ca2 <- lmer(sqrt(native.cover) ~ drought * rootdiam + (1 | Year), data = suballca)
+summary(m2rd.ca2) 
+anova(m2rd.ca2) #only drought important (Rdiam was, but not really relevant)
+emm.ca <- emmeans(m2rd.ca, c("rootdiam","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=native.cover,x=rootdiam,color=water))+
+ggplot(suballca, aes(y=native.cover,x=rootdiam,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)#+
@@ -160,21 +166,109 @@ anova(m2sm.ca,m2rd.ca) #same as sm? sm has WAY lower AIC tho
 ### Multivariate traits model/ value?
 
 ### CWM distance model: 
+hist(suballca$dist)
+hist(sqrt(suballca$dist))
 ## trt can be dropped
-m3.ca <- lmer(native.cover ~ trt * dist * water + (1 | Year), data = suballca)
+m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)
 summary(m3.ca)
-anova(m3.ca) #cov effected by water, and dist:water int.
-emm.ca <- emmeans(m3.ca, c("trt","water","dist"))
-pairs(emm.ca)
+anova(m3.ca) #cov effected by drought, and dist:drought int.
+emm.ca <- emmeans(m3.ca, c("dist","trt","drought"))#,"dist"))
+pairs(emm.ca)#,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
+emmeans(m3.ca,pairwise~"drought","trt")
+contrast(emm.ca)
+
 #view
-ggplot(suballca, aes(y=native.cover,x=dist,color=water))+
-  geom_point()+
+ggplot(suballca, aes(y=native.cover,x=dist,color=drought))+
+  #geom_point()+
+  geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
-  facet_grid(Year~trt)
+  #scale_color_manual(values=droughtcols)+
+  facet_wrap(~trt,scales="free")+
+  theme_classic()
 #compare
-anova(m1.ca,m3.ca) #Better than seeding trt alone!
+anova(m1.ca,m3.ca) #Better than seeding trt alone!(more like the same as)
 anova(m2lma.ca,m3.ca) #NOT better than/equivalent to LMA or rootdiam CWM
 anova(m2sm.ca,m3.ca) #slightly better than CWM sm alone
-#when not including trt w/ dist*water is a strong model
-#water is highly correlated with out ability to hit our targets
+#when not including trt w/ dist*drought is a strong model
+#drought is highly correlated with out ability to hit our targets
+
+#figures to easily view three-way interaction (one uses trt as x-axis, th other uses dist)
+# #x <- ggpredict(m3.ca,c("dist [all]","drought","trt"), type="re"),"drought")),type = "re") #all smooths lines
+# #ca_threeway <- plot(x, alpha = .1, show_title = F)+
+#   labs(y="cover native species", x="Euclidian distance from target", col="seeding trt")+
+#   theme_classic()
+# x <- ggpredict(m3.ca,c("trt","dist","drought")) #all smooths lines
+# plot(x)+
+#   theme_classic()
+
+ggplot(suballca, aes(y=native.cover,x=dist,color=trt))+
+  #geom_point()+
+  geom_smooth(method = "lm",alpha=.25)+
+  #scale_color_manual(values=droughtcols)+
+  facet_wrap(~drought)+
+  theme_classic()
+ggplot(suballca, aes(y=native.cover,x=dist,color=drought))+
+  #geom_point()+
+  geom_smooth(method = "lm",alpha=.25)+
+  scale_color_manual(values=droughtcols)+
+  facet_wrap(~trt)+
+  theme_classic()
+#save some for presentation 1/19
+#CWM models
+#lma
+lma.p <- ggplot(suballca, aes(y=native.cover,x=LMA,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="cover native species")+
+  theme_classic()+
+  xlim(-.5,1.5) #+ #remove outlier?
+#seedmass
+sm.p <- ggplot(suballca, aes(y=native.cover,x=seed.mass,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="")+
+  theme_classic()#+
+facet_wrap(~Year)
+#rootdiam
+rd.p<- ggplot(suballca, aes(y=native.cover,x=rootdiam,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="")+
+  theme_classic()#+
+facet_wrap(~Year)
+
+#alltogether
+library(patchwork)
+tiff("figures/drought models/drought_cwm_ca.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+(lma.p + sm.p + rd.p + plot_layout(guides = 'collect')) 
+dev.off()
+
+
+###for 1/19
+x <- ggpredict(m3.ca,c("dist [all]","drought","trt"), type = "re") #all smooths lines
+tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
+plot(x, alpha = .1, show_title = F)+
+     labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
+  scale_color_manual(values=c("darkblue","red4"))+
+  theme_classic()
+dev.off()
+m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)
+capture.output(anova(m3.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+emm.ca <- emmeans(m3.ca, c("dist","trt","drought"))#,"dist"))
+?pairs(emm.ca,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
+emmeans(m3.ca,pairwise~"trt","drought")
+contrast(emm.ca)
+test(emmeans(m3.ca, pairwise ~drought*trt*dist, at = list(dist = 0)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = .36)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = 1)))
+
+###CWM figs
+tiff("figures/drought models/drought_cwm_ca.tiff", res=400, height = 2,width =7, "in",compression = "lzw")
+(lma.p + sm.p + rd.p + plot_layout(guides = 'collect')) 
+dev.off()
+capture.output(anova(m2lma.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2sm.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2rd.ca)[,c(3,5,6)], file="test2.doc") #cov effected by drought, and dist:drought int.

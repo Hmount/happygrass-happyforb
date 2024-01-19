@@ -279,15 +279,27 @@ allca$drought <- relevel(allca$drought, ref = "cntl") #make random communities t
 
 hist(allca$dist)
 shapiro.test(allca$dist) #below .05 = not normal!
-hist(sqrt(allca$dist))
-shapiro.test(sqrt(allca$dist)) #still not normal, but closer
-allca$dist_tran <- sqrt(allca$dist)
+# hist(sqrt(allca$dist))
+# shapiro.test(sqrt(allca$dist)) #still not normal, but closer
+# allca$dist_tran <- sqrt(allca$dist)
+### for now keeping dist untransformed 
 
-#transfomed
-summary(t <- aov(dist_tran~trt*drought*year, allca))
+# #transfomed
+# summary(t <- aov(dist_tran~trt*drought*year, allca))
+# tuktest <- TukeyHSD(t)
+# multcompView::multcompLetters4(t,tuktest)
+# ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
+#   geom_boxplot()+
+#   #geom_smooth(method="lm")+
+#   facet_wrap(~year, scales="fixed")+
+#   labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+#   theme_classic()
+
+#w/o transform
+summary(t <- aov(dist~trt*drought*year, allca))
 tuktest <- TukeyHSD(t)
 multcompView::multcompLetters4(t,tuktest)
-ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
+ggplot(allca, aes(y=dist, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   facet_wrap(~year, scales="fixed")+
@@ -298,7 +310,7 @@ letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought
 letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\1", rownames(letterstest)))
 letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\2", rownames(letterstest)))
 letterstest$year <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\3", rownames(letterstest)))
-test <- allca %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist_tran,.8))
+test <- allca %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist,.8))
 test <- merge(letterstest,test, by = c("year", "drought", "trt"))
 test2 <- merge(test,allca, by = c("year", "drought", "trt"), all=T)
 
@@ -306,7 +318,7 @@ droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
 #export for short report
 tiff("figures/cwm ca/distanceplot_ca.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
-ggplot(test2, aes(y=dist_tran, x=trt, fill=drought))+
+ggplot(test2, aes(y=dist, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   geom_text(aes(y=yposition,label = Letters), 

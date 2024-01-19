@@ -69,11 +69,14 @@ test <- allca22 %>%
 allca22 <- allca22 %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100)
 
+#make dought column
+allca22 <- allca22 %>% mutate(drought = ifelse(water=="0.5","drt","cntl"))
+
 ## Ensure levels are correctly compared in models
 allca22$trt <- relevel(allca22$trt, ref = "rand") # random as reference level
 allca22$water <- relevel(allca22$water, ref = "1.25") # water as reference level (drought = treatment)
 #for vizuals
-droughtcols <- c("1.25"="skyblue", "0.5"="tomato") #create variable for color
+droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 
 ### data summary
 # look at response variable in each dataset
@@ -99,10 +102,10 @@ suballca <- allca22 %>% filter(propnative >= 80)
 
 ### current cover-only model:
 ### (unsubsetted data could be used for this model (no CWM))
-m1.ca <- lm(log.invg ~ trt * water * native.cover, data = suballca)
+m1.ca2 <- lm(log.invg ~ trt * drought * native.cover, data = suballca)
 summary(m1.ca) 
-anova(m1.ca) #effect of water only
-emm.ca <- emmeans(m1.ca, c("trt","water"))
+anova(m1.ca) #effect of native cover only
+emm.ca <- emmeans(m1.ca, c("trt","drought"))
 pairs(emm.ca)
 #view
 ggplot(suballca, aes(y=log.invg,x=native.cover,color=water))+
@@ -114,57 +117,60 @@ ggplot(suballca, aes(y=log.invg,x=trt,fill=water))+
   geom_boxplot()+
   scale_fill_manual(values=droughtcols)#+
 facet_wrap(~Year)
-
+# library(visreg)
+# visreg(m1.ca,"trt", by="water")
+# x <- ggpredict(m1.ca,c("water","trt","native.cover"),back_transform = T) #all smooths lines
+# plot(x, alpha = .1)
 ### CWM trait model: (individual models only right now)
 ### These models show how CWM effected the relationship with an environmental
 ### variable across the whole site
 #leaf N model
-m2leafn.ca <- lm(log.invg ~ water * N * native.cover, data = suballca)
+m2leafn.ca <- lm(log.invg ~ drought * N * native.cover, data = suballca)
 summary(m2leafn.ca) 
-anova(m2leafn.ca) # only water important
-emm.ca <- emmeans(m2leafn.ca, c("N","water"))
+anova(m2leafn.ca) # only water 
+emm.ca <- emmeans(m2leafn.ca, c("N","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=log.invg,x=N,color=water))+
+ggplot(suballca, aes(y=log.invg,x=N,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   facet_wrap(~trt)
-library(visreg)
-visreg(m2leafn.ca,"N", by="water")
+# library(visreg)
+# visreg(m2leafn.ca,"N", by="water")
 #compare
 anova(m1.ca,m2leafn.ca) #NOT better fit than model with seeding trt
 #seed mass model
-m2srl.ca <- lm(log.invg ~ water * SRL * native.cover, data = suballca)
+m2srl.ca <- lm(log.invg ~ drought * SRL * native.cover, data = suballca)
 summary(m2srl.ca) 
-anova(m2srl.ca) #SRL and native cover
-emm.ca <- emmeans(m2srl.ca, c("SRL","water"))
+anova(m2srl.ca) #SRL and native cover and water
+emm.ca <- emmeans(m2srl.ca, c("SRL","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=log.invg,x=SRL,color=water))+
+ggplot(suballca, aes(y=log.invg,x=SRL,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   facet_wrap(~trt)
-library(visreg)
-visreg(m2srl.ca,"SRL", by="water")
+# library(visreg)
+# visreg(m2srl.ca,"SRL", by="water")
 #compare
 anova(m1.ca,m2srl.ca) #Not as good as seeding trt
 anova(m2leafn.ca,m2srl.ca) #same as leafn?
 #root mass fraction model
-m2rmf.ca <- lm(log.invg ~ water * RMF * native.cover, data = suballca)
+m2rmf.ca <- lm(log.invg ~ drought * RMF * native.cover, data = suballca)
 summary(m2rmf.ca) 
 anova(m2rmf.ca) #water and diam maybe kindof
-emm.ca <- emmeans(m2rmf.ca, c("RMF","water"))
+emm.ca <- emmeans(m2rmf.ca, c("RMF","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=log.invg,x=RMF,color=water))+
+ggplot(suballca, aes(y=log.invg,x=RMF,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)#+
   facet_wrap(~trt)
-library(visreg)
-visreg(m2rmf.ca,"RMF", by="water")
+# library(visreg)
+# visreg(m2rmf.ca,"RMF", by="water")
 #compare
 anova(m1.ca,m2rmf.ca) #Not better fit than model with seeding
 anova(m2leafn.ca,m2rmf.ca) #same as lma? not better?
@@ -173,10 +179,10 @@ anova(m2srl.ca,m2rmf.ca) #same as sm? not better?
 
 ### CWM distance model: 
 ## trt can be dropped to improve slightly
-m3.ca <- lm(log.invg ~ water * dist * trt * native.cover, data = suballca)
+m3.ca <- lm(log.invg ~ drought * dist * trt * native.cover, data = suballca)
 summary(m3.ca) #bad model
 anova(m3.ca) #only water
-emm.ca <- emmeans(m3.ca, c("trt","water","dist"))
+emm.ca <- emmeans(m3.ca, c("trt","drought","dist"))
 pairs(emm.ca)
 #view
 ggplot(suballca, aes(y=log.invg,x=dist,color=water))+
@@ -196,108 +202,72 @@ anova(m2leafn.ca,m3.ca) #all CWM model not better (? p-value not printing?)
 
 
 
+#figures to easily view three-way interaction (one uses trt as x-axis, th other uses dist)
+x <- ggpredict(m1.ca,c("dist [all]","trt","water")) #all smooths lines
+ca_threeway <- plot(x, alpha = .1, show_title = F)+
+  labs(y="cover native species", x="Euclidian distance from target", col="seeding trt")+
+  theme_classic()
+x <- ggpredict(m3.ca,c("trt","dist","water")) #all smooths lines
+plot(x)+
+  theme_classic()
 
-#### Logistic models ####
-# add column for all inv grass presence absence
-suballca <- suballca %>% mutate(inv.present = as.factor(ifelse(inv.grass.cov > 0, "1","0")))
-
-### current cover-only logistic model:
-### (unsubsetted data could be used for this model (no CWM))
-logm1.ca <- glm(inv.present ~ trt * water, data = suballca, family = "binomial")
-summary(logm1.ca) 
-anova(logm1.ca) #effect of water only
-# emm.ca <- emmeans(m1.ca, c("trt","water"))
-# pairs(emm.ca)
-#for for plot
-pred <- predict(logm1.ca, type="response")
-pred_df <- data.frame(native.cover = suballca$native.cover, pred)
-#view
-ggplot(suballca, aes(y=inv.present,x=native.cover))+
-  geom_smooth(data = pred_df, aes(x = native.cover, y = pred), lty = 1, method = "glm")+
-  #binomial_smooth(method="glm")+
-  #geom_smooth(data = pred_df, aes(x = native.cover, y = pred), colour = "blue", method = "binimoal") +
-  scale_color_manual(values=droughtcols)#+
-facet_wrap(~trt)
-ggplot(suballca, aes(y=log.invg,x=trt,fill=water))+
-  geom_boxplot()+
-  scale_fill_manual(values=droughtcols)#+
+#save some for presentation 1/19
+#CWM models
+#lma
+leafn.p <- ggplot(suballca, aes(y=log.invg,x=N,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="cover invasive grass")+
+  theme_classic()+
+  xlim(-.5,1.5) #+ #remove outlier?
+#seedmass
+srl.p <- ggplot(suballca, aes(y=log.invg,x=SRL,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="")+
+  theme_classic()#+
+facet_wrap(~Year)
+#rootdiam
+rmf.p<- ggplot(suballca, aes(y=log.invg,x=RMF,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="")+
+  xlim(-.5,1)+
+  theme_classic()#+
 facet_wrap(~Year)
 
-### CWM trait model: (individual models only right now)
-### These models show how CWM effected the relationship with an environmental
-### variable across the whole site
-#leaf N model
-m2leafn.ca <- lm(log.invg ~ water * N * native.cover, data = suballca)
-summary(m2leafn.ca) 
-anova(m2leafn.ca) # only water important
-emm.ca <- emmeans(m2leafn.ca, c("N","water"))
-pairs(emm.ca)
-#view
-ggplot(suballca, aes(y=log.invg,x=N,color=water))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)+
-  facet_wrap(~trt)
-library(visreg)
-visreg(m2leafn.ca,"N", by="water")
-#compare
-anova(m1.ca,m2leafn.ca) #NOT better fit than model with seeding trt
-#seed mass model
-m2srl.ca <- lm(log.invg ~ water * SRL * native.cover, data = suballca)
-summary(m2srl.ca) 
-anova(m2srl.ca) #SRL and native cover
-emm.ca <- emmeans(m2srl.ca, c("SRL","water"))
-pairs(emm.ca)
-#view
-ggplot(suballca, aes(y=log.invg,x=SRL,color=water))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)+
-  facet_wrap(~trt)
-library(visreg)
-visreg(m2srl.ca,"SRL", by="water")
-#compare
-anova(m1.ca,m2srl.ca) #Not as good as seeding trt
-anova(m2leafn.ca,m2srl.ca) #same as leafn?
-#root mass fraction model
-m2rmf.ca <- lm(log.invg ~ water * RMF * native.cover, data = suballca)
-summary(m2rmf.ca) 
-anova(m2rmf.ca) #water and diam maybe kindof
-emm.ca <- emmeans(m2rmf.ca, c("RMF","water"))
-pairs(emm.ca)
-#view
-ggplot(suballca, aes(y=log.invg,x=RMF,color=water))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
-facet_wrap(~trt)
-library(visreg)
-visreg(m2rmf.ca,"RMF", by="water")
-#compare
-anova(m1.ca,m2rmf.ca) #Not better fit than model with seeding
-anova(m2leafn.ca,m2rmf.ca) #same as lma? not better?
-anova(m2srl.ca,m2rmf.ca) #same as sm? not better?
-### Multivariate traits model/ value?
+#alltogether
+library(patchwork)
+tiff("figures/drought models/drought_cwm_ca.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+ca_threeway / (lma.p + sm.p + rd.p + plot_layout(guides = 'collect')) 
+dev.off()
 
-### CWM distance model: 
-## trt can be dropped to improve slightly
-m3.ca <- lm(log.invg ~ water * dist * trt * native.cover, data = suballca)
-summary(m3.ca) #bad model
-anova(m3.ca) #only water
-emm.ca <- emmeans(m3.ca, c("trt","water","dist"))
-pairs(emm.ca)
-#view
-ggplot(suballca, aes(y=log.invg,x=dist,color=water))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
-facet_grid(Year~trt)
-ggplot(suballca, aes(x=dist,y=native.cover,color=water))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)+
-  facet_wrap(~trt)
-#compare
-anova(m1.ca,m3.ca) #NOT better than seeding trt alone
-anova(m2leafn.ca,m3.ca) #all CWM model not better (? p-value not printing?)
-#water is highly correlated with out ability to hit our targets
+
+###for 1/19
+library(ggeffects)
+x <- ggpredict(m1.ca,c("native.cover [all]","drought"), type = "re") #all smooths lines
+tiff("figures/drought models/invasion_mod_ca.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
+plot(x, alpha = .1, show_title = F)+
+  labs(y="cover invasive grass", x="native species cover", col="drought trt")+
+  scale_color_manual(values=c("darkblue","red4"))+
+  theme_classic()
+dev.off()
+capture.output(anova(m1.ca)[,c(1,4,5)], file="test.doc") #cov effected by drought, and dist:drought int.
+emm.ca <- emmeans(m1.ca, c("native.cover","trt","drought"))#,"dist"))
+pairs(emm.ca,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
+emmeans(m3.ca,pairwise~"drought","trt")
+contrast(emm.ca)
+test(emmeans(m3.ca, pairwise ~drought*trt*dist, at = list(dist = 0)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = .36)))
+test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = 1)))
+
+###CWM figs
+tiff("figures/drought models/invasion_cwm_ca.tiff", res=400, height = 2,width =7, "in",compression = "lzw")
+(leafn.p + srl.p + rmf.p + plot_layout(guides = 'collect')) 
+dev.off()
+capture.output(anova(m2lma.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2sm.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+capture.output(anova(m2rd.ca)[,c(3,5,6)], file="test2.doc") #cov effected by drought, and dist:drought int.
