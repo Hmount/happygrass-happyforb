@@ -1,13 +1,18 @@
+#### Calculating Euclidean distances to assess dissimilarity from targets and 
+#### traits maximums (as high values of most traits selected should only benefit
+#### species in those seeding treatments)
+
+# packages used
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(vegan)
 
 # Function for normalizing FD
 normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x)))
 }
 
-library(tidyverse)
 alldat <- read.csv("data/cwm_wy.csv")
 alldat$year <- as.factor(alldat$year)
 alldat$block <- as.factor(alldat$block)
@@ -31,15 +36,20 @@ traits.wy$rootdiam = scale(log(traits.wy$rootdiam))
 traits.wy$sla = scale(log(traits.wy$sla))
 traits.wy$rdmc = scale(log(traits.wy$rdmc))
 
-## Calculating dissimilarity/ distance (euclidian) from targets
 ## select relevent CWM traits per DT or IR, rows are communities
+# remove predictor rows 
 pred <- alldat %>% filter(year=="0")#filter preds
 dat <- alldat %>% filter(year!="0")#filter preds
 FDpred <- FDdat %>% filter(year=="0")#filter preds
 FDdat <- FDdat %>% filter(year!="0")#filter preds
 
 
-#subset for just seeding trt of interest
+#subset for just seeding trt of interest and calculate dissimilarity
+# first calculated for distance to target, but distance to target to be closer
+# or further from max/min of traits (ex. SRL above our target is even better
+# than hitting our target). So, distance from max/min by trt and year is also 
+# now calculated below.
+
 ## IR
 distir.wy <- dat %>% select(c(block,trt,subplot,year,leafn,srl))
 distir.wy <- merge(distir.wy,FDdat[,c(2,4:6,12)], all.x = T)
@@ -67,6 +77,61 @@ irdistmat <-as.matrix(irdistmat)
 irdistances <- as.data.frame(irdistmat["target",])
 colnames(irdistances) <- "dist"
 irdistances <- irdistances %>% rownames_to_column("trt.b.sub.y")
+
+## IR (min/max)
+irdist <- distir.wy %>% filter(trt=="ir")
+##2021
+# within each year subset the data
+irdist21 <- irdist %>% filter(year=="2021")
+irdist21 <- irdist21 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+irdist21 <- irdist21 %>% add_row(trt.b.sub.y = "target",
+                                 leafn = quantile(irdist21$leafn,.05),
+                                 srl = quantile(irdist21$srl,.95),
+                                 veg = quantile(normalize(irdist21$veg),.95))
+irdist21 <- irdist21 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+irdistmat <- vegdist(as.matrix(irdist21),method = "euclidean", upper=T)#,diag=T)
+irdistmat <-as.matrix(irdistmat)
+# save only pairwise between target 
+irdistances21 <- as.data.frame(irdistmat["target",])
+colnames(irdistances21) <- "dist"
+##2022
+# within each year subset the data
+irdist22 <- irdist %>% filter(year=="2022")
+irdist22 <- irdist22 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+irdist22 <- irdist22 %>% add_row(trt.b.sub.y = "target",
+                                 leafn = quantile(irdist21$leafn,.05),
+                                 srl = quantile(irdist21$srl,.95),
+                                 veg = quantile(normalize(irdist21$veg),.95))
+irdist22 <- irdist22 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+irdistmat <- vegdist(as.matrix(irdist22),method = "euclidean", upper=T)#,diag=T)
+irdistmat <-as.matrix(irdistmat)
+# save only pairwise between target 
+irdistances22 <- as.data.frame(irdistmat["target",])
+colnames(irdistances22) <- "dist"
+##2023
+# within each year subset the data
+irdist23 <- irdist %>% filter(year=="2023")
+irdist23 <- irdist23 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+irdist23 <- irdist23 %>% add_row(trt.b.sub.y = "target",
+                                 leafn = quantile(irdist21$leafn,.05),
+                                 srl = quantile(irdist21$srl,.95),
+                                 veg = quantile(normalize(irdist21$veg),.95))
+irdist23 <- irdist23 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+irdistmat <- vegdist(as.matrix(irdist23),method = "euclidean", upper=T)
+irdistmat <-as.matrix(irdistmat)
+# save only pairwise between target 
+irdistances23 <- as.data.frame(irdistmat["target",])
+colnames(irdistances23) <- "dist"
+## bind dataframes
+irdistances.max <- bind_rows(irdistances21,irdistances22)
+irdistances.max <- bind_rows(irdistances.max,irdistances23)
+irdistances.max <- irdistances.max %>% rownames_to_column("trt.b.sub.y")
 
 
 ## DT
@@ -96,6 +161,60 @@ dtdistances <- as.data.frame(dtdistmat["target",])
 colnames(dtdistances) <- "dist"
 dtdistances <- dtdistances %>% rownames_to_column("trt.b.sub.y")
 
+## DT (min/max)
+dtdist <- distdt.wy %>% filter(trt=="dt")
+##2021
+# within each year subset the data
+dtdist21 <- dtdist %>% filter(year=="2021")
+dtdist21 <- dtdist21 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+dtdist21 <- dtdist21 %>% add_row(trt.b.sub.y = "target", 
+                                 ldmc = quantile(dtdist21$ldmc,.95),
+                                 lop = quantile(dtdist21$lop,.05),
+                                 rootdiam = quantile(normalize(dtdist21$rootdiam),.95))
+dtdist21 <- dtdist21 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+dtdistmat <- vegdist(as.matrix(dtdist21),method = "euclidean", upper=T)#,diag=T)
+dtdistmat <-as.matrix(dtdistmat)
+# save only padtwise between target 
+dtdistances21 <- as.data.frame(dtdistmat["target",])
+colnames(dtdistances21) <- "dist"
+##2022
+# within each year subset the data
+dtdist22 <- dtdist %>% filter(year=="2022")
+dtdist22 <- dtdist22 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+dtdist22 <- dtdist22 %>% add_row(trt.b.sub.y = "target", 
+                                 ldmc = quantile(dtdist21$ldmc,.95),
+                                 lop = quantile(dtdist21$lop,.05),
+                                 rootdiam = quantile(normalize(dtdist21$rootdiam),.95))
+dtdist22 <- dtdist22 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+dtdistmat <- vegdist(as.matrix(dtdist22),method = "euclidean", upper=T)#,diag=T)
+dtdistmat <-as.matrix(dtdistmat)
+# save only padtwise between target 
+dtdistances22 <- as.data.frame(dtdistmat["target",])
+colnames(dtdistances22) <- "dist"
+##2023
+# within each year subset the data
+dtdist23 <- dtdist %>% filter(year=="2023")
+dtdist23 <- dtdist23 %>% unite(trt.b.sub.y, c(trt, block, subplot, year), sep = ".", remove=T)
+# attach row of targets
+dtdist23 <- dtdist23 %>% add_row(trt.b.sub.y = "target", 
+                                 ldmc = quantile(dtdist21$ldmc,.95),
+                                 lop = quantile(dtdist21$lop,.05),
+                                 rootdiam = quantile(normalize(dtdist21$rootdiam),.95))
+dtdist23 <- dtdist23 %>% column_to_rownames("trt.b.sub.y")
+#run dist or vegdist
+dtdistmat <- vegdist(as.matrix(dtdist23),method = "euclidean", upper=T)
+dtdistmat <-as.matrix(dtdistmat)
+# save only padtwise between target 
+dtdistances23 <- as.data.frame(dtdistmat["target",])
+colnames(dtdistances23) <- "dist"
+## bind dataframes
+dtdistances.max <- bind_rows(dtdistances21,dtdistances22)
+dtdistances.max <- bind_rows(dtdistances.max,dtdistances23)
+dtdistances.max <- dtdistances.max %>% rownames_to_column("trt.b.sub.y")
 
 
 ## To assess similarity to highest multivariate FD we use upper 95th percentile
@@ -252,6 +371,9 @@ rdistances$dist <- normalize(rdistances$dist)
 irdistances$dist <- normalize(irdistances$dist)
 dtdistances$dist <- normalize(dtdistances$dist)
 
+irdistances.max$dist <- normalize(irdistances.max$dist)
+dtdistances.max$dist <- normalize(dtdistances.max$dist)
+
 #### combine all dissimilarities 
 wydist <- bind_rows(dtdistances,irdistances)
 wydist <- bind_rows(wydist,fddistances)
@@ -261,6 +383,14 @@ wydist <- bind_rows(wydist,rdistances)
 
 #export csv
 write.csv(wydist, "data/cwm_distances_wy.csv")
+
+#### combine again using max in DT and IR 
+wydist2 <- bind_rows(dtdistances.max,irdistances.max)
+wydist2 <- bind_rows(wydist2,fddistances)
+wydist2 <- bind_rows(wydist2,rdistances)
+
+#export csv
+write.csv(cadist2, "data/cwm_maxdistances_wy.csv")
 
 
 
@@ -286,10 +416,10 @@ cwm.wy <- cwm.wy %>%
 cwm.wy <- cwm.wy %>% filter(year != "0") #remove predicted/target communities
 # also combine CWM_distances dataframe to master df 
 #break apart distances ID to make wider and merge together
-wydist <- separate(wydist, trt.b.sub.y, into = c("trt", "block", "subplot", "year"), sep = "\\.")
-wydist <- wydist %>% filter(trt!="target")
+wydist2 <- separate(wydist2, trt.b.sub.y, into = c("trt", "block", "subplot", "year"), sep = "\\.")
+wydist2 <- wydist2 %>% filter(trt!="target")
 #wydist <- wydist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
-allwy <- merge(cwm.wy,wydist, by=c("year","trt","block","subplot"), all.x=T)
+allwy <- merge(cwm.wy,wydist2, by=c("year","trt","block","subplot"), all.x=T)
 allwy$trt <- as.factor(allwy$trt)
 allwy$drought <- as.factor(allwy$drought)
 
