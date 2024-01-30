@@ -410,10 +410,10 @@ cwm.ca <- cwm.ca %>%
 cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
 # also combine CWM_distances dataframe to master df 
 #break apart distances ID to make wider and merge together
-cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
-cadist <- cadist %>% filter(trt!="target")
+cadist2 <- separate(cadist2, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+cadist2 <- cadist2 %>% filter(trt!="target")
 #cadist <- cadist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
-allca <- merge(cwm.ca,cadist, by=c("year","trt","block"), all=T)
+allca <- merge(cwm.ca,cadist2, by=c("year","trt","block"), all=T)
 allca$trt <- as.factor(allca$trt)
 allca$water <- as.factor(allca$water)
 
@@ -425,7 +425,9 @@ allca$trt <- relevel(allca$trt, ref = "rand") #make random communities the refer
 allca$drought <- as.factor(allca$drought)
 allca$drought <- relevel(allca$drought, ref = "cntl") #make random communities the reference level
 
-
+ggplot(allca,(aes(x=dist)))+
+  geom_histogram()+
+  facet_wrap(~trt) #looks fiarly normal within groups
 hist(allca$dist)
 shapiro.test(allca$dist) #below .05 = not normal!
 # hist(sqrt(allca$dist))
@@ -433,16 +435,17 @@ shapiro.test(allca$dist) #below .05 = not normal!
 # allca$dist_tran <- sqrt(allca$dist)
 ### for now keeping dist untransformed 
 
-# #transfomed
+#transfomed
 # summary(t <- aov(dist_tran~trt*drought*year, allca))
 # tuktest <- TukeyHSD(t)
 # multcompView::multcompLetters4(t,tuktest)
-# ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
+# ggplot(allca, aes(y=dist_tran, x=trt, fill=drought))+
 #   geom_boxplot()+
 #   #geom_smooth(method="lm")+
 #   facet_wrap(~year, scales="fixed")+
 #   labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
-#   theme_classic()
+#   theme_classic()+
+#   ylim(0,3)
 
 #w/o transform
 summary(t <- aov(dist~trt*drought*year, allca))

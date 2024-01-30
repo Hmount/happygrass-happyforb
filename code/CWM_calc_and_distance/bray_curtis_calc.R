@@ -146,6 +146,11 @@ comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","s
                                                          "nativecov","BG", "Litter","plot","sub.tveg"), 
                                              names_from = "species", 
                                              values_from = "cover")
+######
+##FIX PROPORTIONS AND PROPGATE THROUGHOUT
+#### USE PLOT LEVEL:
+comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
+
 
 ## pretreatment/ seeding probability 
 # Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
@@ -283,10 +288,14 @@ bcdist.ca$year <- as.factor(bcdist.ca$year)
 bcdist.ca$block <- as.factor(bcdist.ca$block)
 bcdist.ca$trt <- as.factor(bcdist.ca$trt)
 bcdist.ca$water <- as.factor(bcdist.ca$water)
+bcdist.ca <- bcdist.ca %>% mutate(drought=as.factor(ifelse(water=="0.5","drt","cntl")))
+droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
-ggplot(bcdist.ca, aes(y=dist.ca, x=trt, fill=water))+
+summary(aov(dist.ca~trt*drought*year, bcdist.ca))
+ggplot(bcdist.ca, aes(y=dist.ca, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
+  scale_fill_manual(values=droughtcolsca)+
   facet_wrap(~year, scales="fixed")+
   labs(x=" ",y="Dissimilarity (bray-curtis)")+ #, fill="drought treatment")+
   theme_classic()
@@ -301,11 +310,15 @@ bcdist.wy <- separate(bcdist.wy, id, into = c("trt", "block", "subplot","year"),
 bcdist.wy$year <- as.factor(bcdist.wy$year)
 bcdist.wy$block <- as.factor(bcdist.wy$block)
 bcdist.wy$trt <- as.factor(bcdist.wy$trt)
-bcdist.wy$drought <- as.factor(bcdist.wy$drought)
+bcdist.wy <- bcdist.wy %>% mutate(drought=as.factor(ifelse(drought=="0","cntl","drt")))
+#bcdist.wy$drought <- as.factor(bcdist.wy$drought)
+droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
+summary(aov(dist.wy~trt*drought*year, bcdist.wy))
 ggplot(bcdist.wy, aes(y=dist.wy, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
+  scale_fill_manual(values=droughtcolswy)+
   facet_wrap(~year, scales="fixed")+
   labs(x=" ",y="Dissimilarity (bray-curtis)")+ #, fill="drought treatment")+
   theme_classic()
