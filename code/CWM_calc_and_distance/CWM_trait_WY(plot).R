@@ -23,12 +23,10 @@ comp.wy$year<-as.factor(comp.wy$year)
 comp.wy$trt <- as.factor(comp.wy$trt)
 comp.wy$block <- as.factor(comp.wy$block)
 comp.wy <- comp.wy %>% unite(plot, c(block, trt), sep = ".", remove=F) # make unique plot variable
-#units are already in proportions
-#comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
 
 ###how many WY 2022+2023 data need to be dropped from CWM calculations (until we get trait data)
 subwy <- comp.wy %>%
-  mutate(propnative = nativecov.plot/totalcov.plot*100) %>%
+  mutate(propnative = nativecov.plot/totcov.plot*100) %>%
   filter(propnative < 80)
 table(subwy$year)
 table(comp.wy$year)

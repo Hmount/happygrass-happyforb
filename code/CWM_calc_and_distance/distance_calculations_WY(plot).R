@@ -481,7 +481,7 @@ ggplot(test2, aes(y=dist, x=trt, fill=drought))+
             size=3) +
   scale_fill_manual(values = droughtcolswy)+
   facet_wrap(~year, scales="fixed")+
-  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
 dev.off()

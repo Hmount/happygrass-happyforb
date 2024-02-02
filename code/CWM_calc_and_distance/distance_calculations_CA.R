@@ -160,7 +160,7 @@ irdist <- irdist %>% add_row(trt.b.y = "target",
 irdist <- irdist %>% column_to_rownames("trt.b.y")
 #mnake into matrix
 #run dist or vegdist
-irdistmat <- vegdist(as.matrix(irdist),method = "bray", upper=T)#,diag=T)
+irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
 irdistmat <-as.matrix(irdistmat)
 # save only pairwise between target 
 irdistances.bc <- as.data.frame(irdistmat["target",])
@@ -481,7 +481,7 @@ ggplot(test2, aes(y=dist, x=trt, fill=drought))+
             size=3) +
   scale_fill_manual(values = droughtcolsca)+
   facet_wrap(~year, scales="fixed")+
-  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
+  labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
 dev.off()

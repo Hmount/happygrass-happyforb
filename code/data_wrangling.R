@@ -21,13 +21,13 @@ comp.ca.long <- comp.ca %>% pivot_longer(c(18:56), names_to = "species",values_t
 # group plots together and find plot totals
 comp.ca.long <- comp.ca.long %>% 
   group_by(block, trt, year) %>% 
-  mutate(totplotcov = sum(abscov, na.rm=T))
+  mutate(totcov.plot = sum(abscov, na.rm=T))
 # find relative proportion per species
 comp.ca.long <- comp.ca.long %>% 
   group_by(block, trt, year) %>% 
-  mutate(relcov = abscov/totplotcov)
+  mutate(relcov = abscov/totcov.plot)
 # #checks
-# comp.ca.long %>% filter(plot=="1-DT") %>% summarize(totplotcov = sum(abscov, na.rm=T))
+# comp.ca.long %>% filter(plot=="1-DT") %>% summarize(totcov.plot = sum(abscov, na.rm=T))
 # comp.ca.long %>% filter(plot=="1-DT") %>% summarize(tot = sum(relcov, na.rm=T))
 # return to wide
 comp.ca.long <- comp.ca.long %>% 
@@ -144,7 +144,7 @@ fortotplotcover <- comp.wy.plot %>%
 # group plots together and find plot totals
 fortotplotcover <- fortotplotcover %>% 
   group_by(block, trt, year) %>% 
-  mutate(totplotcov = sum(tot.plotmean, na.rm=T)) #total absolute cover of all plants per plot
+  mutate(totcov.plot = sum(tot.plotmean, na.rm=T)) #total absolute cover of all plants per plot
 fornativeplotcover <- fortotplotcover %>% group_by(year,block,trt,drought) %>% 
   filter(native == "N") %>% #only native live veg
   group_by(year,block,trt) %>% 
@@ -153,9 +153,9 @@ fornativeplotcover <- fortotplotcover %>% group_by(year,block,trt,drought) %>%
 # find relative proportion per species
 fortotplotcover <- fortotplotcover %>% 
   group_by(block, trt, year) %>% 
-  mutate(relcov = tot.plotmean/totplotcov)
+  mutate(relcov = tot.plotmean/totcov.plot)
 # #checks
-# fortotplotcover %>% filter(block=="1") %>% filter(trt=="dt") %>% summarize(totplotcov = sum(tot.plotmean, na.rm=T))
+# fortotplotcover %>% filter(block=="1") %>% filter(trt=="dt") %>% summarize(totcov.plot = sum(tot.plotmean, na.rm=T))
 # fortotplotcover %>% filter(block=="1"&trt=="dt") %>% summarize(tot = sum(relcov, na.rm=T))
 
 # make into wide format
@@ -180,11 +180,3 @@ rowSums(comp.wy.plot.wide[,c(6:61)], na.rm=T)
 #
 # save data for all other analyses
 write.csv(comp.wy.plot.wide, "data/comp_wy_plot.csv", row.names = F)
-
-
-
-
-
-
-
-
