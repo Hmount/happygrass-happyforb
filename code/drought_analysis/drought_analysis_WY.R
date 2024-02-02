@@ -10,19 +10,20 @@ library(lmerTest)
 
 ## load in data, clean and modify columns
 # WY
-comp.wy <- read.csv("data/comp_wy.csv") # Wyoming species comp data 
+comp.wy <- read.csv("data/comp_wy_plot.csv") # Wyoming species comp data 
 comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
 #correct factor columns
-comp.wy$subplot <- as.factor(comp.wy$subplot)
-comp.wy$drought <- as.factor(comp.wy$drought)
+#comp.wy$subplot <- as.factor(comp.wy$subplot)
+comp.wy <- comp.wy %>% select(-drought)
+#comp.wy$drought <- as.factor(comp.wy$drought)
 comp.wy$year<-as.factor(comp.wy$year)
 comp.wy$trt <- as.factor(comp.wy$trt)
 comp.wy$block <- as.factor(comp.wy$block)
 comp.wy <- comp.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
-comp.wy$nativecov <- comp.wy$nativecov/100  # make native live veg % a proportion to match CA data
-comp.wy$totalcov <- comp.wy$totalcov/100  # make native live veg % a proportion to match CA data
+# comp.wy$nativecov <- comp.wy$nativecov/100  # make native live veg % a proportion to match CA data
+# comp.wy$totalcov <- comp.wy$totalcov/100  # make native live veg % a proportion to match CA data
 
-cwm.wy <- read.csv("data/cwm_wy.csv")# Wyoming CWM data
+cwm.wy <- read.csv("data/cwm_wy(plot).csv")# Wyoming CWM data
 cwm.wy$year <- as.factor(cwm.wy$year)
 #make new sequence column
 cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
@@ -31,41 +32,42 @@ cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
 cwm.wy$yrorder <- as.numeric(cwm.wy$yrorder)
 #add plot ID column (but give NA to target/predicted communities)
 cwm.wy <- cwm.wy %>% 
-  mutate(plot = ifelse(!is.na(subplot), paste(block, trt, subplot, sep = "."), NA))
+  mutate(plot = paste(block, trt, year, sep = "."))
+# cwm.wy <- cwm.wy %>% 
+#   mutate(plot = ifelse(!is.na(subplot), paste(block, trt, subplot, sep = "."), NA))
 cwm.wy <- cwm.wy %>% filter(year != "0") #remove predicted/target communities
 
 cwm.wy <- cwm.wy %>% select(-c(rootdiam,veg)) #remove CWM rootdiam column to avoid confusion
-cwmFD <- read.csv("data/cwm_raoq_wy.csv") #add FD for traits that need it (rootdiam/veg)
-cwmFD <- cwmFD %>% select(block,trt,year,subplot,drought,rootdiam,veg) #only columns we need
+cwmFD <- read.csv("data/cwm_raoq_wy(plot).csv") #add FD for traits that need it (rootdiam/veg)
+cwmFD <- cwmFD %>% select(block,trt,year,drought,rootdiam,veg, full) #only columns we need
 cwm.wy <- merge(cwm.wy,cwmFD, all.x=T)
 
 # combine to master df (remove spp columns for now)
-allwy <- merge(comp.wy[,-c(5,12:66)],cwm.wy, by=c("year","trt","block","subplot"))
+allwy <- merge(comp.wy[,-c(5:60)],cwm.wy, by=c("year","trt","block"))
 allwy$trt <- as.factor(allwy$trt)
 
 # also combine CWM_distances dataframe to master df 
-wydist <- read.csv("data/cwm_distances_WY.csv")
+wydist <- read.csv("data/cwm_maxdistances_wy(plot).csv")
 wydist <- wydist %>% select(-X) #%>% filter(trt.b.sub.y!="target")
 #break apart distances ID to make wider and merge together
-wydist <- separate(wydist, trt.b.sub.y, into = c("trt", "block", "subplot", "year"), sep = "\\.")
+wydist <- separate(wydist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
 wydist <- wydist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 
-allwy <- merge(allwy,wydist, by=c("year","trt","block","subplot"), all.x=T)
+allwy <- merge(allwy,wydist, by=c("year","trt","block"), all.x=T)
 allwy$trt <- as.factor(allwy$trt)
 allwy$block <- as.factor(allwy$block)
 allwy$year <- as.factor(allwy$year)
-allwy$subplot <- as.factor(allwy$subplot)
+#allwy$subplot <- as.factor(allwy$subplot)
 allwy$drought <- as.factor(allwy$drought)
 
 ### how many WY 2022+2023 data need to be dropped from CWM calculations 
-test <- comp.wy %>% group_by(block,trt,year,subplot) %>%
-  mutate(propnative = nativecov/totalcov*100) %>% 
+subvalid <- comp.wy %>% group_by(block,trt,year) %>%
+  mutate(propnative = nativecov.plot/totcov.plot*100) %>% 
   filter(propnative < 80)
-table(test$year)
-table(comp.wy$year)
-(26+181)/(512*3)*100 # only 13% total observation to remove
+table(subvalid$year)
+(17+132)/(512*3)*100 # only 10% total observation to remove
 allwy <- allwy %>% 
-  mutate(propnative = nativecov/totalcov*100)
+  mutate(propnative = nativecov.plot/totcov.plot*100)
 
 ## Ensure levels are correctly compared in models
 allwy$trt <- relevel(allwy$trt, ref = "rand") #make random communities the reference level
@@ -76,11 +78,11 @@ droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 ### data summary
 # look at response variable in each dataset
 # WY
-hist(allwy$nativecov) # native cover in WY is left skewed (extremely not normal)
-hist(sqrt(allwy$nativecov)) # good transformation for normalizing data
-shapiro.test(sqrt(allwy$nativecov)) #still not quite normal, but better
+hist(allwy$nativecov.plot) # native cover in WY is left skewed (extremely not normal)
+hist(sqrt(allwy$nativecov.plot)) # good transformation for normalizing data
+shapiro.test(sqrt(allwy$nativecov.plot)) #still not quite normal, but better
 allwy <- allwy %>% 
-  mutate(nativecov_tran = sqrt(nativecov))
+  mutate(nativecov_tran = sqrt(nativecov.plot))
 
 #### remove all plots where CWM could not be validly calculated
 suballwy <- allwy %>% filter(propnative >= 80)
@@ -88,14 +90,14 @@ suballwy <- allwy %>% filter(propnative >= 80)
 #### Linear models of native cover ~ treatments:
 #### (unsebsetted data could be used for this model)
 ### Cover-only model (fullest model):
-m0.wy <- lmer(nativecov_tran ~ trt * drought + (1 | year) + (1 | block) + (1|plot.x), data = suballwy)
-summary(m0.wy) # plot can account for plot effect
+#m0.wy <- lmer(nativecov_tran ~ trt * drought + (1 | year) + (1 | block) + (1|plot), data = suballwy)
+#summary(m0.wy) # plot can account for plot effect
 ### current cover-only model:
 m1.wy <- lmer(nativecov_tran ~ trt * drought + (1 | year) + (1 | block), data = suballwy)
 summary(m1.wy) 
-anova(m0.wy,m1.wy) 
+#anova(m0.wy,m1.wy) 
 ## plot does not improve model statistically, may want to retain to account for design,
-## but removing for now since it encapsulates essentially 0 variance.
+## but removing for now since it encapsulates very little variance.
 
 ### current cover-only model:
 m1.wy <- lmer(nativecov_tran ~ trt * drought + (1 | year) + (1 | block), data = suballwy)
@@ -123,8 +125,8 @@ ggplot(suballwy, aes(y=nativecov_tran,x=ldmc,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
-  xlim(-.8,1.5) #+ #remove outlier?
-facet_wrap(~year)
+  xlim(-.8,1.5) + #remove outlier?
+  facet_wrap(~year)
 #compare
 anova(m1.wy,m2ldmc.wy) #Equivalent fit as model with seeding
 #lop model
@@ -137,8 +139,8 @@ pairs(emm.ca)
 ggplot(suballwy, aes(y=nativecov_tran,x=lop,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
-facet_wrap(~Year)
+  scale_color_manual(values=droughtcols)+
+  facet_wrap(~year)
 #compare
 anova(m1.wy,m2lop.wy) #Better than seeding trt alone!
 anova(m2ldmc.wy,m2lop.wy) #same as ldmc? lop has slightly lower AIC
@@ -153,7 +155,7 @@ pairs(emm.ca)
 ggplot(suballwy, aes(y=nativecov_tran,x=rootdiam,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
+  scale_color_manual(values=droughtcols)+
   facet_wrap(~year)
 #compare
 anova(m1.wy,m2rd.wy) #Better than seeding trt alone!
@@ -161,10 +163,15 @@ anova(m2ldmc.wy,m2rd.wy) #same as ldmc? rd has slightly lower AIC
 anova(m2lop.wy,m2rd.wy) #same as lop? rd has slightly lower AIC
 ### Multivariate traits model/ value?
 
+suballwy$full <- normalize(suballwy$full) # normalize FD
+m2rd.wy <- lmer(nativecov_tran ~ rootdiam * drought + (1 | year) + (1 | block), data = suballwy)
+summary(m2rd.wy) 
+anova(m2rd.wy) #all sig.
+emm.ca <- emmea
 
 ### CWM distance model: 
 ## trt can be dropped
-m3.wy <- lmer(nativecov_tran ~ trt * dist * drought + (1 | year) + (1 | block), data = suballwy)
+m3.wy <- lmer(nativecov_tran ~ trt * distdt * drought + (1 | year) + (1 | block), data = suballwy)
 summary(m3.wy)
 anova(m3.wy) #all sig! (except drought alone)
 emm.wy <- emmeans(m3.wy, c("trt","drought","dist"), )
@@ -211,16 +218,16 @@ srl.p <- ggplot(suballwy, aes(y=nativecov,x=srl,color=drought))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y="")+
-  theme_classic()#+
-facet_wrap(~Year)
+  theme_classic()+
+  facet_wrap(~year)
 #rootdiam
-veg.p<- ggplot(suballwy, aes(y=nativecov,x=veg,color=drought))+
+veg.p<- ggplot(suballwy, aes(y=nativecov,x=rootdiam,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y="")+
-  theme_classic()#+
-facet_wrap(~Year)
+  theme_classic()+
+  facet_wrap(~year)
 
 #alltogether
 library(patchwork)
@@ -253,3 +260,53 @@ dev.off()
 capture.output(anova(m2ldmc.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2lop.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2rd.wy)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
+
+
+#### for 2/2 ###
+tiff("figures/drought models/drought_mod_wy.tiff", res=400, height = 3,width =6, "in",compression = "lzw")
+x <- ggpredict(m3.wy,c("trt","distdt","drought")) 
+plot(x)+
+  labs(x="seeding treatment", 
+       y="absolute cover native species",
+       title=" ")
+#theme_classic()
+dev.off()
+
+#CWM's and FD
+#CWM models
+ln <- ggplot(suballwy, aes(y=nativecov.plot,x=leafn,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y=" ")+
+  theme(legend.position = "none")+
+  facet_wrap(~year)+
+  theme_classic()
+#xlim(-.5,1.5) #+ #remove outlier?
+srl <- ggplot(suballwy, aes(y=nativecov.plot,x=srl,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="")+
+  theme_classic()+
+  facet_wrap(~year)
+rd <- ggplot(suballwy, aes(y=nativecov.plot,x=rootdiam,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="", x="FD rootdiam")+
+  theme_classic()+
+  facet_wrap(~year)
+fd <- ggplot(suballwy, aes(y=nativecov.plot,x=full,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="", x="FD")+
+  theme_classic()+
+  facet_wrap(~year)
+#save
+library(ggpubr)
+tiff("figures/drought models/drought_CWM_wy.tiff", res=400, height = 4,width =8, "in",compression = "lzw")
+annotate_figure(ggarrange(ln,srl,rd,fd, nrow=2, ncol=2, common.legend = T), 
+                left ="absolute cover native species")
+dev.off()

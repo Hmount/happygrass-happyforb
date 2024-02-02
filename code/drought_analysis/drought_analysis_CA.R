@@ -14,10 +14,10 @@ comp.ca <- read.csv("data/comp_ca.csv") #read in California comp data
 comp.ca$fesper.seeded <- as.factor(comp.ca$fesper.seeded)
 comp.ca$fesper.present <- as.factor(comp.ca$fesper.present)
 comp.ca$water <- as.factor(comp.ca$water)
-comp.ca$year<-as.factor(comp.ca$Year)
+comp.ca$year<-as.factor(comp.ca$year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
-comp.ca$trt <- tolower(comp.ca$trt) #make these lower to match cwm dataframe
+#comp.ca$trt <- tolower(comp.ca$trt) #make these lower to match cwm dataframe
 comp.ca <- comp.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 
 cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
@@ -34,18 +34,18 @@ cwm.ca <- cwm.ca %>%
 cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
 
 cwmFD <- read.csv("data/cwm_raoq_ca.csv") #add FD for traits that need it (rootdiam)
-cwmFD <- cwmFD %>% select(block,trt,year,water,rootdiam) #only columns we need
+cwmFD <- cwmFD %>% select(block,trt,year,water,rootdiam,full) #only columns we need
 cwm.ca <- merge(cwm.ca,cwmFD, all.x=T)
 cwm.ca <- cwm.ca %>% select(-Rdiam) #remove CWM rootdiam column to avoid confusion
 
 # combine to master df (remove spp columns for now)
 allca <- merge(comp.ca[,-c(18:53,55:66)],cwm.ca,  #this merge drops monoculture plots
-               by.y=c("year","trt","block","water"), 
-               by.x=c("Year","trt","block","water"))
+               by=c("year","trt","block","water"))#, 
+               #by.x=c("Year","trt","block","water"))
 allca$trt <- as.factor(allca$trt)
 
 # also combine CWM_distances dataframe to master df 
-cadist <- read.csv("data/cwm_distances_ca.csv")
+cadist <- read.csv("data/cwm_maxdistances_ca.csv")
 cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
 #break apart distances ID to make wider and merge together
 cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
@@ -53,17 +53,17 @@ cadist <- cadist %>% filter(trt!="target")
 
 #cadist <- cadist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 allca <- merge(allca,cadist, 
-               by.y=c("year","trt","block"), 
-               by.x=c("Year","trt","block"), all=T)
+               by.y=c("year","trt","block"), all=T)
+              # by.x=c("Year","trt","block"), all=T)
 allca$trt <- as.factor(allca$trt)
 allca$plot.y <- as.factor(allca$plot.y)
-allca$Year <- as.factor(allca$Year)
+allca$Year <- as.factor(allca$year)
 
 ### how many WY 2022+2023 data need to be dropped from CWM calculations 
 test <- allca %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>%
   filter(propnative < 80)
-table(test$Year)
+table(test$year)
 table(comp.ca$year)
 (9+18+57)/(210*3)*100 # only 13% total observation to remove
 allca <- allca %>% 
@@ -84,6 +84,7 @@ droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 # look at response variable in each dataset
 # CA
 hist(allca$native.cover) # native cover in CA is not skewed
+shapiro.test(allca$native.cover) #still not quite normal, but better
 ## I am transforming WY data for normality, doing so here to match, little
 ## to no differences in model from this change.
 # hist(sqrt(allca$native.cover)) # transform to match, but does not need (all models match both ways)
@@ -102,7 +103,7 @@ suballca <- allca %>% filter(propnative >= 80)
 
 ### current cover-only model: (extremely similar w/ sqrt)
 ### (unsebsetted data could be used for this model)
-m1.ca <- lmer(sqrt(native.cover) ~ trt * drought + (1 | Year), data = suballca)
+m1.ca <- lmer(sqrt(native.cover) ~ trt * drought + (1 | Year)+ (1 | structure), data = suballca)
 summary(m1.ca) 
 anova(m1.ca) #effect of water
 emm.ca <- emmeans(m1.ca, c("trt","drought"))
@@ -117,7 +118,7 @@ ggplot(suballca, aes(y=native.cover,x=trt,fill=drought))+
 ### These models show how CWM effected the relationship with an environmental
 ### variable across the whole site
 #lma model
-m2lma.ca <- lmer(sqrt(native.cover) ~ drought * LMA + (1 | Year), data = suballca)
+m2lma.ca <- lmer(sqrt(native.cover) ~ drought * LMA + (1 | Year)+ (1 | structure), data = suballca)
 summary(m2lma.ca) 
 anova(m2lma.ca) #drought and lma important
 emm.ca <- emmeans(m2lma.ca, c("drought","LMA"))
@@ -127,12 +128,12 @@ ggplot(suballca, aes(y=native.cover,x=LMA,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
-  xlim(-.8,1.5) #+ #remove outlier?
+  xlim(-.8,1.5) + #remove outlier?
   facet_wrap(~Year)
 #compare
 anova(m1.ca,m2lma.ca) #Equivalent fit as model with seeding
 #seed mass model
-m2sm.ca <- lmer(sqrt(native.cover) ~ drought * seed.mass + (1 | Year), data = suballca)
+m2sm.ca <- lmer(sqrt(native.cover) ~ drought * seed.mass + (1 | Year)+ (1 | structure), data = suballca)
 summary(m2sm.ca) 
 anova(m2sm.ca) #only drought
 emm.ca <- emmeans(m2sm.ca, c("seed.mass","drought"))
@@ -141,14 +142,14 @@ pairs(emm.ca)
 ggplot(suballca, aes(y=native.cover,x=seed.mass,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
+  scale_color_manual(values=droughtcols)+
   facet_wrap(~Year)
 #compare
 anova(m1.ca,m2sm.ca) #Not as good as seeding trt
 anova(m2lma.ca,m2sm.ca) #same as lma? lma has lower AIC tho
 #rootdiam model
 suballca$rootdiam <- normalize(suballca$rootdiam) # normalize FD
-m2rd.ca2 <- lmer(sqrt(native.cover) ~ drought * rootdiam + (1 | Year), data = suballca)
+m2rd.ca2 <- lmer(sqrt(native.cover) ~ drought * rootdiam + (1 | Year)+ (1 | structure), data = suballca)
 summary(m2rd.ca2) 
 anova(m2rd.ca2) #only drought important (Rdiam was, but not really relevant)
 emm.ca <- emmeans(m2rd.ca, c("rootdiam","drought"))
@@ -157,7 +158,7 @@ pairs(emm.ca)
 ggplot(suballca, aes(y=native.cover,x=rootdiam,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
+  scale_color_manual(values=droughtcols)+
 facet_wrap(~Year)
 #compare
 anova(m1.ca,m2rd.ca) #Equivalent fit as model with seeding
@@ -165,11 +166,16 @@ anova(m2lma.ca,m2rd.ca) #same as lma? lma has lower AIC tho
 anova(m2sm.ca,m2rd.ca) #same as sm? sm has WAY lower AIC tho
 ### Multivariate traits model/ value?
 
+
+suballca$full <- normalize(suballca$full) # normalize FD
+m2rd.ca2 <- lmer(sqrt(native.cover) ~ drought * full + (1 | Year)+ (1 | structure), data = suballca)
+summary(m2rd.ca2) 
+
 ### CWM distance model: 
 hist(suballca$dist)
 hist(sqrt(suballca$dist))
 ## trt can be dropped
-m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)
+m3.ca <- lmer(sqrt(native.cover) ~ trt * distdt * drought + (1 | Year)+ (1 | structure), data = suballca)
 summary(m3.ca)
 anova(m3.ca) #cov effected by drought, and dist:drought int.
 emm.ca <- emmeans(m3.ca, c("dist","trt","drought"))#,"dist"))
@@ -178,7 +184,7 @@ emmeans(m3.ca,pairwise~"drought","trt")
 contrast(emm.ca)
 
 #view
-ggplot(suballca, aes(y=native.cover,x=dist,color=drought))+
+ggplot(suballca, aes(y=native.cover,x=distdt,color=drought))+
   #geom_point()+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
@@ -192,14 +198,29 @@ anova(m2sm.ca,m3.ca) #slightly better than CWM sm alone
 #when not including trt w/ dist*drought is a strong model
 #drought is highly correlated with out ability to hit our targets
 
+#view
+test <- suballca %>%
+  mutate(distbin = cut(dist, breaks = quantile(dist, c(0, 0.25, 0.5, 0.75)), labels = c("Low", "Medium", "High")))
+ggplot(test, aes(y=native.cover,x=trt,fill=distbin))+
+  geom_boxplot()+
+  #geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  #scale_color_manual(values=droughtcols)+
+  facet_wrap(~drought,scales="free")+
+  theme_classic()
+
 #figures to easily view three-way interaction (one uses trt as x-axis, th other uses dist)
 # #x <- ggpredict(m3.ca,c("dist [all]","drought","trt"), type="re"),"drought")),type = "re") #all smooths lines
 # #ca_threeway <- plot(x, alpha = .1, show_title = F)+
 #   labs(y="cover native species", x="Euclidian distance from target", col="seeding trt")+
 #   theme_classic()
-# x <- ggpredict(m3.ca,c("trt","dist","drought")) #all smooths lines
-# plot(x)+
-#   theme_classic()
+library(ggeffects)
+x <- ggpredict(m3.ca,c("trt","distdt","drought")) 
+plot(x)+
+  labs(x="seeding treatment", 
+       y="absolute cover native species",
+       title=" ")
+  #theme_classic()
 
 ggplot(suballca, aes(y=native.cover,x=dist,color=trt))+
   #geom_point()+
@@ -222,23 +243,24 @@ lma.p <- ggplot(suballca, aes(y=native.cover,x=LMA,color=drought))+
   scale_color_manual(values=droughtcols)+
   labs(y="cover native species")+
   theme_classic()+
-  xlim(-.5,1.5) #+ #remove outlier?
+  xlim(-.5,1.5) + #remove outlier?
+  facet_wrap(~Year)
 #seedmass
 sm.p <- ggplot(suballca, aes(y=native.cover,x=seed.mass,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   labs(y="")+
-  theme_classic()#+
-facet_wrap(~Year)
+  theme_classic()+
+  facet_wrap(~Year)
 #rootdiam
 rd.p<- ggplot(suballca, aes(y=native.cover,x=rootdiam,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   labs(y="")+
-  theme_classic()#+
-facet_wrap(~Year)
+  theme_classic()+
+  facet_wrap(~Year)
 
 #alltogether
 library(patchwork)
@@ -272,3 +294,55 @@ dev.off()
 capture.output(anova(m2lma.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2sm.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2rd.ca)[,c(3,5,6)], file="test2.doc") #cov effected by drought, and dist:drought int.
+
+#### for 2/2 ###
+tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 3,width =6, "in",compression = "lzw")
+x <- ggpredict(m3.ca,c("trt","distdt","drought")) 
+plot(x)+
+  labs(x="seeding treatment", 
+       y="absolute cover native species",
+       title=" ")
+#theme_classic()
+dev.off()
+
+#CWM's and FD
+#CWM models
+lma <- ggplot(suballca, aes(y=native.cover,x=LMA,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y=" ")+
+  theme_classic()+
+  xlim(-.5,1.5) + #remove outlier?
+  theme(legend.position = "none")+
+  facet_wrap(~Year)
+#seedmass
+sm<- ggplot(suballca, aes(y=native.cover,x=seed.mass,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="")+
+  theme(legend.position = "none")+
+  theme_classic()+
+  facet_wrap(~Year)
+#rootdiam
+rd <- ggplot(suballca, aes(y=native.cover,x=rootdiam,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  labs(y="", x="FD rootdiam")+
+  theme_classic()+
+  facet_wrap(~Year)
+fd <- ggplot(suballca, aes(y=native.cover,x=full,color=drought))+
+  geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolswy)+
+  labs(y="", x="FD")+
+  theme_classic()+
+  facet_wrap(~year)
+#save
+library(ggpubr)
+tiff("figures/drought models/drought_CWM_ca.tiff", res=400, height = 4,width =8, "in",compression = "lzw")
+annotate_figure(ggarrange(lma,sm,rd,fd, nrow=2, ncol=2, common.legend = T), 
+                left ="absolute cover native species")
+dev.off()
