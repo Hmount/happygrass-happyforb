@@ -394,7 +394,7 @@ comp.ca$block <- as.factor(comp.ca$block)
 traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1)
 #traits.ca <- traits.ca[traits.ca$use==1,] # subset use=1
 #traits$PLSg.m2.mono <- traits$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
-traits.ca <- traits.ca %>% select(-c(Asat,WUE,RLD,RTD))
+#traits.ca <- traits.ca %>% select(-c(Asat,WUE,RLD,RTD))
 # add graminoid
 traits.ca$graminoid <- c(0,0,0,0,1,0,1,0,0,0, #10
                          1,1,0,1,0,1,1,1,0,0, #20

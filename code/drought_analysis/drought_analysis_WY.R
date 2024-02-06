@@ -73,7 +73,7 @@ allwy <- allwy %>%
 allwy$trt <- relevel(allwy$trt, ref = "rand") #make random communities the reference level
 allwy$drought <- relevel(allwy$drought, ref = "cntl") #make ambient precip the reference level
 #for vizuals
-droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
+droughtcolswy <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 
 ### data summary
 # look at response variable in each dataset
@@ -174,9 +174,30 @@ emm.ca <- emmea
 m3.wy <- lmer(nativecov_tran ~ trt * distdt * drought + (1 | year) + (1 | block), data = suballwy)
 summary(m3.wy)
 anova(m3.wy) #all sig! (except drought alone)
-emm.wy <- emmeans(m3.wy, c("trt","drought","dist"), )
-pairs(emm.wy,simple="dist")
+emm.wy <- emmeans(m3.wy, c("trt","drought","distdt") )
+pairs(emm.wy,  at = list(distdt = 0.58))
 contrast(emm.wy,simple=)
+
+difflsmeans(m3.wy, at = list(distdt = 0.58))
+
+#testing with daniel
+glht(m3.wy, mcp(trt="Tukey", ))
+multcomp::cdl(m3.wy, c("trt","drought","distdt"))
+cld(m3.wy, c("trt","drought","distdt"))
+
+#testing emmeasns
+emm.wy <- emmeans(m3.wy, ~trt * distdt * drought)#,c("trt","drought","distdt"))
+cld1 <- cld(emm.wy,adjust="sidak", Letters=letters)
+
+### define coefficients of linear function directly
+K <- diag(length(coef(m3.wy)))[-1,]
+rownames(K) <- names(coef(m3.wy))[-1]
+K 
+### set up general linear hypothesis
+glht(m3.wy, linfct = K)
+
+
+
 #view
 ggplot(suballwy, aes(y=nativecov,x=dist,color=trt))+
   #geom_point()+
@@ -236,6 +257,18 @@ wy_threeway / (ldmc.p + lop.p + rd.p + plot_layout(guides = 'collect'))
 dev.off()
 
 ###for 1/19
+
+#with dan and jen
+m3.wy.y <- lmer(nativecov_tran ~ lop* ldmc*distdt * drought +(1|year)+ (1 | block), data = suballwy)
+
+x <- ggpredict(m3.wy.y,c("ldmc [all]","drought","lop","distdt"), type = "re") #all smooths lines
+x <- ggpredict(m3.wy,c("distdt [all]","drought","trt"), type = "re") #all smooths lines
+plot(x, alpha = .1, show_title = F)+
+  labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
+  #scale_color_manual(values=c("darkblue","red4"))+
+  #theme_classic()
+
+
 x <- ggpredict(m3.wy,c("dist [all]","drought","trt"), type = "re") #all smooths lines
 tiff("figures/drought models/drought_mod_wy.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
 plot(x, alpha = .1, show_title = F)+
@@ -274,39 +307,39 @@ dev.off()
 
 #CWM's and FD
 #CWM models
-ln <- ggplot(suballwy, aes(y=nativecov.plot,x=leafn,color=drought))+
+ldmc <- ggplot(suballwy, aes(y=nativecov.plot,x=ldmc,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y=" ")+
   theme(legend.position = "none")+
-  facet_wrap(~year)+
+  #facet_wrap(~year)+
   theme_classic()
 #xlim(-.5,1.5) #+ #remove outlier?
-srl <- ggplot(suballwy, aes(y=nativecov.plot,x=srl,color=drought))+
+srl <- ggplot(suballwy, aes(y=nativecov.plot,x=lop, color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y="")+
-  theme_classic()+
+  theme_classic()#+
   facet_wrap(~year)
 rd <- ggplot(suballwy, aes(y=nativecov.plot,x=rootdiam,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y="", x="FD rootdiam")+
-  theme_classic()+
+  theme_classic()#+
   facet_wrap(~year)
 fd <- ggplot(suballwy, aes(y=nativecov.plot,x=full,color=drought))+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
   labs(y="", x="FD")+
-  theme_classic()+
+  theme_classic()#+
   facet_wrap(~year)
 #save
 library(ggpubr)
 tiff("figures/drought models/drought_CWM_wy.tiff", res=400, height = 4,width =8, "in",compression = "lzw")
-annotate_figure(ggarrange(ln,srl,rd,fd, nrow=2, ncol=2, common.legend = T), 
+annotate_figure(ggarrange(ldmc,srl,rd,fd, nrow=2, ncol=2, common.legend = T), 
                 left ="absolute cover native species")
 dev.off()

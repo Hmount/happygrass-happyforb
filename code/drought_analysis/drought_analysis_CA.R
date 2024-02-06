@@ -34,9 +34,9 @@ cwm.ca <- cwm.ca %>%
 cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
 
 cwmFD <- read.csv("data/cwm_raoq_ca.csv") #add FD for traits that need it (rootdiam)
-cwmFD <- cwmFD %>% select(block,trt,year,water,rootdiam,full) #only columns we need
+#cwmFD <- cwmFD %>% select(block,trt,year,water,rootdiam,full) #only columns we need
 cwm.ca <- merge(cwm.ca,cwmFD, all.x=T)
-cwm.ca <- cwm.ca %>% select(-Rdiam) #remove CWM rootdiam column to avoid confusion
+#cwm.ca <- cwm.ca %>% select(-Rdiam) #remove CWM rootdiam column to avoid confusion
 
 # combine to master df (remove spp columns for now)
 allca <- merge(comp.ca[,-c(18:53,55:66)],cwm.ca,  #this merge drops monoculture plots
@@ -46,7 +46,7 @@ allca$trt <- as.factor(allca$trt)
 
 # also combine CWM_distances dataframe to master df 
 cadist <- read.csv("data/cwm_maxdistances_ca.csv")
-cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
+#cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
 #break apart distances ID to make wider and merge together
 cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
 cadist <- cadist %>% filter(trt!="target")
@@ -178,10 +178,12 @@ hist(sqrt(suballca$dist))
 m3.ca <- lmer(sqrt(native.cover) ~ trt * distdt * drought + (1 | Year)+ (1 | structure), data = suballca)
 summary(m3.ca)
 anova(m3.ca) #cov effected by drought, and dist:drought int.
-emm.ca <- emmeans(m3.ca, c("dist","trt","drought"))#,"dist"))
+emm.ca <- emmeans(m3.ca, c("distdt","trt","drought"), at = list(distdt = 0.58))#,"dist"))
 pairs(emm.ca)#,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
 emmeans(m3.ca,pairwise~"drought","trt")
 contrast(emm.ca)
+
+difflsmeans(m3.ca, at = list(distdt = 0.58))
 
 #view
 ggplot(suballca, aes(y=native.cover,x=distdt,color=drought))+
@@ -220,6 +222,12 @@ plot(x)+
   labs(x="seeding treatment", 
        y="absolute cover native species",
        title=" ")
+  #theme_classic()
+
+
+plot(x)#, alpha = .1, show_title = F)+
+  #labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
+  #scale_color_manual(values=c("darkblue","red4"))+
   #theme_classic()
 
 ggplot(suballca, aes(y=native.cover,x=dist,color=trt))+
@@ -270,11 +278,14 @@ dev.off()
 
 
 ###for 1/19
-x <- ggpredict(m3.ca,c("dist [all]","drought","trt"), type = "re") #all smooths lines
+m3.ca.y <- lmer(sqrt(native.cover) ~ distdt * drought * Year+ (1 | structure), data = suballca)
+
+x <- ggpredict(m3.ca.y,c("distdt [all]","drought", "Year"), type = "re") #all smooths lines
+x <- ggpredict(m3.ca,c("distdt [all]","drought","trt"), type = "re") #all smooths lines
 tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
 plot(x, alpha = .1, show_title = F)+
      labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
-  scale_color_manual(values=c("darkblue","red4"))+
+  #scale_color_manual(values=c("darkblue","red4"))+
   theme_classic()
 dev.off()
 m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)

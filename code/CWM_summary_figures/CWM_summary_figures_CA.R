@@ -2,6 +2,8 @@
 #### How to CWM's differ by trt?
 #### How do CWM's maintain/change through time? (not on here right now)
 
+library(tidyverse)
+
 #### Functions needed to normalizing RoaQ, making post-hoc letters, 
 #### and creating figures
 # Function for normalizing FD
@@ -331,3 +333,75 @@ dev.off()
 # dev.off()
 # 
 # gridExtra::grid.arrange(a,b,c,d,e,f,ncol=3)
+
+
+
+### All years combined
+summary(leafn.mod <- aov(N~trt, dat))
+leafn.tuk <- generateTukeyLabel(leafn.mod, dat$N)
+leafn.ca <- CWM_trait_plot(dat,dat$N,"Leaf N") +
+  geom_point(aes(y=quantile(N,.33),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) + # Specifying the target object (red dot).
+  #  geom_point(aes(y=quantile(cwm21.wy$leafn,.25),x="ir"), data=traits.wy, col= "red", shape=18, size=3.5) # target could be specified per year, but probably makes less sense.
+  geom_text(data = leafn.tuk, aes(x = trt, y = y_var, label = Letters), hjust=2, vjust=-1.75, col="black") #add tukey labels
+
+summary(srl.mod <- aov(SRL~trt, dat))
+srl.tuk <- generateTukeyLabel(srl.mod, dat$SRL)
+srl.ca <- CWM_trait_plot(dat,dat$SRL,"Specific root length") +
+  geom_point(aes(y=quantile(SRL,.67),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) +
+  geom_text(data = srl.tuk, aes(x = trt, y = y_var, label = Letters), hjust=1.5, vjust=-1.75, col="black") #add tukey labels
+
+summary(rmf.mod <- aov(RMF~trt, dat))
+rmf.tuk <- generateTukeyLabel(rmf.mod, dat$RMF)
+rmf.ca <- CWM_trait_plot(dat,dat$RMF,"Root mass fraction") +
+  geom_point(aes(y=quantile(RMF,.33),x="ir"), data=traits.ca, col= "red", shape=18, size=3.5) +
+  geom_text(data = rmf.tuk, aes(x = trt, y = y_var, label = Letters), hjust=2, vjust=-.5, col="black") #add tukey labels
+
+summary(lma.mod <- aov(LMA~trt, dat))
+lma.tuk <- generateTukeyLabel(lma.mod, dat$LMA)
+lma.ca <- CWM_trait_plot(dat,dat$LMA,"Leaf mass per area") +
+  geom_point(aes(y=quantile(LMA,.67),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) +
+  # scale_y_continuous(
+  #   "unloged unsclaed", 
+  #   sec.axis = sec_axis(~ . * 1.20, name = "mpg (UK)"))+
+  geom_text(data = lma.tuk, aes(x = trt, y = y_var, label = Letters), hjust=2.5, vjust=-1.75, col="black") #add tukey labels
+
+summary(seedmass.mod <- aov(seed.mass~trt, dat))
+seedmass.tuk <- generateTukeyLabel(seedmass.mod, dat$seed.mass)
+seedmass.ca <- CWM_trait_plot(dat,dat$seed.mass,"Seed mass") +
+  geom_point(aes(y=quantile(seed.mass,.67),x="dt"),data=traits.ca, col= "red", shape=18, size=3.5) +
+  geom_text(data = seedmass.tuk, aes(x = trt, y = y_var, label = Letters), hjust=2, vjust=-1.5, col="black") #add tukey labels
+
+# rootdiam.wy.21 <- CWM_trait_plot(cwm21.wy,cwm21.wy$rootdiam,"Root diameter")
+#plot veg as Raoq instead (normalize FD/RoaQ)
+datFD$rootdiam <- normalize(datFD$rootdiam) #(normalize FD/RoaQ)
+datFD %>% group_by(trt) %>% summarize(maxrd = max(rootdiam)) #find max in just DT for target
+maxdtrootdiam <- .552
+summary(rd.mod <- aov(rootdiam~trt, datFD)) #summary model
+rd.tuk <- generateTukeyLabel(rd.mod, datFD$rootdiam) #tukey and labels
+rootdiam.ca <- CWM_trait_FD_plot(datFD,datFD$rootdiam,"Root diameter") +
+  geom_point(aes(y=maxdtrootdiam,x="dt"), col= "red", shape=18, size=3.5) + #get target FD from annual highest possible (?)
+  #geom_point(aes(y=max(rootdiam),x="dt"),data=datFD, col= "red", shape=18, size=3.5) + #get target FD from annual highest possible (?)
+  geom_text(data = rd.tuk, aes(x = trt, y = y_var, label = Letters), hjust=2.5, vjust=2, col="black") #add tukey labels
+
+datFD$full <- normalize(datFD$full) #(normalize FD/RoaQ)
+summary(full.mod <- aov(full~trt, datFD)) #summary model
+full.tuk <- generateTukeyLabel(full.mod, datFD$full) #tukey and labels
+FD.ca <- datFD %>% 
+  ggplot(aes(trt,full)) +
+  geom_violin(aes(fill=trt), width=1, trim=F) +
+  geom_boxplot(width=.25) +
+  #geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
+  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
+  theme_classic() + ylab("FD (RaoQ) of all traits") + xlab("") + 
+  ylim(0,1)+
+  #ylim(0,max(cwm_roaq21.ca$full+3)) +
+  theme(legend.position  = "none") +
+  geom_point(aes(y=max(full),x="fd"),data=datFD, col= "red", shape=18, size=3.5) + #get target FD from annual highest possible (?)
+  geom_text(data = full.tuk, aes(x = trt, y = y_var, label = Letters), hjust=3, vjust=1, col="black") #add tukey labels
+
+# all figure
+tiff("figures/cwm CA/alltargets.tiff", res=400, height = 6,width =12, "in",compression = "lzw")
+(((leafn.ca + srl.ca + rmf.ca) / (lma.ca + seedmass.ca + rootdiam.ca)) | (FD.ca)) +
+  plot_layout(widths = c(2,1)) + 
+  plot_annotation(title = 'CA (all years)')
+dev.off()
