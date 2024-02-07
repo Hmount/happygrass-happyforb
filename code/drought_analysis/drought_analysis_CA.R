@@ -178,7 +178,7 @@ hist(sqrt(suballca$dist))
 m3.ca <- lmer(sqrt(native.cover) ~ trt * distdt * drought + (1 | Year)+ (1 | structure), data = suballca)
 summary(m3.ca)
 anova(m3.ca) #cov effected by drought, and dist:drought int.
-emm.ca <- emmeans(m3.ca, c("distdt","trt","drought"), at = list(distdt = 0.56))#,"dist"))
+emm.ca <- emmeans(m3.ca, c("distdt","trt","drought"), at = list(distdt = 0.58))#,"dist"))
 pairs(emm.ca)#,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
 emmeans(m3.ca,pairwise~"drought","trt")
 contrast(emm.ca)
@@ -186,7 +186,7 @@ contrast(emm.ca)
 difflsmeans(m3.ca, at = list(distdt = 0.58))
 
 #view
-ggplot(suballca, aes(y=native.cover,x=trt,color=drought))+
+ggplot(suballca, aes(y=native.cover,x=distdt,color=drought))+
   #geom_point()+
   geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
@@ -201,18 +201,14 @@ anova(m2sm.ca,m3.ca) #slightly better than CWM sm alone
 #drought is highly correlated with out ability to hit our targets
 
 #view
-# test <- suballca %>%
-#   mutate(distbin = cut(distdt, breaks = c(0.56,1.56), labels = "low"))# c("Low", "High", "na")))
 test <- suballca %>%
-  mutate(distbin = ifelse(distdt <= 0.56,"close",
-                          ifelse(distdt >= 1.56, "far", NA)))
-test <- test %>% filter(!is.na(distbin))
-ggplot(test, aes(y=native.cover,x=trt,color=distbin))+
+  mutate(distbin = cut(dist, breaks = quantile(dist, c(0, 0.25, 0.5, 0.75)), labels = c("Low", "Medium", "High")))
+ggplot(test, aes(y=native.cover,x=trt,fill=distbin))+
   geom_boxplot()+
   #geom_point(alpha=.3, pch=20)+
   geom_smooth(method = "lm")+
   #scale_color_manual(values=droughtcols)+
-  facet_grid(drought~year,scales="free")+
+  facet_wrap(~drought,scales="free")+
   theme_classic()
 
 #figures to easily view three-way interaction (one uses trt as x-axis, th other uses dist)
@@ -226,6 +222,12 @@ plot(x)+
   labs(x="seeding treatment", 
        y="absolute cover native species",
        title=" ")
+  #theme_classic()
+
+
+plot(x)#, alpha = .1, show_title = F)+
+  #labs(y="cover native species", x="Euclidian distance from target", col="drought trt")+
+  #scale_color_manual(values=c("darkblue","red4"))+
   #theme_classic()
 
 ggplot(suballca, aes(y=native.cover,x=dist,color=trt))+
@@ -276,6 +278,9 @@ dev.off()
 
 
 ###for 1/19
+m3.ca.y <- lmer(sqrt(native.cover) ~ distdt * drought * Year+ (1 | structure), data = suballca)
+
+x <- ggpredict(m3.ca.y,c("distdt [all]","drought", "Year"), type = "re") #all smooths lines
 x <- ggpredict(m3.ca,c("distdt [all]","drought","trt"), type = "re") #all smooths lines
 tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 4,width =5, "in",compression = "lzw")
 plot(x, alpha = .1, show_title = F)+
@@ -286,7 +291,7 @@ dev.off()
 m3.ca <- lmer(sqrt(native.cover) ~ trt * dist * drought + (1 | Year), data = suballca)
 capture.output(anova(m3.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 emm.ca <- emmeans(m3.ca, c("dist","trt","drought"))#,"dist"))
-pairs(emm.ca,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
+?pairs(emm.ca,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
 emmeans(m3.ca,pairwise~"trt","drought")
 contrast(emm.ca)
 test(emmeans(m3.ca, pairwise ~drought*trt*dist, at = list(dist = 0)))
@@ -301,9 +306,11 @@ capture.output(anova(m2lma.ca)[,c(3,5,6)], file="test.doc") #cov effected by dro
 capture.output(anova(m2sm.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2rd.ca)[,c(3,5,6)], file="test2.doc") #cov effected by drought, and dist:drought int.
 
-#### for 2/2 ###
+#### for 2/5 ###
+quantile(suballca$distdt,.05) #find lower .05
+quantile(suballca$distdt,.95) #find upper .95
 tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 3,width =6, "in",compression = "lzw")
-x <- ggpredict(m3.ca,c("trt","distdt","drought")) 
+x <- ggpredict(m3.ca,c("trt","distdt [c(.56,1.56)]","drought")) 
 plot(x)+
   labs(x="seeding treatment", 
        y="absolute cover native species",
@@ -355,50 +362,39 @@ dev.off()
 
 
 
-# for 2/5
-#change quantiles
-quantile(suballca$distdt,.05) #find lower .05
-quantile(suballca$distdt,.95) #find upper .95
 
-#make pairwise comparisons and letters to display
-emm <- emmeans(m3.ca, specs = ~ trt * drought * distdt,  at = list(distdt = c(0.56,1.56)))
-pairwise <- pairs(emm)
-summary(pairwise, adjust = "tukey")
-letters <- multcomp::cld(emm, Letters = LETTERS)
-
-
-tiff("figures/drought models/drought_mod_ca.tiff", res=400, height = 3,width =6, "in",compression = "lzw")
-x <- ggpredict(m3.ca,c("trt","distdt [c(.56,1.56)]","drought")) 
-
-plot(x)+
-  labs(x="seeding treatment", 
-       y="absolute cover native species",
-       title=" ")+
-  scale_color_manual(values = c("1" = "slateblue", "2" = "lightsalmon3"), #orchid4 #olivdrab3
-                     labels = c("1" = "0.56", "2" = "1.56"))#+
-#geom_text(data = letters, aes(x = trt, color=distdt, y = emmean, label = .group), hjust=2, vjust=-1.75, col="black") #add tukey labels
-
-#theme_classic()
-dev.off()
-
-#test <- suballca %>%
-  mutate(distbin = ifelse(distdt <= 0.56,"close",
-                          ifelse(distdt >= 1.56, "far", NA)))
-#test <- test %>% filter(!is.na(distbin))
-anova(lm(sqrt(native.cover)~drought*trt*year, suballca))
-ggplot(suballca, aes(y=native.cover,x=year, col=trt))+
+#### 2/7/ comparison to loggr
+ggplot(suballca, aes(y=native.cover,x=drought,fill=trt))+
   geom_boxplot()+
-  #geom_point(alpha=.3, pch=20)+
-  geom_smooth(method = "lm")+
-  #scale_color_manual(values = c("close" = "slateblue", "far" = "lightsalmon3"))+
-  facet_wrap(~drought,scales="fixed")#+
-  #theme_classic()
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
+  facet_wrap(~year,scales="fixed")+
+  #geom_hline(yintercept =0,col="black")+
+  labs(y="absolute cover native", fill="seed trt")+
+  theme_ggeffects()
+x <- ggpredict(m3.ca,c("trt","distdt [c(.56,1.56)]","drought", "Year")) 
+plot(x, show.title = F)
+
+# x <- ggpredict(m3.ca,c("year","distdt [c(.56,1.56)]","trt","drought")) 
+# plot(x, show.title = F, connect_lines = T, one_plot = T)
 
 
-ggplot(suballwy, aes(y=nativecov.plot,x=year,col=trt))+
-  geom_boxplot()+
-  geom_line()+
-  #geom_point(alpha=.3, pch=20)+
+#rootdiam model
+#suballca$rootdiam <- normalize(suballca$rootdiam) # normalize FD
+distmod <- lmer(sqrt(native.cover) ~ distdt + (1|year) + (1 | structure), data = suballca)
+summary(distmod) 
+anova(distmod) #only drought important (Rdiam was, but not really relevant)
+emm.ca <- emmeans(m2rd.ca, c("rootdiam","drought"))
+pairs(emm.ca)
+#view
+ ggplot(suballca, aes(y=native.cover,x=distdt,color=drought))+
+  geom_point()+
   geom_smooth(method = "lm")+
-  #scale_color_manual(values = c("close" = "slateblue", "far" = "lightsalmon3"))+
-  facet_wrap(~drought,scales="fixed")#+
+  scale_color_manual(values=droughtcols)+
+  facet_wrap(~year)+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+
+#together
+ggarrange(gr.raw.fig.ca,gr.dist.fig.ca,gr.pred.fig.ca, nrow=3)
+
+

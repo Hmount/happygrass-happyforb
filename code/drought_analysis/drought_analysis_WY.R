@@ -410,3 +410,38 @@ ggplot(suballwy, aes(y=nativecov.plot,x=drought,col=trt))+
   #           size=3) +
   #scale_color_manual(values = c("close" = "slateblue", "far" = "lightsalmon3"))+
   facet_wrap(~year,scales="fixed")#+
+
+
+
+
+
+#### 2/7/ comparison to loggr
+ggplot(suballwy, aes(y=nativecov.plot,x=drought,fill=trt))+
+  geom_boxplot()+
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
+  facet_wrap(~year,scales="fixed")+
+  #geom_hline(yintercept =0,col="black")+
+  labs(y="absolute cover native", fill="seed trt")+
+  theme_ggeffects()
+x <- ggpredict(m3.wy,c("trt","distdt [c(.56,1.56)]","drought", "year")) 
+plot(x, show.title = F)
+
+distmod <- lmer(nativecov_tran ~ distdt*trt + (1|year) + (1 | block), data = suballwy)
+summary(distmod) 
+anova(distmod) #only drought important (Rdiam was, but not really relevant)
+emm.ca <- emmeans(m2rd.ca, c("rootdiam","drought"))
+pairs(emm.ca)
+#view
+ggplot(suballwy, aes(y=nativecov.plot,x=distdt,color=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  facet_wrap(~year)+
+  labs(y="absolute cover native")+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+
+#together
+ggarrange(gr.raw.fig.ca,gr.dist.fig.ca,gr.pred.fig.ca, nrow=3)
+
+

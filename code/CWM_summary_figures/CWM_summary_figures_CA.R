@@ -402,6 +402,8 @@ FD.ca <- datFD %>%
 datamore <- datFD %>% mutate(seedtrt = ifelse(trt=="ir", "Invasion Resistant",
                                                           ifelse(trt=="dt", "Drought Tolerant",
                                                                  ifelse(trt=="fd", "Functionally Diverse", "Random"))))
+datamore$seedtrt <- factor(datamore$seedtrt, levels = c("Invasion Resistant", "Drought Tolerant","Functionally Diverse", "Random"))
+library(ggpubr)
 legplot <- datamore %>% 
   ggplot(aes(trt,full)) +
   geom_violin(aes(fill=seedtrt), width=1, trim=F) +
