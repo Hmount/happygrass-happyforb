@@ -394,8 +394,8 @@ FD.wy <- datFD %>%
 
 
 #figure together
-tiff("figures/cwm wy/alltargets.tiff", res=400, height = 6,width =12, "in",compression = "lzw")
-(((leafn.wy + srl.wy + veg.wy) / (ldmc.wy + lop.wy + rootdiam.wy)) | (FD.wy)) +
-  plot_layout(widths = c(2,1)) + 
+png("figures/cwm wy/alltargets.png", res=400, height = 6,width =12, "in")#,compression = "lzw")
+(((leafn.wy + srl.wy + veg.wy) / (ldmc.wy + lop.wy + rootdiam.wy)) | (legend)/(FD.wy)) +
+  plot_layout(widths = c(2.25,.75)) + 
   plot_annotation(title = 'WY (all years)')
 dev.off()

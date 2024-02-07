@@ -282,7 +282,7 @@ emm.ca <- emmeans(m3.wy, c("dist","trt","drought"))#,"dist"))
 ?pairs(emm.wy,simple="drought") #at an average distance from target how does cover vary as a result of the other vars
 emmeans(m3.wy,pairwise~"trt","drought")
 contrast(emm.ca)
-test(emmeans(m3.ca, pairwise ~drought*trt*dist, at = list(dist = 0)))
+test<-(emmeans(m3.ca, pairwise ~drought*trt*distdt, at = list(distdt = c(0.58,1.58))))
 test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = .36)))
 test(emmeans(m3.ca, pairwise ~drought*dist, at = list(dist = 1)))
 
@@ -343,3 +343,70 @@ tiff("figures/drought models/drought_CWM_wy.tiff", res=400, height = 4,width =8,
 annotate_figure(ggarrange(ldmc,srl,rd,fd, nrow=2, ncol=2, common.legend = T), 
                 left ="absolute cover native species")
 dev.off()
+
+# for 2/5
+#change quantiles
+quantile(suballwy$distdt,.05) #find lower .05
+quantile(suballwy$distdt,.95) #find upper .95
+
+#make pairwise comparisons and letters to display
+emm <- emmeans(m3.wy, specs = ~ trt + drought + distdt,  at = list(distdt = c(0.48,2.84)))
+pairwise <- pairs(emm)
+summary(pairwise, adjust = "tukey")
+letters <- multcomp::cld(emm, Letters = LETTERS)
+
+
+tiff("figures/drought models/drought_mod_wy.tiff", res=400, height = 3,width =6, "in",compression = "lzw")
+x <- ggpredict(m3.wy,c("trt","distdt [c(.48,2.84)]","drought")) 
+
+plot(x)+
+  labs(x="seeding treatment", 
+       y="absolute cover native species",
+       title=" ")+
+  scale_color_manual(values = c("1" = "slateblue", "2" = "lightsalmon3"), #orchid4 #olivdrab3
+                     labels = c("1" = "0.48", "2" = "2.84"))#+
+  #geom_text(data = letters, aes(x = trt, color=distdt, y = emmean, label = .group), hjust=2, vjust=-1.75, col="black") #add tukey labels
+
+#theme_classic()
+dev.off()
+
+#test <- suballwy %>%
+  mutate(distbin = ifelse(distdt <= 0.48,"close",
+                          ifelse(distdt >= 2.84, "far", NA)))
+#test <- test %>% filter(!is.na(distbin))
+anova(lm(nativecov_tran~drought*trt*year, suballwy))
+ggplot(suballwy, aes(y=nativecov_tran,x=trt))+
+  geom_boxplot()+
+  geom_line()+
+  #geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  #scale_color_manual(values = c("close" = "slateblue", "far" = "lightsalmon3"))+
+  facet_grid(drought~year,scales="free")#+
+#theme_classic()
+
+
+m3.wy <- lmer(nativecov_tran ~ trt*distdt * drought +(1|year)+ (1 | block), data = suballwy)
+t <- lm(nativecov_tran~drought*trt*year, suballwy)
+tuktest <- TukeyHSD(t)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought:year'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\2", rownames(letterstest)))
+letterstest$year <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\3", rownames(letterstest)))
+test <- allca %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist,.8))
+test <- merge(letterstest,test, by = c("year", "drought", "trt"))
+test2 <- merge(test,allca, by = c("year", "drought", "trt"), all=T)
+
+droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
+
+ggplot(suballwy, aes(y=nativecov.plot,x=drought,col=trt))+
+  geom_boxplot()+
+  geom_line()+
+  #geom_point(alpha=.3, pch=20)+
+  geom_smooth(method = "lm")+
+  # geom_text(aes(y=yposition,label = Letters), 
+  #           position = position_dodge(width = 0.9), 
+  #           vjust = -0.5,
+  #           #angle = 15,
+  #           size=3) +
+  #scale_color_manual(values = c("close" = "slateblue", "far" = "lightsalmon3"))+
+  facet_wrap(~year,scales="fixed")#+

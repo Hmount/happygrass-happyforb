@@ -47,7 +47,7 @@ CWM_trait_plot <- function(data, trait, ylab) {
     geom_violin(aes(fill = trt), width = 1, trim = FALSE) +
     geom_boxplot(width = 0.25) +
     #geom_jitter(width = 0.12, height = 0, size = 1, alpha = 0.3) +
-    scale_fill_viridis_d(option = "D", begin = 0.1, end = 1, alpha = 0.7) +
+    scale_fill_viridis_d(option = "D", begin = 1, end = .01, alpha = 0.7) +
     theme_classic() +
     ylab(ylab) +
     xlab("") +
@@ -399,9 +399,28 @@ FD.ca <- datFD %>%
   geom_point(aes(y=max(full),x="fd"),data=datFD, col= "red", shape=18, size=3.5) + #get target FD from annual highest possible (?)
   geom_text(data = full.tuk, aes(x = trt, y = y_var, label = Letters), hjust=3, vjust=1, col="black") #add tukey labels
 
+datamore <- datFD %>% mutate(seedtrt = ifelse(trt=="ir", "Invasion Resistant",
+                                                          ifelse(trt=="dt", "Drought Tolerant",
+                                                                 ifelse(trt=="fd", "Functionally Diverse", "Random"))))
+legplot <- datamore %>% 
+  ggplot(aes(trt,full)) +
+  geom_violin(aes(fill=seedtrt), width=1, trim=F) +
+  geom_boxplot(width=.25) +
+  #geom_jitter(width=.12, height = 0, size= 1, alpha=.3) +
+  scale_fill_viridis_d(option="D", begin = .1, end = 1, alpha=.7) +
+  theme_classic() +
+  labs(fill="Seeding Treatment")+ 
+  ylim(0,1)+
+  #ylim(0,max(cwm_roaq21.ca$full+3)) +
+  theme(legend.position  = "right")
+leg <- get_legend(legplot)
+  
+  # Convert to a ggplot and print
+legend <- as_ggplot(leg)
+  
 # all figure
-tiff("figures/cwm CA/alltargets.tiff", res=400, height = 6,width =12, "in",compression = "lzw")
-(((leafn.ca + srl.ca + rmf.ca) / (lma.ca + seedmass.ca + rootdiam.ca)) | (FD.ca)) +
-  plot_layout(widths = c(2,1)) + 
+png("figures/cwm CA/alltargets.png", res=400, height = 6,width =12, "in")#,compression = "lzw")
+(((leafn.ca + srl.ca + rmf.ca) / (lma.ca + seedmass.ca + rootdiam.ca)) | (legend)/(FD.ca)) +
+  plot_layout(widths = c(2.25,.75)) + 
   plot_annotation(title = 'CA (all years)')
 dev.off()

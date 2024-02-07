@@ -414,43 +414,99 @@ allca$drought <- relevel(allca$drought, ref = "cntl") #make random communities t
 droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
 
-summary(t <- aov(distdt~trt*drought*year, allca))
+summary(t <- aov(distr~trt*drought, allca))
 tuktest <- TukeyHSD(t)
-multcompView::multcompLetters4(t,tuktest)
-distr <- ggplot(allca, aes(y=distr, x=trt, fill=drought))+
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distr,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distr <- ggplot(test2, aes(y=distr, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from exact CWM target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
-distfd <- ggplot(allca, aes(y=distfd, x=trt, fill=drought))+
+
+summary(t <- aov(distfd~trt*drought, allca))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distfd,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distfd <- ggplot(test2, aes(y=distfd, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from FD target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
-distir <- ggplot(allca, aes(y=distir, x=trt, fill=drought))+
+
+summary(t <- aov(distir~trt*drought, allca))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distir,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distir <- ggplot(test2, aes(y=distir, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
   #coord_flip()+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
-distdt <- ggplot(allca, aes(y=distdt, x=trt, fill=drought))+
+
+summary(t <- aov(distdt~trt*drought, allca))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distdt,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distdt <- ggplot(test2, aes(y=distdt, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
@@ -888,51 +944,116 @@ allwy$drought <- relevel(allwy$drought, ref = "cntl") #make random communities t
 
 droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
-summary(t <- aov(distdt~trt*drought*year, allca))
+summary(t <- aov(distr~trt*drought, allwy))
 tuktest <- TukeyHSD(t)
-multcompView::multcompLetters4(t,tuktest)
-distr <- ggplot(allwy, aes(y=distr, x=trt, fill=drought))+
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distr,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distr <- ggplot(test2, aes(y=distr, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from exact CWM target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
-distfd <- ggplot(allwy, aes(y=distfd, x=trt, fill=drought))+
+
+summary(t <- aov(distfd~trt*drought, allwy))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distfd,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distfd <- ggplot(test2, aes(y=distfd, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from FD target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
-distir <- ggplot(allwy, aes(y=distir, x=trt, fill=drought))+
+
+summary(t <- aov(distir~trt*drought, allwy))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distir,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distir <- ggplot(test2, aes(y=distir, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
   #coord_flip()+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
-distdt <- ggplot(allwy, aes(y=distdt, x=trt, fill=drought))+
+
+summary(t <- aov(distdt~trt*drought, allwy))
+tuktest <- TukeyHSD(t)
+#multcompView::multcompLetters4(t,tuktest)
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(distdt,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+distdt <- ggplot(test2, aes(y=distdt, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
   scale_fill_manual(values = droughtcolsca)+
   #coord_flip()+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
   labs(x=" ",y="Distance from DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
 
-library(patchwork)
-wyplots <- (distdt+distfd+distir+distr)
+#library(patchwork)
+#wyplots <- (distdt+distfd+distir+distr)
+library(ggpubr)
 
+p2 <- ggarrange(distdt,distfd,distir,distr, common.legend = T)
+ggarrange(p1, alldistwy, common.legend = T, heights = c(1,2))
+tiff("figures/cwm wy/alldistance_wy.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
+p1
+dev.off()
+tiff("figures/cwm ca/alldistance_ca.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
+p2
+dev.off()
 
 tiff("figures/cwm ca/alldistance_ca.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
 caplots

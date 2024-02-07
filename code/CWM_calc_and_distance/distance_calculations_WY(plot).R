@@ -436,7 +436,7 @@ allwy$drought <- relevel(allwy$drought, ref = "cntl") #make random communities t
 #allwy$dist_tran <- sqrt(allwy$dist)
 
 #w/out transfom
-summary(t <- aov(dist~trt*drought*year, allwy))
+summary(t <- aov(dist~trt*drought, allwy))
 tuktest <- TukeyHSD(t)
 multcompView::multcompLetters4(t,tuktest)
 ggplot(allwy, aes(y=dist, x=trt, fill=drought))+
@@ -467,7 +467,17 @@ ggplot(test2, aes(y=dist, x=trt, fill=drought))+
   labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
   theme_classic()
 
+
+# testing 2/6
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allwy %>% group_by(drought, trt) %>% summarise(yposition = quantile(dist,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allwy, by = c("drought", "trt"), all=T)
+
 droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
+
 
 #export for short report
 tiff("figures/cwm wy/distanceplot_wy.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
@@ -480,8 +490,23 @@ ggplot(test2, aes(y=dist, x=trt, fill=drought))+
             #angle = 15,
             size=3) +
   scale_fill_manual(values = droughtcolswy)+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
   labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
 dev.off()
+
+#combined with distance by year on other r script
+alldistwy <- ggplot(test2, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
+  scale_fill_manual(values = droughtcolswy)+
+  #facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
+  theme_classic()+
+  ylim(0,4)

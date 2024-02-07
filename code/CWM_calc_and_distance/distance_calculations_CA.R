@@ -480,9 +480,34 @@ ggplot(test2, aes(y=dist, x=trt, fill=drought))+
             #angle = 15,
             size=3) +
   scale_fill_manual(values = droughtcolsca)+
-  facet_wrap(~year, scales="fixed")+
+  #facet_wrap(~year, scales="fixed")+
   labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
   theme_classic()+
   ylim(0,4)
 dev.off()
 
+#combined with distance by year on other r script
+
+letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letterstest)))
+letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letterstest)))
+test <- allca %>% group_by(drought, trt) %>% summarise(yposition = quantile(dist,.8))
+test <- merge(letterstest,test, by = c("drought", "trt"))
+test2 <- merge(test,allca, by = c("drought", "trt"), all=T)
+
+droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
+
+
+alldistca <- ggplot(test2, aes(y=dist, x=trt, fill=drought))+
+  geom_boxplot()+
+  #geom_smooth(method="lm")+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5,
+            #angle = 15,
+            size=3) +
+  scale_fill_manual(values = droughtcolswy)+
+  #facet_wrap(~year, scales="fixed")+
+  labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
+  theme_classic()+
+  ylim(0,4)
