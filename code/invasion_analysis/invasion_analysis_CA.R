@@ -15,10 +15,10 @@ comp.ca <- read.csv("data/comp_ca.csv") #read in California comp data
 comp.ca$fesper.seeded <- as.factor(comp.ca$fesper.seeded)
 comp.ca$fesper.present <- as.factor(comp.ca$fesper.present)
 comp.ca$water <- as.factor(comp.ca$water)
-comp.ca$year<-as.factor(comp.ca$Year)
+comp.ca$year<-as.factor(comp.ca$year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
-comp.ca$trt <- tolower(comp.ca$trt) #make these lower to match cwm dataframe
+#comp.ca$trt <- tolower(comp.ca$trt) #make these lower to match cwm dataframe
 comp.ca <- comp.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 
 cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
@@ -41,12 +41,11 @@ cwm.ca <- cwm.ca %>% select(-Rdiam) #remove CWM rootdiam column to avoid confusi
 
 # combine to master df (remove spp columns for now)
 allca <- merge(comp.ca[,-c(18:53,55:66)],cwm.ca,  #this merge drops monoculture plots
-               by.y=c("year","trt","block","water"), 
-               by.x=c("Year","trt","block","water"))
+               by=c("year","trt","block","water"))
 allca$trt <- as.factor(allca$trt)
 
 # also combine CWM_distances dataframe to master df 
-cadist <- read.csv("data/cwm_distances_ca.csv")
+cadist <- read.csv("data/cwm_maxdistances_ca.csv")
 cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
 #break apart distances ID to make wider and merge together
 cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
@@ -54,12 +53,11 @@ cadist <- cadist %>% filter(trt!="target")
 
 #cadist <- cadist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 allca <- merge(allca,cadist, 
-               by.y=c("year","trt","block"), 
-               by.x=c("Year","trt","block"), all=T)
-allca22 <- allca %>% filter(Year=="2022")
+               by=c("year","trt","block"), all=T)
+allca22 <- allca %>% filter(year=="2022")
 allca22$trt <- as.factor(allca22$trt)
 allca22$plot.y <- as.factor(allca22$plot.y)
-allca22$Year <- as.factor(allca22$Year)
+allca22$year <- as.factor(allca22$year)
 
 ### how many WY 2022+2023 data need to be dropped from CWM calculations 
 test <- allca22 %>% 
@@ -91,6 +89,9 @@ allca22 %>% filter(inv.grass.cov!="0") %>% n_distinct() #only 87/204 (-100 not s
 allca22 <- allca22 %>% mutate(log.invg = log(inv.grass.cov)) %>% 
   mutate(log.invg = ifelse(log.invg == -Inf, NA, log.invg))
 
+# assess only invaded plots
+allca22 <- allca22 %>% filter(fesper.seeded=="1")
+
 #### remove all plots where CWM could not be validly calculated
 suballca <- allca22 %>% filter(propnative >= 80)
 
@@ -102,30 +103,33 @@ suballca <- allca22 %>% filter(propnative >= 80)
 
 ### current cover-only model:
 ### (unsubsetted data could be used for this model (no CWM))
-m1.ca2 <- lm(log.invg ~ trt * drought * native.cover, data = suballca)
+m1.ca <- lmer(log.invg ~ trt * drought * native.cover + (1|structure), data = suballca)
 summary(m1.ca) 
 anova(m1.ca) #effect of native cover only
 emm.ca <- emmeans(m1.ca, c("trt","drought"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=log.invg,x=native.cover,color=water))+
+ggplot(suballca, aes(y=log.invg,x=native.cover,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcols)#+
+  scale_color_manual(values=droughtcols)+
   facet_wrap(~trt)
-ggplot(suballca, aes(y=log.invg,x=trt,fill=water))+
+ggplot(suballca, aes(y=log.invg,x=trt,fill=drought))+
   geom_boxplot()+
   scale_fill_manual(values=droughtcols)#+
 facet_wrap(~Year)
 # library(visreg)
 # visreg(m1.ca,"trt", by="water")
-# x <- ggpredict(m1.ca,c("water","trt","native.cover"),back_transform = T) #all smooths lines
-# plot(x, alpha = .1)
+library(ggeffects)
+x <- ggpredict(m1.ca,c("drought","trt","native.cover"),back_transform = T) #all smooths lines
+plot(x, alpha = .1)
+x <- ggpredict(m1.ca,c("native.cover","drought","trt"),back_transform = T) #all smooths lines
+plot(x, alpha = .1)
 ### CWM trait model: (individual models only right now)
 ### These models show how CWM effected the relationship with an environmental
 ### variable across the whole site
 #leaf N model
-m2leafn.ca <- lm(log.invg ~ drought * N * native.cover, data = suballca)
+m2leafn.ca <- lmer(log.invg ~ drought * N * native.cover+ (1|structure), data = suballca)
 summary(m2leafn.ca) 
 anova(m2leafn.ca) # only water 
 emm.ca <- emmeans(m2leafn.ca, c("N","drought"))
@@ -141,7 +145,7 @@ ggplot(suballca, aes(y=log.invg,x=N,color=drought))+
 #compare
 anova(m1.ca,m2leafn.ca) #NOT better fit than model with seeding trt
 #seed mass model
-m2srl.ca <- lm(log.invg ~ drought * SRL * native.cover, data = suballca)
+m2srl.ca <- lmer(log.invg ~ drought * SRL * native.cover+ (1|structure), data = suballca)
 summary(m2srl.ca) 
 anova(m2srl.ca) #SRL and native cover and water
 emm.ca <- emmeans(m2srl.ca, c("SRL","drought"))
@@ -152,13 +156,15 @@ ggplot(suballca, aes(y=log.invg,x=SRL,color=drought))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   facet_wrap(~trt)
+x <- ggpredict(m2srl.ca,c("SRL","drought","native.cover"),back_transform = T) #all smooths lines
+plot(x, alpha = .1)
 # library(visreg)
 # visreg(m2srl.ca,"SRL", by="water")
 #compare
 anova(m1.ca,m2srl.ca) #Not as good as seeding trt
 anova(m2leafn.ca,m2srl.ca) #same as leafn?
 #root mass fraction model
-m2rmf.ca <- lm(log.invg ~ drought * RMF * native.cover, data = suballca)
+m2rmf.ca <- lmer(log.invg ~ drought * RMF * native.cover+ (1|structure), data = suballca)
 summary(m2rmf.ca) 
 anova(m2rmf.ca) #water and diam maybe kindof
 emm.ca <- emmeans(m2rmf.ca, c("RMF","drought"))
@@ -179,13 +185,13 @@ anova(m2srl.ca,m2rmf.ca) #same as sm? not better?
 
 ### CWM distance model: 
 ## trt can be dropped to improve slightly
-m3.ca <- lm(log.invg ~ drought * dist * trt * native.cover, data = suballca)
+m3.ca <- lmer(log.invg ~ drought * distir * trt * native.cover + (1|structure), data = suballca)
 summary(m3.ca) #bad model
 anova(m3.ca) #only water
-emm.ca <- emmeans(m3.ca, c("trt","drought","dist"))
+emm.ca <- emmeans(m3.ca, c("trt","drought","distir"))
 pairs(emm.ca)
 #view
-ggplot(suballca, aes(y=log.invg,x=dist,color=water))+
+ggplot(suballca, aes(y=log.invg,x=distir,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)#+
@@ -195,9 +201,11 @@ ggplot(suballca, aes(x=dist,y=native.cover,color=water))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
 facet_wrap(~trt)
+x <- ggpredict(m3.ca,c("distir","trt","native.cover","drought"),back_transform = T) #all smooths lines
+plot(x, alpha = .1)
 #compare
-anova(m1.ca,m3.ca) #NOT better than seeding trt alone
-anova(m2leafn.ca,m3.ca) #all CWM model not better (? p-value not printing?)
+anova(m1.ca,m3.ca) #slightly better than seeding trt alone
+#anova(m2leafn.ca,m3.ca) #all CWM model not better 
 #water is highly correlated with out ability to hit our targets
 
 
@@ -207,9 +215,13 @@ x <- ggpredict(m1.ca,c("dist [all]","trt","water")) #all smooths lines
 ca_threeway <- plot(x, alpha = .1, show_title = F)+
   labs(y="cover native species", x="Euclidian distance from target", col="seeding trt")+
   theme_classic()
-x <- ggpredict(m3.ca,c("trt","dist","water")) #all smooths lines
+x <- ggpredict(m3.ca,c("trt","distir","drought")) #all smooths lines
 plot(x)+
   theme_classic()
+x <- ggpredict(m3.ca,c("trt","native.cover","drought")) #all smooths lines
+plot(x)+
+  theme_classic()
+
 
 #save some for presentation 1/19
 #CWM models
@@ -220,7 +232,7 @@ leafn.p <- ggplot(suballca, aes(y=log.invg,x=N,color=drought))+
   scale_color_manual(values=droughtcols)+
   labs(y="cover invasive grass")+
   theme_classic()+
-  xlim(-.5,1.5) #+ #remove outlier?
+  xlim(-.5,1.5) + #remove outlier?
 #seedmass
 srl.p <- ggplot(suballca, aes(y=log.invg,x=SRL,color=drought))+
   geom_point(alpha=.3, pch=20)+
@@ -271,3 +283,54 @@ dev.off()
 capture.output(anova(m2lma.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2sm.ca)[,c(3,5,6)], file="test.doc") #cov effected by drought, and dist:drought int.
 capture.output(anova(m2rd.ca)[,c(3,5,6)], file="test2.doc") #cov effected by drought, and dist:drought int.
+
+
+
+## for 2/7
+anova(m3.ca)
+quantile(suballca$distir,.05) #find lower .05
+quantile(suballca$distir,.95) #find upper .95
+summary(lm(log.invg~trt*drought, suballca))
+inv.cov.ca.plot <- ggplot(suballca, aes(y=inv.grass.cov ,x=drought,fill=trt))+
+  geom_boxplot()+
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
+  #facet_wrap(~year,scales="fixed")+
+  #geom_hline(yintercept =0,col="black")+
+  labs(y="absolute cover invasive grass", fill="seed trt")+
+  theme_ggeffects()
+x <- ggpredict(m3.ca,c("trt","distir [c(.72,2.51)]","drought","native.cover")) 
+plot(x, show.title = F)
+
+x <- ggpredict(m3.ca,c("distir [c(.72,2.51)]","drought","trt", "native.cover")) 
+ plot(x, show.title = F)
+
+ library(emmeans)
+emm.ca <- emmeans(m3.ca, c("native.cover","trt","drought","distir [c(.72,2.51)]"))#,"dist"))
+ 
+ contrast(emm.ca, "consec")
+ 
+
+#rootdiam model
+#suballca$rootdiam <- normalize(suballca$rootdiam) # normalize FD
+distmod <- lmer(log.invg ~ distir * drought + (1 | structure), data = suballca)
+summary(distmod) 
+anova(distmod) #only drought important (Rdiam was, but not really relevant)
+emm.ca <- emmeans(m2rd.ca, c("rootdiam","drought"))
+pairs(emm.ca)
+#view
+ggplot(suballca, aes(y=inv.grass.cov,x=distfd,color=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcols)+
+  stat_cor(label.y = 40)+ 
+  stat_regline_equation(label.y = 45) +
+ #  annotate("text", x = min(data$x), y = max(data$y), 
+ #           label = paste("R^2 =", round(r_squared, 3), "p-value =", round(p_value, 3)),
+ #           hjust = 0, vjust = 1)
+ # #  stat_regline_equation(aes(label = paste(after_stat(eq.label), 
+ #                      paste("R^2 =", format(summary(model)$r.squared, digits = 2)))))+#, 
+ #                           # sep = "*\", \"p-value =", format(summary(model)$coefficients[8], digits = 3), sep = "*, \""))))+
+  # facet_wrap(~year)+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+

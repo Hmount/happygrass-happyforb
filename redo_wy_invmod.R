@@ -4,9 +4,6 @@
 #### 2 Q's: Are IR communities more tolerant of drought than random? than FD? 
 #### OR: Is the likelihood of being invaded effected by any of the treatments? 
 
-###* this document was done at subplot and accidenetly partially reworked at plot level
-###* refer to other rscript (redo_wy_invmod), or revert this one. 
-
 ## packages
 library(tidyverse)
 library(lme4)
@@ -19,7 +16,7 @@ normalize <- function(x) {
 
 ## load in data, clean and modify columns
 # WY
-comp.wy <- read.csv("data/comp_wy.csv") # Wyoming species comp data 
+comp.wy <- read.csv("data/comp_wy_plot.csv") # Wyoming species comp data 
 comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
 #correct factor columns
 #comp.wy$subplot <- as.factor(comp.wy$subplot)
@@ -27,63 +24,63 @@ comp.wy <- comp.wy %>% select(-drought)
 #comp.wy$drought <- as.factor(comp.wy$drought)comp.wy$year<-as.factor(comp.wy$year)
 comp.wy$trt <- as.factor(comp.wy$trt)
 comp.wy$block <- as.factor(comp.wy$block)
-# comp.wy <- comp.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+comp.wy <- comp.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 # comp.wy$nativecov <- comp.wy$nativecov/100  # make native live veg % a proportion to match CA data
 # comp.wy$totalcov <- comp.wy$totalcov/100  # make native live veg % a proportion to match CA data
 
-cwm.wy <- read.csv("data/cwm_wy.csv")# Wyoming CWM data
+cwm.wy <- read.csv("data/cwm_wy(plot).csv")# Wyoming CWM data
 cwm.wy$year <- as.factor(cwm.wy$year)
 #make new sequence column
 cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
-                                      ifelse(year=="2022","2",
-                                      ifelse(year=="2023","3","0"))))
+                                             ifelse(year=="2022","2",
+                                                    ifelse(year=="2023","3","0"))))
 cwm.wy$yrorder <- as.numeric(cwm.wy$yrorder)
 #add plot ID column (but give NA to target/predicted communities)
 cwm.wy <- cwm.wy %>% 
-  mutate(plot = paste(block, trt, subplot, sep = "."))
+  mutate(plot = paste(block, trt, sep = "."))
 cwm.wy <- cwm.wy %>% filter(year != "0") #remove predicted/target communities
 
 cwm.wy <- cwm.wy %>% select(-c(rootdiam,veg)) #remove CWM rootdiam and veg column to avoid confusion
-cwmFD <- read.csv("data/cwm_raoq_wy.csv") #add FD for traits that need it (rootdiam/veg)
-cwmFD <- cwmFD %>% select(block,trt,year,subplot,drought,rootdiam,veg) #only columns we need
+cwmFD <- read.csv("data/cwm_raoq_wy(plot).csv") #add FD for traits that need it (rootdiam/veg)
+cwmFD <- cwmFD %>% select(block,trt,year,drought,rootdiam,veg) #only columns we need
 cwm.wy <- merge(cwm.wy,cwmFD, all.x=T)
 
-# combine to master df (remove spp columns for now, except for BRTE) (also keep invaded column)
-allwy <- merge(comp.wy[,-c(7:9,11:15,17:66)],cwm.wy, by=c("year","trt","block","subplot"))
+# combine to master df (remove spp columns for now)
+allwy <- merge(comp.wy[,-c(5:11,13:60)],cwm.wy, by=c("year","trt","block"))
 allwy$trt <- as.factor(allwy$trt)
 
 # also combine CWM_distances dataframe to master df 
-wydist <- read.csv("data/cwm_maxdistances_wy(plot).csv")
+wydist <- read.csv("data/cwm_maxdistances_WY(plot).csv")
 wydist <- wydist %>% select(-X) #%>% filter(trt.b.sub.y!="target")
 #break apart distances ID to make wider and merge together
 wydist <- separate(wydist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
-wydist <- wydist %>% mutate(trt = str_replace(trt, "^rand$", "r")) #make r match rand in cwm df
+wydist <- wydist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 
 allwy <- merge(allwy,wydist, by=c("year","trt","block"), all.x=T)
 allwy23 <- allwy %>% filter(year=="2023")
 allwy23$trt <- as.factor(allwy23$trt)
 allwy23$block <- as.factor(allwy23$block)
 allwy23$year <- as.factor(allwy23$year)
-allwy23$subplot <- as.factor(allwy23$subplot)
+#allwy23$subplot <- as.factor(allwy23$subplot)
 allwy23$drought <- as.factor(allwy23$drought)
 
 ### how many WY 2022+2023 data need to be dropped from CWM calculations 
-subvalid <- allwy23 %>% group_by(block,trt,year,subplot) %>%
-  mutate(propnative = nativecov/totalcov*100) %>% 
+subvalid <- allwy23 %>% group_by(block,trt,year) %>%
+  mutate(propnative = nativecov.plot/totcov.plot*100) %>% 
   filter(propnative < 80)
 table(subvalid$year)
 181/512*100 # 35% total observation to remove for inv. models
 allwy23 <- allwy23 %>% 
-  mutate(propnative = nativecov/totalcov*100)
+  mutate(propnative = nativecov.plot/totcov.plot*100)
 
 ## Ensure levels are correctly compared in models
-allwy23$trt <- relevel(allwy23$trt, ref = "r") #make random communities the reference level
+allwy23$trt <- relevel(allwy23$trt, ref = "rand") #make random communities the reference level
 allwy23$drought <- relevel(allwy23$drought, ref = "cntl") #make ambient precip the reference level
 #for vizuals
 droughtcols <- c("cntl"="skyblue", "drt"="tomato") #create variable for color
 #make invcov column
-allwy23 <- allwy23 %>% mutate(invcov = totalcov-nativecov) #(already a proportion)
-allwy23$BRTE <- allwy23$BRTE/100  # make native live veg % a proportion to match CA data
+allwy23 <- allwy23 %>% mutate(invcov = totcov.plot-nativecov.plot) #(already a proportion)
+#allwy23$BRTE <- allwy23$BRTE/100  # make native live veg % a proportion to match CA data
 
 ### data summary
 # look at response variable in each dataset
@@ -410,7 +407,7 @@ x <- ggpredict(m3.ca,c("trt","distir [c(.75,2.56)]","drought","native.cover"))
 plot(x, show.title = F)
 
 x <- ggpredict(m3.ca,c("native.cover","distir [c(.75,2.56)]","trt","drought")) 
- plot(x, show.title = F)
+plot(x, show.title = F)
 
 
 #rootdiam model
@@ -425,6 +422,6 @@ ggplot(suballca, aes(y=inv.grass.cov,x=distdt,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
- # facet_wrap(~year)+
+  # facet_wrap(~year)+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
