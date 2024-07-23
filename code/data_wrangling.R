@@ -48,56 +48,56 @@ write.csv(comp.ca.rel, "data/comp_ca.csv", row.names = F)
 ####
 #### WY (subplot level) 
 #### NOT UPDATED W/ RELATIVE COV (!)
-## load in data, clean and modify columns
-comp.wy <- read.csv("data/raw_cover/hpg_total.csv") #Wyoming species comp data 
-#comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
-#correct factor columns
-comp.wy$subplot <- as.factor(comp.wy$subplot)
-comp.wy$drought <- as.factor(comp.wy$drought)
-comp.wy$year<-as.factor(comp.wy$year)
-comp.wy$trt <- as.factor(comp.wy$trt)
-comp.wy$block <- as.factor(comp.wy$block)
-comp.wy <- comp.wy %>% select(-c(sub.tcov,sub.tveg)) #remove totals calculated in excel so all math is recorded here
-
-# add invaded locations as 0/1 variable (2023 only)
-wy.invaded.23 <- read.csv("data/invasion_loc23.csv") # load data
-wy.invaded.23$invaded <-tolower(wy.invaded.23$invaded)
-comp.wy <- comp.wy %>%
-  mutate(invaded = ifelse(year == 2023, as.integer(paste(block, trt, subplot) %in% paste(wy.invaded.23$block, wy.invaded.23$trt, wy.invaded.23$invaded)), NA_integer_))
-#rm(wy.invaded.23)# remove invasion data
-
-# make unique plot variable
-comp.wy <- comp.wy %>% unite(plot, c(block, trt, subplot), sep = ".", remove=F) 
-
-## Summaries at the subplot level:
-# calculate cover per subplot and add to data
-fortotalcover <- comp.wy %>% filter(species!="BG"&
-                                       species!="Litter") %>% #only native live veg (this is unecessary as I already seperated out BG)
-  group_by(year,block,trt,subplot) %>% 
-  summarize(totalcov = sum(cover, na.rm=T)) #summarize total live veg per subplot
-comp.wy <- merge(comp.wy,fortotalcover, all.x = T)
-
-# calculate cover native per subplot and add to data
-fornativecover <- comp.wy %>% filter(species!="BG"&
-                                       species!="Litter"&
-                                       native == "N") %>% #only native live veg
-  group_by(year,block,trt,subplot) %>% 
-  summarize(nativecov = sum(cover, na.rm=T)) #summarize total live veg per subplot
-comp.wy <- merge(comp.wy,fornativecover, all.x = T)
-
-
-# make wide for analysis and matching CA data
-comp.wy.wide <- comp.wy %>% select(-c("prob","native","graminoid")) #columns to drop 
-comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","subplot","drought",
-                                                         "nativecov","totalcov","BG", "Litter",
-                                                         "plot", "invaded"), 
-                                             names_from = "species", 
-                                             values_from = "cover")
-comp.wy.wide$totalcov <- comp.wy.wide$totalcov/100  # make native live veg % a proportion to match CA data
-comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
-
-# save data for all other analyses
-write.csv(comp.wy.wide, "data/comp_wy.csv", row.names = F)
+# ## load in data, clean and modify columns
+# comp.wy <- read.csv("data/raw_cover/hpg_total.csv") #Wyoming species comp data 
+# #comp.wy <- comp.wy %>% filter(year != "2020") #remove pre-treatment data
+# #correct factor columns
+# comp.wy$subplot <- as.factor(comp.wy$subplot)
+# comp.wy$drought <- as.factor(comp.wy$drought)
+# comp.wy$year<-as.factor(comp.wy$year)
+# comp.wy$trt <- as.factor(comp.wy$trt)
+# comp.wy$block <- as.factor(comp.wy$block)
+# comp.wy <- comp.wy %>% select(-c(sub.tcov,sub.tveg)) #remove totals calculated in excel so all math is recorded here
+# 
+# # add invaded locations as 0/1 variable (2023 only)
+# wy.invaded.23 <- read.csv("data/invasion_loc23.csv") # load data
+# wy.invaded.23$invaded <-tolower(wy.invaded.23$invaded)
+# comp.wy <- comp.wy %>%
+#   mutate(invaded = ifelse(year == 2023, as.integer(paste(block, trt, subplot) %in% paste(wy.invaded.23$block, wy.invaded.23$trt, wy.invaded.23$invaded)), NA_integer_))
+# #rm(wy.invaded.23)# remove invasion data
+# 
+# # make unique plot variable
+# comp.wy <- comp.wy %>% unite(plot, c(block, trt, subplot), sep = ".", remove=F) 
+# 
+# ## Summaries at the subplot level:
+# # calculate cover per subplot and add to data
+# fortotalcover <- comp.wy %>% filter(species!="BG"&
+#                                        species!="Litter") %>% #only native live veg (this is unecessary as I already seperated out BG)
+#   group_by(year,block,trt,subplot) %>% 
+#   summarize(totalcov = sum(cover, na.rm=T)) #summarize total live veg per subplot
+# comp.wy <- merge(comp.wy,fortotalcover, all.x = T)
+# 
+# # calculate cover native per subplot and add to data
+# fornativecover <- comp.wy %>% filter(species!="BG"&
+#                                        species!="Litter"&
+#                                        native == "N") %>% #only native live veg
+#   group_by(year,block,trt,subplot) %>% 
+#   summarize(nativecov = sum(cover, na.rm=T)) #summarize total live veg per subplot
+# comp.wy <- merge(comp.wy,fornativecover, all.x = T)
+# 
+# 
+# # make wide for analysis and matching CA data
+# comp.wy.wide <- comp.wy %>% select(-c("prob","native","graminoid")) #columns to drop 
+# comp.wy.wide <- comp.wy.wide %>% pivot_wider(id_cols = c("year","block","trt","subplot","drought",
+#                                                          "nativecov","totalcov","BG", "Litter",
+#                                                          "plot", "invaded"), 
+#                                              names_from = "species", 
+#                                              values_from = "cover")
+# comp.wy.wide$totalcov <- comp.wy.wide$totalcov/100  # make native live veg % a proportion to match CA data
+# comp.wy.wide$nativecov <- comp.wy.wide$nativecov/100  # make native live veg % a proportion to match CA data
+# 
+# # save data for all other analyses
+# write.csv(comp.wy.wide, "data/comp_wy.csv", row.names = F)
 
 
 ####

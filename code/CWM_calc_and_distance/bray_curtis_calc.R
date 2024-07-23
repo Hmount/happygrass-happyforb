@@ -1,11 +1,14 @@
 #### Bray-curtis dissimilarity of community composition annually at both sites.
 
+#### Packages
 library(tidyverse)
 library(vegan)
 
-
-### CA
-#get comp data
+#### Calculate B-C dissimilarity for every community every year
+####
+#### CA
+####
+## load in composition data, clean and modify columns as usual
 comp.ca <- read.csv("data/comp_ca.csv") #read in California comp data
 comp.ca$fesper.seeded <- as.factor(comp.ca$fesper.seeded)
 comp.ca$fesper.present <- as.factor(comp.ca$fesper.present)
@@ -129,10 +132,11 @@ bcdist.ca23<- data.frame(
 bcdist.ca <- bind_rows(bcdist.ca21,bcdist.ca22,bcdist.ca23)
 
 #save
-write.csv(bcdist.ca, "data/bc_dissimilarity_ca.csv" )
+write.csv(bcdist.ca, "data/bc_dissimilarity_ca.csv", row.names = F)
 
-
-### WY
+####
+#### WY
+####
 ## load in composition data, clean and modify columns as usual
 comp.wy.plot <- read.csv("data/comp_wy_plot.csv")
 comp.wy.plot <- comp.wy.plot %>% filter(year != "2020") #remove 2020
@@ -219,7 +223,7 @@ bcdist.wy23<- data.frame(
 bcdist.wy <- bind_rows(bcdist.wy21,bcdist.wy22,bcdist.wy23)
 
 #save
-write.csv(bcdist.wy, "data/bc_dissimilarity_wy.csv" )
+write.csv(bcdist.wy, "data/bc_dissimilarity_wy.csv", row.names = F)
 
 
 
@@ -372,8 +376,11 @@ write.csv(bcdist.wy, "data/bc_dissimilarity_wy.csv" )
 # #save
 # write.csv(bcdist.wy, "data/bc_dissimilarity_wy.csv" )
 
-#### figures 
-#CA
+
+#### models and figures ####
+####
+#### CA
+####
 x <- read.csv("data/comp_ca.csv")
 x$trt <- tolower(x$trt)
 x <- x %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
@@ -483,3 +490,187 @@ ggplot(testbc, aes(y=dist.wy, x=trt, fill=drought))+
   labs(x=" ",y="Dissimilarity (bray-curtis)")+ #, fill="drought treatment")+
   theme_classic()
 dev.off()
+
+
+
+###### TESTING/CHECKING B-C and FD
+FDdat <- read.csv("data/cwm_raoq_wy(plot).csv")
+FDdat$year <- as.factor(FDdat$year)
+FDdat$block <- as.factor(FDdat$block)
+FDdat$trt <- as.factor(FDdat$trt)
+
+bcdist.wy <- read.csv("data/bc_dissimilarity_wy.csv") #read in comp data
+bcdist.wy <- separate(bcdist.wy, id, into = c("trt", "block", "year"), sep = "\\.")
+bcdist.wy <- bcdist.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+
+test.wy <- merge(bcdist.wy,FDdat, by= c("trt", "block", "year"))
+subvalid <- comp.wy %>% group_by(block,trt,year) %>%
+  mutate(propnative = nativecov.plot/totcov.plot*100) %>% 
+  filter(propnative < 80)
+subvalid <- subvalid %>%  unite(trt.b.y, c(trt, block, year), sep = ".") 
+test.wy <- test.wy %>%  unite(trt.b.y, c(trt, block, year), sep = ".")
+testvalid <- test.wy %>% filter(!(trt.b.y %in% subvalid$trt.b.y))
+testvalid <- separate(testvalid, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+
+summary(lm(full~dist.wy*year*trt*drought, testvalid)) #signifigany and explains a lot
+ggplot(testvalid, aes(x=dist.wy,y=full,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_wrap(~year, scales="free")
+# more dissimilar in composition lead to lower functional diversities
+# our targets were highly FD, and real/stable communities were less FD?
+
+wydist2 <- read.csv("data/cwm_maxdistances_wy(plot).csv")
+
+wydist2 <- separate(wydist2, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+test <- merge(bcdist.wy,wydist2, by= c("trt", "block", "year"), all.x=T)
+
+subvalid <- comp.wy %>% group_by(block,trt,year) %>%
+  mutate(propnative = nativecov.plot/totcov.plot*100) %>% 
+  filter(propnative < 80)
+subvalid <- subvalid %>%  unite(trt.b.y, c(trt, block, year), sep = ".") 
+test <- test %>%  unite(trt.b.y, c(trt, block, year), sep = ".")
+testvalid <- test %>% filter(!(trt.b.y %in% subvalid$trt.b.y))
+testvalid <- separate(testvalid, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+subdrought <- FDdat %>% select(c(year,trt,block,drought))
+testvalid <- merge(testvalid, subdrought, all.x=T)
+
+#quick and dirty make this plot, make dist column that is dist to target
+testvalid.wy <- testvalid %>% mutate(dist_target = ifelse(trt=="dt", distdt,
+                                                          ifelse(trt=="ir", distir,
+                                                                 ifelse(trt=="fd", distfd,distr))))
+
+summary(lm(dist_target~dist.wy*trt*year*drought, testvalid)) #signifigany and explains a lot
+ggplot(testvalid, aes(x=dist.wy,y=dist_target,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")#+
+#facet_grid(year~drought, scales="free")#+
+#facet_wrap(~year, scales = "free")
+# mix of relationships, but positive slopes in FD and IR21+22 are expected relationships
+# DT is oddly static and then negative. Random has no relationship (matches CA)
+
+#export for short report
+tiff("figures/cwm wy/dist_dis_wy.tiff", res=400, height = 4,width =6, "in",compression = "lzw")
+ggplot(testvalid, aes(x=dist.wy,y=dist_target,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  #facet_grid(year~drought, scales="free")#+
+  labs(x="Compositional dissimilarity (bray-curtis)", 
+       y="Distance to functonal targets (Euclidean)",
+       col="seeding trt")+
+  theme_classic()
+#facet_wrap(~year, scales = "free")
+dev.off()
+
+
+### CA
+#what about with FD
+FDdat <- read.csv("data/cwm_raoq_ca.csv")
+FDdat$year <- as.factor(FDdat$year)
+FDdat$block <- as.factor(FDdat$block)
+FDdat$trt <- as.factor(FDdat$trt)
+FDdat$subplot <- as.factor(FDdat$water)
+
+bcdist.ca <- read.csv("data/bc_dissimilarity_ca.csv") #read in comp data
+bcdist.ca <- separate(bcdist.ca, id, into = c("trt", "block", "year"), sep = "\\.")
+bcdist.ca <- bcdist.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+
+test.ca <- merge(bcdist.ca,FDdat, by= c("trt", "block", "year"))
+subvalid <- comp.ca %>% group_by(block,trt,year) %>%
+  mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>% 
+  filter(propnative < 80)
+subvalid <- subvalid %>%  unite(trt.b.y, c(trt, block, year), sep = ".") 
+test.ca <- test.ca %>%  unite(trt.b.y, c(trt, block, year), sep = ".")
+testvalid <- test.ca %>% filter(!(trt.b.y %in% subvalid$trt.b.y))
+testvalid <- separate(testvalid, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+
+summary(lm(full~dist.ca*year*trt*water, testvalid)) #signifigant but explains little
+ggplot(testvalid, aes(x=dist.ca,y=full,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  facet_wrap(~year)
+# more dissimilar compositions lead to lower functional diversities 
+# our targets were highly FD, and going away from that homogenized
+
+## with distance and dissimilrity? 
+cadist2 <- read.csv("data/cwm_maxdistances_ca.csv")
+
+cadist2 <- separate(cadist2, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+test <- merge(bcdist.ca,cadist2, by= c("trt", "block", "year"))
+subvalid <- comp.ca %>% group_by(block,trt,year) %>%
+  mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>% 
+  filter(propnative < 80)
+subvalid <- subvalid %>%  unite(trt.b.y, c(trt, block, year), sep = ".") 
+test <- test %>%  unite(trt.b.y, c(trt, block, year), sep = ".")
+testvalid <- test %>% filter(!(trt.b.y %in% subvalid$trt.b.y))
+testvalid <- separate(testvalid, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
+
+#quick and dirty make this plot, make dist column that is dist to target
+testvalid.ca <- testvalid %>% mutate(dist_target = ifelse(trt=="dt", distdt,
+                                                          ifelse(trt=="ir", distir,
+                                                                 ifelse(trt=="fd", distfd,distr))))
+
+summary(lm(dist_target~dist.ca*year*trt, testvalid.ca)) #significant but explains little
+ggplot(testvalid.ca, aes(x=dist.ca,y=dist_target,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")#+
+#facet_wrap(~year)
+# more similarity to composition = more similarity to target (except random)
+# this is the expected result
+
+#export for short report
+tiff("figures/cwm ca/dist_dis_ca.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
+ggplot(testvalid, aes(x=dist.ca,y=dist,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  #facet_grid(year~drought, scales="free")#+
+  labs(x="Compositional dissimilarity (bray-curtis)", 
+       y="Distance to functonal targets (Euclidean)",
+       col="seeding trt")+
+  facet_wrap(~year, scales = "free")
+dev.off()
+
+####together for 2/5/24
+library(tidyverse)
+library(patchwork)
+testvalid.ca$trt <- factor(testvalid.ca$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE) #order trt levels
+pdisdist.ca <- ggplot(testvalid.ca, aes(x=dist.ca,y=dist_target,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  labs(x=" ", 
+       y=" ",
+       col="seeding trt")+
+  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7) +
+  theme_classic()
+testvalid.wy$trt <- factor(testvalid.wy$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE) #order trt levels
+pdisdist.wy <- ggplot(testvalid.wy, aes(x=dist.wy,y=dist_target,col=trt))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7) +
+  #scale_color_viridis_d(option = "D", begin = 1, end = 0.1, alpha = 0.7) +
+  labs(x=" ", 
+       y=" ",
+       col="seeding trt")+
+  theme_classic()
+library(ggpubr)
+annotate_figure(ggarrange(pdisdist.ca,pdisdist.wy, common.legend = T),
+                bottom ="Compositional dissimilarity (bray-curtis)",
+                left = "Distance to functonal targets (Euclidean)")
+
+
+# #export for short report
+# tiff("figures/cwm wy/dissim_wy.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
+# ggplot(testbc, aes(y=dist., x=trt, fill=drought))+
+#   geom_boxplot()+
+#   #geom_smooth(method="lm")+
+#   geom_text(aes(y=yposition,label = Letters), 
+#             position = position_dodge(width = 0.9), 
+#             vjust = -0.5,
+#             #angle = 15,
+#             size=3) +
+#   scale_fill_manual(values=droughtcolswy)+
+#   facet_wrap(~year, scales="fixed")+
+#   labs(x=" ",y="Dissimilarity (bray-curtis)")+ #, fill="drought treatment")+
+#   theme_classic()
+# dev.off()
+

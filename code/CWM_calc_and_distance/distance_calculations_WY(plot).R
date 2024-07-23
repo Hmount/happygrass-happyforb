@@ -47,35 +47,35 @@ FDdat <- FDdat %>% filter(year!="0")#filter preds
 # # first calculated for distance to target, but distance to target to be closer
 # # or further from max/min of traits (ex. SRL above our target is even better
 # # than hitting our target). So, distance from max/min by trt and year is also
-# # now calculated below.
+# # now calculated below the commented out code.
 #
 ## IR
 distir.wy <- dat %>% select(c(block,trt,year,leafn,srl))
 distir.wy <- merge(distir.wy,FDdat[,c(2,4:6)], all.x = T)
-# define trait targets
-quantile(traits.wy$leafn,.25) #IR
-# -0.565257
-quantile(traits.wy$srl,.7557) #IR
-# 0.6536232
-irdist <- distir.wy %>% filter(trt=="ir")
-irdist <- irdist %>%
-  unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-irdist$veg <- normalize(irdist$veg)
-# make row of targets
-irdist <- irdist %>% add_row(trt.b.y = "target",
-                             leafn = quantile(traits.wy$leafn,.25),
-                             srl = quantile(traits.wy$srl,.7557),
-                             veg = quantile(normalize(FDdat$veg),.99)) #this should be by year tho
-irdist <- irdist %>% column_to_rownames("trt.b.y")
-#mnake into matrix
-#run dist or vegdist
-library(vegan)
-irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
-irdistmat <-as.matrix(irdistmat)
-# save only pairwise between target
-irdistances <- as.data.frame(irdistmat["target",])
-colnames(irdistances) <- "dist"
-irdistances <- irdistances %>% rownames_to_column("trt.b.y")
+# # define trait targets
+# quantile(traits.wy$leafn,.25) #IR
+# # -0.565257
+# quantile(traits.wy$srl,.7557) #IR
+# # 0.6536232
+# irdist <- distir.wy %>% filter(trt=="ir")
+# irdist <- irdist %>%
+#   unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
+# irdist$veg <- normalize(irdist$veg)
+# # make row of targets
+# irdist <- irdist %>% add_row(trt.b.y = "target",
+#                              leafn = quantile(traits.wy$leafn,.25),
+#                              srl = quantile(traits.wy$srl,.7557),
+#                              veg = quantile(normalize(FDdat$veg),.99)) #this should be by year tho
+# irdist <- irdist %>% column_to_rownames("trt.b.y")
+# #mnake into matrix
+# #run dist or vegdist
+# library(vegan)
+# irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
+# irdistmat <-as.matrix(irdistmat)
+# # save only pairwise between target
+# irdistances <- as.data.frame(irdistmat["target",])
+# colnames(irdistances) <- "dist"
+# irdistances <- irdistances %>% rownames_to_column("trt.b.y")
 
 ## IR (min/max)
 irdist <- distir.wy %>% filter(trt=="ir")
@@ -136,29 +136,29 @@ irdistances.max <- irdistances.max %>% rownames_to_column("trt.b.y")
 ## DT
 distdt.wy <- dat %>% select(c(block,trt,year,ldmc,lop))
 distdt.wy <- merge(distdt.wy,FDdat[,c(1,4:6)], all.x = T)
-# define trait targets
-quantile(traits.wy$ldmc,.75) # DT
-# 0.6766338
-quantile(traits.wy$lop,.25) #DT
-# -0.7420366
-dtdist <- distdt.wy %>% filter(trt=="dt")
-dtdist <- dtdist %>%
-  unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-dtdist$rootdiam <- normalize(dtdist$rootdiam)
-# make row of targets
-dtdist <- dtdist %>% add_row(trt.b.y = "target",
-                             ldmc = quantile(traits.wy$ldmc,.75),
-                             lop = quantile(traits.wy$lop,.25),
-                             rootdiam = quantile(normalize(FDdat$rootdiam),.99)) #this should be by year tho
-dtdist <- dtdist %>% column_to_rownames("trt.b.y")
-#mnake into matrix
-#run dist or vegdist
-dtdistmat <- vegdist(as.matrix(dtdist),method = "euclidean", upper=T)#,diag=T)
-dtdistmat <-as.matrix(dtdistmat)
-# save only pairwise between target
-dtdistances <- as.data.frame(dtdistmat["target",])
-colnames(dtdistances) <- "dist"
-dtdistances <- dtdistances %>% rownames_to_column("trt.b.y")
+# # define trait targets
+# quantile(traits.wy$ldmc,.75) # DT
+# # 0.6766338
+# quantile(traits.wy$lop,.25) #DT
+# # -0.7420366
+# dtdist <- distdt.wy %>% filter(trt=="dt")
+# dtdist <- dtdist %>%
+#   unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
+# dtdist$rootdiam <- normalize(dtdist$rootdiam)
+# # make row of targets
+# dtdist <- dtdist %>% add_row(trt.b.y = "target",
+#                              ldmc = quantile(traits.wy$ldmc,.75),
+#                              lop = quantile(traits.wy$lop,.25),
+#                              rootdiam = quantile(normalize(FDdat$rootdiam),.99)) #this should be by year tho
+# dtdist <- dtdist %>% column_to_rownames("trt.b.y")
+# #mnake into matrix
+# #run dist or vegdist
+# dtdistmat <- vegdist(as.matrix(dtdist),method = "euclidean", upper=T)#,diag=T)
+# dtdistmat <-as.matrix(dtdistmat)
+# # save only pairwise between target
+# dtdistances <- as.data.frame(dtdistmat["target",])
+# colnames(dtdistances) <- "dist"
+# dtdistances <- dtdistances %>% rownames_to_column("trt.b.y")
 
 ## DT (min/max)
 dtdist <- distdt.wy %>% filter(trt=="dt")
@@ -408,7 +408,7 @@ write.csv(wydist2, "data/cwm_maxdistances_wy(plot).csv")
 
 
 #combine with CWM to plot
-cwm.wy <- read.csv("data/cwm_wy.csv")# Wyoming CWM data
+cwm.wy <- read.csv("data/cwm_wy(plot).csv")# Wyoming CWM data
 cwm.wy$year <- as.factor(cwm.wy$year)
 cwm.wy <- cwm.wy %>% mutate(yrorder = ifelse(year=="2021","1",
                                              ifelse(year=="2022","2",
@@ -480,7 +480,7 @@ droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
 
 #export for short report
-tiff("figures/cwm wy/distanceplot_wy.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
+tiff("figures/cwm wy/distanceplot_wy_single.tiff", res=400, height = 4,width =3.5, "in",compression = "lzw")
 ggplot(test2, aes(y=dist, x=trt, fill=drought))+
   geom_boxplot()+
   #geom_smooth(method="lm")+
