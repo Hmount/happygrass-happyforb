@@ -286,7 +286,7 @@ allwy$trt <- as.factor(allwy$trt)
 
 # also combine CWM_distances dataframe to master df 
 wydist <- read.csv("data/cwm_maxdistances_wy(plot).csv")
-wydist <- wydist %>% select(-X) #%>% filter(trt.b.sub.y!="target")
+#wydist <- wydist %>% select(-X) #%>% filter(trt.b.sub.y!="target")
 #break apart distances ID to make wider and merge together
 wydist <- separate(wydist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
 wydist <- wydist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
@@ -594,23 +594,23 @@ testno <- test %>% filter(year!="2021")
 test22 <- test %>% filter(year=="2022")
 
 #model
-summary(lmer(log.gr~distdt*trt*drought+ (1|block), test))
+anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))
 anova(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
 
 dissboxca <- ggplot(testno, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
-  facet_wrap(~year,scales="fixed")+
+  #facet_wrap(~year,scales="fixed")+
   geom_hline(yintercept =0,col="black")+
   labs(y="", fill="seed trt")+
   theme_ggeffects()
-testplot <- testsub %>% filter(!is.na(log.gr))
-caplotdiss <- ggplot(testplot, aes(y=log.gr,x=distdt,color=drought))+
+testplot <- testno %>% filter(!is.na(log.gr))
+caplotdiss <- ggplot(testplot, aes(y=log.gr,x=distfd,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcols)+
   labs(y=" ", x=" ")+
-  #facet_wrap(~year)+
+  facet_wrap(~year)+
   stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
   geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
@@ -696,22 +696,24 @@ test <- merge(suballwy, forgrate, all.x=T)
 test <- test %>% mutate(growrate = nativecov.plot/covprevyr)
 test$log.gr <- log(test$growrate) 
 testno <- test %>% filter(year!="2021")
+testnoD <- testno %>% filter(drought=="cntl")
 
 #model
 summary(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
+anova(lmer(log.gr~distdt*trt*year+ (1|block), testnoD))
 
-dissboxwy <- ggplot(testno, aes(y=log.gr,x=drought,fill=trt))+
+dissboxwy <- ggplot(testnoD, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
   facet_wrap(~year,scales="fixed")+
   geom_hline(yintercept =0,col="black")+
   labs(y=" ", fill="seed trt")+
   theme_ggeffects()
-wyplotdiss <- ggplot(testno, aes(y=log.gr,x=distdt,color=drought))+
+wyplotdiss <- ggplot(testnoD, aes(y=log.gr,x=distdt,color=year))+
   geom_point()+
   geom_smooth(method = "lm")+
   #scale_color_manual(values=droughtcols)+
-  facet_wrap(~year)+
+  #facet_wrap(~year)+
   labs(y=" ", x="")+
   geom_hline(yintercept =0,col="black")+
   stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
