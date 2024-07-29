@@ -56,7 +56,7 @@ distr <- ggplot(test2, aes(y=distr, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -83,7 +83,7 @@ distfd <- ggplot(test2, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -110,7 +110,7 @@ distir <- ggplot(test2, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   #facet_wrap(~year, scales="fixed")+
   #coord_flip()+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -137,7 +137,7 @@ distdt <- ggplot(test2, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -178,7 +178,7 @@ disttargetca <- ggplot(test2, aes(y=targetdist, x=trt, fill=drought))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -234,7 +234,7 @@ distr <- ggplot(test2, aes(y=distr, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -261,7 +261,7 @@ distfd <- ggplot(test2, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -288,7 +288,7 @@ distir <- ggplot(test2, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   #facet_wrap(~year, scales="fixed")+
   #coord_flip()+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -315,7 +315,7 @@ distdt <- ggplot(test2, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -342,7 +342,7 @@ disttargetwy <- ggplot(test2, aes(y=targetdist, x=trt, fill=drought))+
   #coord_flip()+
   #facet_wrap(~year, scales="fixed")+
   geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
+            position = position_dodge(width = 1.2), 
             vjust = -0.5,
             #angle = 15,
             size=3) +
@@ -383,8 +383,9 @@ bcdis.wy <- bcdis.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r m
 cadisdist <- merge(cadist, bcdis.ca)
 wydisdist <- merge(wydist, bcdis.wy)
 
-## plot
+## model and plot
 #CA
+summary(lm(targetdist~dist.ca*trt, cadisdist))
 bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist ,col=trt))+
   geom_point(pch=20)+
   geom_smooth(method="lm")+
@@ -395,6 +396,7 @@ bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist ,col=trt))+
        col="seeding trt")+
   theme_classic()
 #WY
+summary(lm(targetdist~dist.wy*trt, wydisdist))
 bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
   geom_point(pch=20)+
   geom_smooth(method="lm")+
@@ -438,4 +440,31 @@ p2
 ## export figure
 tiff("figures/alldistances_figure.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
 p2
+dev.off()
+
+
+### for ESA presentation 
+tiff("figures/ESAfig1.tiff", res=400, height = 4,width =7, "in",compression = "lzw")
+pp1<-ggarrange(wydistplots, disttargetwy, ncol=2, nrow=1,
+          common.legend = TRUE, legend="bottom", widths = c(1,.5))
+dev.off()
+tiff("figures/ESAfig2.tiff", res=400, height = 4,width =7, "in",compression = "lzw")
+pp2<-ggarrange(cadistplots, disttargetca, ncol=2, nrow=1,
+          common.legend = TRUE, legend="bottom", widths = c(1,.5))
+dev.off()
+bcplots <- ggarrange(bcplotwy, bcplotca, ncol=1, nrow=2, common.legend = T)
+bcplots <- annotate_figure(bcplots, 
+                           bottom = text_grob("Bray-Curtis dissimilarity"))
+plot1 <- ggarrange(pp1, pp2, ncol=1, nrow=2)
+plot2 <- ggarrange(plot1, bcplots, ncol=2, nrow=1, widths = c(1,1))
+# plot2 <- annotate_figure(plot2, 
+#                       left=text_grob("Euclidean distance from", rot=90))
+plot2
+  
+
+cadistanceplot <- ggarrange(cadistplots, disttargetca, ncol=2, nrow=1, common.legend = TRUE, legend="bottom")
+bcplots <- ggarrange(bcplotwy, bcplotca, ncol=2, nrow=1, common.legend = T)
+p1 <-ggarrange(wydistanceplot, cadistanceplot,bcplots, nrow=3)
+tiff("figures/test_figure.tiff", res=400, height = 8,width =6, "in",compression = "lzw")
+p1
 dev.off()

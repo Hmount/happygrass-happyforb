@@ -103,6 +103,13 @@ testno <- test %>% filter(year!="2021")
 #test22 <- test %>% filter(year=="2022")
 
 #model
+summary(lmer(native.cover~trt*drought*year+ (1|block), test))
+summary(lmer(log.gr~trt*drought*year+ (1|structure), testno))
+anova(lmer(log.gr~distdt*drought*year+ (1|block), testno))
+summary(lmer(log.gr~distfd*drought*year+ (1|block), testno))
+summary(lmer(log.gr~distir*drought*year+ (1|block), testno))
+
+
 anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))
 anova(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
 
@@ -114,7 +121,34 @@ dissboxca <- ggplot(testno, aes(y=log.gr,x=drought,fill=trt))+
   labs(y="", fill="seed trt")+
   theme_ggeffects()
 testplot <- testno %>% filter(!is.na(log.gr))
-dissdtca <- ggplot(testno, aes(y=log.gr,x=distdt,color=drought))+
+distdtca <- ggplot(testno, aes(y=log.gr,x=distfd,color=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca)+
+  labs(y=" ", x="DT target")+
+  facet_wrap(~year)+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+distirca <- ggplot(testno, aes(y=log.gr,x=distir,color=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca)+
+  labs(y=" ", x="IR target")+
+  facet_wrap(~year)+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+distfdca <- ggplot(testno, aes(y=log.gr,x=distfd,color=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca)+
+  labs(y=" ", x="FD target")+
+  facet_wrap(~year)+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+distrca <- ggplot(testno, aes(y=log.gr,x=distr,color=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca)+
@@ -123,30 +157,20 @@ dissdtca <- ggplot(testno, aes(y=log.gr,x=distdt,color=drought))+
   stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
   geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-dissirca <- ggplot(testno, aes(y=log.gr,x=distir,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x=" ")+
-  facet_wrap(~year)+
-  stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
-dissfdca <- ggplot(testno, aes(y=log.gr,x=distfd,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x=" ")+
-  facet_wrap(~year)+
-  stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
-dissrca <- ggplot(testno, aes(y=log.gr,x=distr,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x=" ")+
-  facet_wrap(~year)+
-  stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
+
+
+#### combined figures
+library(ggpubr)
+cafigtop <- ggarrange(dissboxca,distdtca, 
+                      common.legend = T, legend = "right",
+                      labels = c("a","b"),label.x = 1)
+cafigbottom <-ggarrange(distfdca,distirca, 
+                        common.legend = T, legend = "right",
+                        labels = c("c","d"),label.x = 1)
+cafigdrought <- ggarrange(cafigtop,cafigbottom, nrow=2)
+cafigdrought <- annotate_figure(cafigdrought, bottom = "Euclidean distance to CWM target",
+                                left="Annual growth rate (log(lambda))")
+
+tiff("figures/droughtfigca.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
+cafigdrought
+dev.off()
