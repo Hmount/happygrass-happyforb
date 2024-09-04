@@ -813,3 +813,6 @@ dev.off()
 tiff("figures/cwm wy/alldistance_wy.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
 wyplots
 dev.off()
+
+## for ESA publication
+esa1 <- ggarrange(distdt,distr, common.legend = T)

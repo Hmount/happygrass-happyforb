@@ -46,7 +46,7 @@ allca$trt <- as.factor(allca$trt)
 
 # also combine CWM_distances dataframe to master df 
 cadist <- read.csv("data/cwm_maxdistances_ca.csv")
-cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
+#cadist <- cadist %>% select(-X) #%>% filter(trt.b.y!="target")
 #break apart distances ID to make wider and merge together
 cadist <- separate(cadist, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
 cadist <- cadist %>% filter(trt!="target")
@@ -334,3 +334,4 @@ ggplot(suballca, aes(y=inv.grass.cov,x=distfd,color=drought))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
 
+summary(lmer(log.invg ~ distir * drought + (1 | structure), data = suballca))

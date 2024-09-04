@@ -90,7 +90,7 @@ testno <- test %>% filter(year!="2021")
 #testnoD <- testno %>% filter(drought=="cntl")
 
 #model
-summary(lmer(log.gr~trt*drought*year+ (1|block), testno))
+anova(lmer(log.gr~trt*drought*year+ (1|block), testno))
 summary(dtmod <- lmer(log.gr~distdt*drought*year+ (1|block), testno))
 summary(lmer(log.gr~distfd*drought*year+ (1|block), testno))
 summary(lmer(log.gr~distir*drought*year+ (1|block), testno))
@@ -240,4 +240,4 @@ table<-kable(combined_effects, caption = "Summary of Linear Mixed-Effects Model"
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),full_width = F, position = "left")
 
 # Save the table as HTML
-save_kable(table, "model_summary.doc")
+save_kable(table, "model_summaryirca.doc")

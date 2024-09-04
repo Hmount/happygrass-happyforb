@@ -45,7 +45,7 @@ cwmFD <- read.csv("data/cwm_raoq_wy(plot).csv") #add FD for traits that need it 
 cwmFD <- cwmFD %>% select(block,trt,year,drought,rootdiam,veg) #only columns we need
 cwm.wy <- merge(cwm.wy,cwmFD, all.x=T)
 
-# combine to master df (remove spp columns for now)
+# combine to master df (remove spp columns for now,but keep BRTE)
 allwy <- merge(comp.wy[,-c(5:11,13:60)],cwm.wy, by=c("year","trt","block"))
 allwy$trt <- as.factor(allwy$trt)
 

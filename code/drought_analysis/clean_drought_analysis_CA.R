@@ -103,11 +103,11 @@ testno <- test %>% filter(year!="2021")
 #test22 <- test %>% filter(year=="2022")
 
 #model
-summary(lmer(native.cover~trt*drought*year+ (1|block), test))
+summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|block), testno))
 summary(lmer(log.gr~trt*drought*year+ (1|structure), testno))
 anova(lmer(log.gr~distdt*drought*year+ (1|block), testno))
 summary(lmer(log.gr~distfd*drought*year+ (1|block), testno))
-summary(lmer(log.gr~distir*drought*year+ (1|block), testno))
+anova(lmer(log.gr~trt*distir*drought*year+ (1|block), testno))
 
 
 anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))

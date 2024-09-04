@@ -47,9 +47,9 @@ ggplot(comp.wy.wide, aes(y=nativecov, x=trt, fill=drought))+ #subplot
   geom_boxplot()+
   scale_fill_manual(values = droughtcolswy)+
   facet_wrap(~year)
-ggplot(comp.wy.wide, aes(y=plot.tveg, x=trt, fill=drought))+ #plot
+ggplot(allwy, aes(y=nativecov, x=trt, fill=drought))+ #plot
   geom_boxplot()+
-  scale_fill_manual(values = droughtcolswy)+
+  scale_fill_manual(values = droughtcols)+
   facet_wrap(~year)
 
 # CA
