@@ -68,7 +68,7 @@ allca23 %>%
 allca23 <- allca23 %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>%
   mutate(propfesper = FESPER/(native.cover+inv.grass.cov)) %>% #this one is not converted to percent
-  mutate(propnativefesper = propnative+(FESPER*100)+(FE))
+  mutate(propnativefesper = propnative+(FESPER*100))
 
 #make dought column
 allca23 <- allca23 %>% mutate(drought = as.factor(ifelse(water=="0.5","drt","cntl")))
@@ -106,10 +106,10 @@ suballca23x <- suballca23 %>% filter(propnativefesper >= 80)
 
 
 #model
-summary(lmer(log.invg~trt*drought+ (1|block), suballca23))
+summary(trtmod<-lmer(log.invg~trt*drought+ (1|block), suballca23))
 summary(irmod <- lmer(log.invg~distir*drought+ (1|block), suballca23))
-summary(m2<-lmer(log.invg~distfd*drought+ (1|block), suballca23))
-summary(lmer(log.invg~distdt*drought+ (1|block), suballca23))
+summary(fdmod<-lmer(log.invg~distfd*drought+ (1|block), suballca23))
+summary(dtmod<-lmer(log.invg~distdt*drought+ (1|block), suballca23))
 
 # summary(irmod <- glmer(BRTEpres~trt*drought+ (1|block), fortest, family = "binomial"))
 # x <- ggpredict(irmod,c("trt","drought")) 

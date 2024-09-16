@@ -99,10 +99,10 @@ allwy23 <- allwy23 %>% mutate(log.propbrte = log(propbrte)) %>%
 suballwy23 <- allwy23 %>% filter(propnativebrte >= 80)
 
 #model
-summary(lmer(log.propbrte~trt*drought+ (1|block), allwy23))
-summary(irmod <- lmer(log.propbrte~distir*drought+ (1|block), suballwy23))
-summary(m2<-lmer(log.propbrte~distdt*drought+ (1|block), suballwy23))
-summary(lmer(log.propbrte~distfd*drought+ (1|block), allwy23))
+summary(trtmod <- lmer(log.propbrte~trt*drought+ (1|block), allwy23))
+summary(irmod <- lmer(log.propbrte~distir*drought+ (1|block), allwy23))
+summary(dtmod <-lmer(log.propbrte~distdt*drought+ (1|block), allwy23))
+summary(fdmod <- lmer(log.propbrte~distfd*drought+ (1|block), allwy23))
 
 # summary(irmod <- glmer(BRTEpres~trt*drought+ (1|block), fortest, family = "binomial"))
 # x <- ggpredict(irmod,c("trt","drought")) 
@@ -122,7 +122,7 @@ suballwy23 <- suballwy23 %>% mutate(nativecovbin = cut(nativecov.plot,
                                                        include.lowest = TRUE))
 # mutate(nativecovbin = bins.quantiles(nativecov.plot, 3, 3))
 #   nativecovbin = ifelse(nativecov.plot 
-invirwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distir,col=drought))+
+invirwy <- ggplot(allwy23, aes(y=log.propbrte,x=distir,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
@@ -132,7 +132,7 @@ invirwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distir,col=drought))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-invdtwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distdt,col=drought))+
+invdtwy <- ggplot(allwy23, aes(y=log.propbrte,x=distdt,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
@@ -142,7 +142,7 @@ invdtwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distdt,col=drought))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-invfdwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distfd,col=drought))+
+invfdwy <- ggplot(allwy23, aes(y=log.propbrte,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
@@ -152,7 +152,7 @@ invfdwy <- ggplot(suballwy23, aes(y=log.propbrte,x=distfd,col=drought))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-distrwy <- ggplot(suballwy23, aes(y=log.brte,x=distr,col=drought))+
+distrwy <- ggplot(allwy23, aes(y=log.brte,x=distr,col=drought))+
   geom_point(aes(y=log.brte,x=distr,col=drought, shape=year))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy)+
@@ -180,3 +180,53 @@ wyfiginvasion <- annotate_figure(wyfiginvasion, bottom = "Euclidean distance to 
 tiff("figures/invasionfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
 wyfiginvasion
 dev.off()
+################################################################
+
+#####output of models as formatted tables:
+library(lme4)
+library(broom.mixed)
+library(knitr)
+library(kableExtra)
+
+model_summary <- tidy(dtmod)
+
+# Separate fixed and random effects
+fixed_effects <- model_summary %>% filter(effect == "fixed")
+random_effects <- model_summary %>% filter(effect == "ran_pars")
+
+# Adjusting Terms to be More Descriptive
+fixed_effects <- fixed_effects %>%
+  mutate(term = recode(term,
+                       `(Intercept)` = "Intercept",
+                       `trt1` = "Treatment 1",
+                       `trt2` = "Treatment 2",
+                       `trt3` = "Treatment 3",
+                       `drought1` = "Drought Level 1",
+                       `drought2` = "Drought Level 2"))
+
+random_effects <- random_effects %>%
+  mutate(term = recode(term,
+                       `(Intercept)` = "Intercept"))
+
+# Combine fixed and random effects with proper column names
+fixed_effects <- fixed_effects %>%
+  select(term, estimate, std.error, statistic, p.value) %>%
+  mutate(effect_type = "Fixed Effect")
+
+random_effects <- random_effects %>%
+  select(term, estimate, std.error) %>%
+  mutate(statistic = NA, p.value = NA, effect_type = "Random Effect")
+
+# Rename columns to be more descriptive
+colnames(fixed_effects) <- c("Term", "Estimate", "Std. Error", "Statistic", "P-value", "Effect Type")
+colnames(random_effects) <- c("Term", "Estimate", "Std. Error", "Statistic", "P-value", "Effect Type")
+
+# Combine both into one dataframe
+combined_effects <- bind_rows(fixed_effects, random_effects)
+
+# Create the table
+table<-kable(combined_effects, caption = "Summary of Linear Mixed-Effects Model", digits = 3) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),full_width = F, position = "left")
+
+# Save the table as HTML
+save_kable(table, "model_summary_inv_dtca.doc")

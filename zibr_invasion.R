@@ -13,7 +13,7 @@ mod1 <- glmmTMB(invcov.rel ~ drought * distir + (1|structure) + (1|trt),
 summary(mod1)
 
 #fix non-convergence
-#step one: determine the effect of coefficents on the zero inflation componant
+#step one: determine the effect of coefficients on the zero inflation componant
 order(fixef(mod1)$zi)
 #examine diagnostic plots
 plot(simulateResiduals(mod1))
