@@ -225,6 +225,27 @@ bcdist.wy <- bind_rows(bcdist.wy21,bcdist.wy22,bcdist.wy23)
 #save
 write.csv(bcdist.wy, "data/bc_dissimilarity_wy.csv", row.names = F)
 
+##2021
+# within each year subset the data
+test <- comp.wy.plot %>% unite(trt.b.y, c(trt, block,year), sep = ".", remove=T)
+test <- test %>% column_to_rownames("trt.b.y")
+test <- test[,c(3:58)]
+# order comms
+test <- test[ order(row.names(dist.wy21)), ]
+# attach row of targets
+#comms_p.wy <- comms_p.wy[-c(99,205),] #remove "fd 50", not in comps data
+all21 <- bind_rows(comms_p.wy, dist.wy21)
+all21 <- all21[,c(1:25)] #only OG 25 right now
+test[is.na(test)] <- 0
+#run dist.wy or vegdist.wy
+testmat <- vegdist(as.matrix(test),method = "bray")
+test2<-data.frame(as.matrix(testmat))
+bcdist.wymat <-as.matrix(bcdist.wymat)[c(1:256),]
+bcdist.wymat <-as.matrix(bcdist.wymat)[,-c(1:256)]
+# save only pairwise between target
+bcdist.wy21<- data.frame(
+  dist.wy=diag(as.matrix(bcdist.wymat)),
+  id=colnames(bcdist.wymat))
 
 
 # ### WY (PREVIOUS WITH INCORRECT % DATA, 

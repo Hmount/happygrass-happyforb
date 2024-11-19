@@ -757,37 +757,10 @@ droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 #### models and figures:
 
 ## CA
-## Functionally Diverse
-## are these plots significantly more functionally diverse (Rao) than random?
-cadist.fd <- cadist %>% filter(trt=="fd"|trt=="rand")# subset for only FD and RC communities
-summary(t <- aov(distfd~trt*drought, cadist.fd)) #run model *reported in ms*
-#create letters for plotting:
-tuktest <- TukeyHSD(t) #run post-hoc for letters
-letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
-letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
-letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
-fdtemp <- cadist.fd %>% group_by(drought, trt) %>% summarise(yposition = quantile(distfd,.8))
-fdtemp <- merge(letters,fdtemp, by = c("drought", "trt"))
-fdtemp <- merge(fdtemp,cadist.fd, by = c("drought", "trt"), all=T)
-#plot:
-distfd <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
-  geom_boxplot()+
-  scale_fill_manual(values = droughtcolsca)+
-  scale_alpha_manual(values = c(1, .4))+
-  scale_x_discrete(labels = c("FD", "RC"))+
-  geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 1.2), 
-            vjust = -0.5,
-            size=3) +
-  labs(x=" ",y="FD target")+ #, fill="drought treatment")+
-  theme_classic()+
-  theme(legend.position = "none")+
-  ylim(0,4)
-
 ## Drought Tolerant
 ## are drought tolerant plots significantly closer to our DT target than random?
 cadist.dt <- cadist %>% filter(trt=="dt"|trt=="rand")# subset for only DT and RC communities
-summary(t <- aov(distfd~trt*drought, cadist.dt)) #run model *reported in ms*
+summary(t <- aov(distdt~trt*drought, cadist.dt)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -797,10 +770,11 @@ dttemp <- cadist.dt %>% group_by(drought, trt) %>% summarise(yposition = quantil
 dttemp <- merge(letters,dttemp, by = c("drought", "trt"))
 dttemp <- merge(dttemp,cadist.dt, by = c("drought", "trt"), all=T)
 #plot:
-distdt <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
+distdtca <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
   geom_boxplot()+
   scale_fill_manual(values = droughtcolsca)+
   scale_alpha_manual(values = c(1, .4))+
+  guides(alpha = "none")+
   scale_x_discrete(labels = c("DT", "RC"))+
   geom_text(aes(y=yposition,label = Letters), 
             position = position_dodge(width = 1.2), 
@@ -814,7 +788,7 @@ distdt <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
 ## Invasion resistant 
 ## are invasion resistant plots significantly closer to our IR target than random?
 cadist.ir <- cadist %>% filter(trt=="ir"|trt=="rand")# subset for only IR and RC communities
-summary(t <- aov(distfd~trt*drought, cadist.ir)) #run model *reported in ms*
+summary(t <- aov(distir~trt*drought, cadist.ir)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -824,10 +798,11 @@ irtemp <- cadist.ir %>% group_by(drought, trt) %>% summarise(yposition = quantil
 irtemp <- merge(letters,irtemp, by = c("drought", "trt"))
 irtemp <- merge(irtemp,cadist.ir, by = c("drought", "trt"), all=T)
 #plot:
-distir <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
+distirca <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   geom_boxplot()+
   scale_fill_manual(values = droughtcolsca)+
   scale_alpha_manual(values = c(1, .4))+
+  guides(alpha = "none")+
   scale_x_discrete(labels = c("IR", "RC"))+
   geom_text(aes(y=yposition,label = Letters), 
             position = position_dodge(width = 1.2), 
@@ -837,6 +812,35 @@ distir <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
+
+## Functionally Diverse
+## are these plots significantly more functionally diverse (Rao) than random?
+cadist.fd <- cadist %>% filter(trt=="fd"|trt=="rand")# subset for only FD and RC communities
+summary(t <- aov(distfd~trt*drought, cadist.fd)) #run model *reported in ms*
+#create letters for plotting:
+tuktest <- TukeyHSD(t) #run post-hoc for letters
+letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
+letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
+fdtemp <- cadist.fd %>% group_by(drought, trt) %>% summarise(yposition = quantile(distfd,.8))
+fdtemp <- merge(letters,fdtemp, by = c("drought", "trt"))
+fdtemp <- merge(fdtemp,cadist.fd, by = c("drought", "trt"), all=T)
+#plot:
+distfdca <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
+  geom_boxplot()+
+  scale_fill_manual(values = droughtcolsca)+
+  scale_alpha_manual(values = c(1, .4))+
+  guides(alpha = "none")+
+  scale_x_discrete(labels = c("FD", "RC"))+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 1.2), 
+            vjust = -0.5,
+            size=3) +
+  labs(x=" ",y="FD target")+ #, fill="drought treatment")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  ylim(0,4)
+
   
 ## Next, create a model and figure comparing distances for each community to 
 ## its intended target 
@@ -859,14 +863,67 @@ disttargetca <- ggplot(alltemp, aes(y=targetdist, x=trt, fill=drought))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="seeding treatment target")+ #, fill="drought treatment")+
-  theme_classic()+
-  theme(legend.position = c(.2,.9), legend.direction = "horizontal")+
+  labs(x=" ",y="Euclidean distance from seeding treatment target", fill="Drought treatment")+  theme_classic()+
+  theme(legend.position = "bottom", legend.direction = "horizontal")+
   ylim(0,4)
 
 library(ggpubr)
 
 ## WY
+## Drought Tolerant
+## are drought tolerant plots significantly closer to our DT target than random?
+wydist.dt <- wydist %>% filter(trt=="dt"|trt=="rand")# subset for only DT and RC communities
+summary(t <- aov(distdt~trt*drought, wydist.dt)) #run model *reported in ms*
+#create letters for plotting:
+tuktest <- TukeyHSD(t)
+letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
+letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
+dttemp <- wydist.dt %>% group_by(drought, trt) %>% summarise(yposition = quantile(distdt,.8))
+dttemp <- merge(letters,dttemp, by = c("drought", "trt"))
+dttemp <- merge(dttemp,wydist.dt, by = c("drought", "trt"), all=T)
+#plot:
+distdtwy <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
+  geom_boxplot()+
+  scale_fill_manual(values = droughtcolsca)+
+  scale_alpha_manual(values = c(1, .4))+
+  scale_x_discrete(labels = c("DT", "RC"))+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 1.2), 
+            vjust = -0.5,
+            size=3) +
+  labs(x=" ",y="DT target")+ #, fill="drought treatment")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  ylim(0,4)
+
+## Invasion resistant 
+## are invasion resistant plots significantly closer to our IR target than random?
+wydist.ir <- wydist %>% filter(trt=="ir"|trt=="rand")# subset for only IR and RC communities
+summary(t <- aov(distir~trt*drought, wydist.ir)) #run model *reported in ms*
+#create letters for plotting:
+tuktest <- TukeyHSD(t)
+letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
+letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
+letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
+irtemp <- wydist.ir %>% group_by(drought, trt) %>% summarise(yposition = quantile(distir,.8))
+irtemp <- merge(letters,irtemp, by = c("drought", "trt"))
+irtemp <- merge(irtemp,wydist.ir, by = c("drought", "trt"), all=T)
+#plot:
+distirwy <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
+  geom_boxplot()+
+  scale_fill_manual(values = droughtcolsca)+
+  scale_alpha_manual(values = c(1, .4))+
+  scale_x_discrete(labels = c("IR", "RC"))+
+  geom_text(aes(y=yposition,label = Letters), 
+            position = position_dodge(width = 1.2), 
+            vjust = -0.5,
+            size=3) +
+  labs(x=" ",y="IR target")+ #, fill="drought treatment")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  ylim(0,4)
+
 ## Functionally Diverse
 ## are these plots significantly more functionally diverse (Rao) than random?
 wydist.fd <- wydist %>% filter(trt=="fd"|trt=="rand")# subset for only FD and RC communities
@@ -894,59 +951,6 @@ distfdwy <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
   theme(legend.position = "none")+
   ylim(0,4)
 
-## Drought Tolerant
-## are drought tolerant plots significantly closer to our DT target than random?
-wydist.dt <- wydist %>% filter(trt=="dt"|trt=="rand")# subset for only DT and RC communities
-summary(t <- aov(distfd~trt*drought, wydist.dt)) #run model *reported in ms*
-#create letters for plotting:
-tuktest <- TukeyHSD(t)
-letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
-letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
-letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
-dttemp <- wydist.dt %>% group_by(drought, trt) %>% summarise(yposition = quantile(distdt,.8))
-dttemp <- merge(letters,dttemp, by = c("drought", "trt"))
-dttemp <- merge(dttemp,wydist.dt, by = c("drought", "trt"), all=T)
-#plot:
-distdtwy <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
-  geom_boxplot()+
-  scale_fill_manual(values = droughtcolsca)+
-  scale_alpha_manual(values = c(1, .4))+
-  scale_x_discrete(labels = c("DT", "RC"))+
-  geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 1.2), 
-            vjust = -0.5,
-            size=3) +
-  labs(x=" ",y="DT target")+ #, fill="drought treatment")+
-  theme_classic()+
-  theme(legend.position = "none")+
-  ylim(0,4)
-
-## Invasion resistant 
-## are invasion resistant plots significantly closer to our IR target than random?
-wydist.ir <- wydist %>% filter(trt=="ir"|trt=="rand")# subset for only IR and RC communities
-summary(t <- aov(distfd~trt*drought, wydist.ir)) #run model *reported in ms*
-#create letters for plotting:
-tuktest <- TukeyHSD(t)
-letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
-letters$trt <- as.factor(sub("([a-z]+):([a-z]+)$", "\\1", rownames(letters)))
-letters$drought <- as.factor(sub("([a-z]+):([a-z]+)$", "\\2", rownames(letters)))
-irtemp <- wydist.ir %>% group_by(drought, trt) %>% summarise(yposition = quantile(distir,.8))
-irtemp <- merge(letters,irtemp, by = c("drought", "trt"))
-irtemp <- merge(irtemp,wydist.ir, by = c("drought", "trt"), all=T)
-#plot:
-distirwy <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
-  geom_boxplot()+
-  scale_fill_manual(values = droughtcolsca)+
-  scale_alpha_manual(values = c(1, .4))+
-  scale_x_discrete(labels = c("IR", "RC"))+
-  geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 1.2), 
-            vjust = -0.5,
-            size=3) +
-  labs(x=" ",y="IR target")+ #, fill="drought treatment")+
-  theme_classic()+
-  theme(legend.position = "none")+
-  ylim(0,4)
 
 ## Next, create a model and figure comparing distances for each community to 
 ## its intended target 
@@ -969,25 +973,123 @@ disttargetwy <- ggplot(alltemp, aes(y=targetdist, x=trt, fill=drought))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="seeding treatment target")+ #, fill="drought treatment")+
+  labs(x=" ",y="Euclidean distance from seeding treatment target", fill="Drought treatment")+
   theme_classic()+
-  theme(legend.position = c(.2,.9), legend.direction = "horizontal")+
+  theme(legend.position = c(.3,.9), legend.direction = "vertical")+
   ylim(0,4)
 
-## Combining (NOT DONE YET 11/7)
-wyp <- ggarrange(wydistplots, disttargetwy, ncol=2, nrow=1, common.legend = T)
-cap <- ggarrange(cadistplots, disttargetca, ncol=2, nrow=1, common.legend = T)
-p1 <- ggarrange(wyp, cap, ncol=1, nrow=2, common.legend = T)
-p1 <- annotate_figure(p1,
-                      bottom = text_grob("seeding treatment"))
-bcplots <- ggarrange(bcplotwy, bcplotca, ncol=1, nrow=2, common.legend = T)
-bcplots <- annotate_figure(bcplots, 
-                           bottom = text_grob("Bray-Curtis dissimilarity"))
-p2 <- ggarrange(p1, bcplots, ncol=2, nrow=1, widths = c(1,.5))
-p2 <- annotate_figure(p2, 
-                      left=text_grob("Euclidean distance from", rot=90))
-p2
+## Last, plot bray-Curtis dissimilarity as it relates to Euclidean distance.
+## The relationship between our intended community composition and target CWM trait profile 
+## should be tight and highly correlated. A tight relationship suggests that
+## the replacement of species corresponds to the change in traits. But, a 
+## poor relationship between these suggests that the replacement of species did
+## not lead to consistent changes in CWM, possibly suggesting high functional 
+## redundancy.
+## See the "bray_curtis_calc.R script" for details on how these were calculated.
+
+## read in bray-curtis data, create separated id columns, and make factors match 
+## CA
+bcdis.ca <- read.csv("data/bc_dissimilarity_ca.csv") #CA data
+bcdis.ca <- bcdis.ca %>% 
+  separate(id, into = c("trt", "block", "year"), sep = "\\.")
+bcdis.ca$block <- as.numeric(bcdis.ca$block)
+bcdis.ca$year <- as.numeric(bcdis.ca$year)
+bcdis.ca <- bcdis.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
+## WY
+bcdis.wy <- read.csv("data/bc_dissimilarity_wy.csv") #WY data
+bcdis.wy <- bcdis.wy %>% 
+  separate(id, into = c("trt", "block", "year"), sep = "\\.")
+bcdis.wy$block <- as.numeric(bcdis.wy$block)
+bcdis.wy$year <- as.numeric(bcdis.wy$year)
+bcdis.wy <- bcdis.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
+
+## combine with Euclidean distance data (calculated above) 
+## (dis.site column = bray-curtis)
+cadisdist <- merge(cadist, bcdis.ca)
+wydisdist <- merge(wydist, bcdis.wy)
+
+#model and plot:
+## CA
+summary(lm(targetdist~dist.ca*trt, cadisdist))
+bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist ,col=trt))+
+  geom_point(pch=20)+
+  geom_smooth(method="lm")+
+  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7, 
+                        labels = c("dt" = "DT", "fd" = "FD", 
+                                   "ir" = "IR", "rand" = "RC")) +
+  labs(x="Bray-Curtis dissimilarity", 
+       y="Seeding treatment target",
+       col="Seeding 
+treatment")+
+  theme_classic()+
+  theme(legend.position = "bottom")
+  #theme(legend.position = c(-.5,0), legend.direction = "horizontal")
+## WY
+summary(lm(targetdist~dist.wy*trt, wydisdist))
+bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
+  geom_point(pch=20)+
+  geom_smooth(method="lm")+
+  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
+                        labels = c("dt" = "DT", "fd" = "FD", 
+                                   "ir" = "IR", "rand" = "RC"))+
+  labs(x="Bray-Curtis dissimilarity", 
+       y="Seeding treatment target",
+       col="Seeding 
+treatment")+
+  theme_classic()+
+  theme(legend.position = "bottom")
+  #theme(legend.position = c(.3,.8))#, legend.direction = "horizontal")
+
+# ## Combining (NOT DONE YET 11/7)
+# #first the distance plots
+# library(ggpubr)
+# wydistplots <- ggarrange(distdtwy, distfdwy, distirwy, ncol=3, nrow=1)
+# wydistanceplot<- ggarrange(wydistplots, disttargetwy, ncol=1, nrow=2, common.legend = F)
+# wydistbcplot <- ggarrange(wydistanceplot, bcplotwy, ncol=2, nrow=1)#,widths = c(1,.5))
+# 
+# cadistplots <- ggarrange(distdtca, distfdca, distirca, ncol=3, nrow=1)
+# cadistanceplot<- ggarrange(cadistplots, disttargetca, ncol=1, nrow=2, common.legend = F)
+# cadistbcplot <- ggarrange(cadistanceplot, bcplotca, ncol=2, nrow=1)#,widths = c(1,.5))
+# 
+# alldistbcplot <- ggarrange(wydistbcplot, cadistbcplot, ncol=1, nrow=2)
+# alldistbcplot <- annotate_figure(alldistbcplot, left=text_grob("Euclidean distance from...", rot=90))
+# alldistbcplot
+
+## Combining (11/19)
+# get legends
+drought_legend <- as_ggplot(get_legend(disttargetca))
+seed_legend <- as_ggplot(get_legend(bcplotca))
+
+#first the distance plots
+library(ggpubr)
+wydistplots <- ggarrange(distdtwy, distfdwy, distirwy, ncol=3, nrow=1, 
+                         common.legend = T, legend = "none", 
+                         labels = c("a","b","c"), hjust=c(-4,-4,-4))
+wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
+                          widths = c(1,.5), 
+                          legend = "none",
+                          labels = c(" ", "d"), hjust = -4)
+
+cadistplots <- ggarrange(distdtca, distfdca, distirca, ncol=3, nrow=1, 
+                         common.legend = T, legend = "none", 
+                         labels = c("e","f","g"), hjust=c(-4,-8,-4))
+cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,
+                          widths = c(1,.5), 
+                          legend = "none",
+                          labels = c(" ", "h"), hjust = -4)
+
+alldistbcplot <- ggarrange(wydistbcplot, cadistbcplot, ncol=1, nrow=2)
+alldistbcplot <- annotate_figure(alldistbcplot, left=text_grob("Euclidean distance from...", rot=90))
+
+legend <- ggarrange(drought_legend, seed_legend, nrow = 1)
+
+alldistbcplot <- ggarrange(alldistbcplot, legend, nrow=2, heights = c(1.75,.25))
+alldistbcplot
+
 ## export figure
-tiff("figures/alldistances_figure.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
-p2
+# tiff("figures/alldistances_figure.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
+# alldistbcplot
+# dev.off()
+tiff("figures/alldistances_figure.tiff", res=800, height = 5,width =6.5, "in") #,compression = "lzw")
+alldistbcplot
 dev.off()
