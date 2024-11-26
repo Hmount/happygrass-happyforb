@@ -8,6 +8,7 @@
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(ggeffects)
 
 ## read in all data and clean to create master dataframe
 comp.ca <- read.csv("data/comp_ca.csv") #read in California comp data
@@ -103,73 +104,117 @@ testno <- test %>% filter(year!="2021")
 #test22 <- test %>% filter(year=="2022")
 
 #model
-summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|block), testno))
-summary(lmer(log.gr~trt*drought*year+ (1|structure), testno))
-anova(lmer(log.gr~distdt*drought*year+ (1|block), testno))
-summary(lmer(log.gr~distfd*drought*year+ (1|block), testno))
-anova(lmer(log.gr~trt*distir*drought*year+ (1|block), testno))
+summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|structure), testno))
+summary(trtmod <- lmer(log.gr~trt*drought*year+ (1|structure), testno))
+#anova(lmer(log.gr~distdt*drought*year+ (1|structure()), testno))
+summary(lmer(log.gr~distfd*drought*year+ (1|structure), testno))
+#anova(lmer(log.gr~trt*distir*drought*year+ (1|block), testno))
 
+# anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))
+# anova(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
 
-anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))
-anova(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
+#### Making plots
+## create label names for facets used in all plots:
+labelnames.ca <- c('2022' = "2021 - 2022",
+                   '2023' = "2022 - 2023")
 
-dissboxca <- ggplot(testno, aes(y=log.gr,x=drought,fill=trt))+
+## ~ seeding treatment
+#create letters for plotting:
+library(emmeans)
+# Step 1: Get the emmeans for the interaction of trt, drought, and year
+emm_trt <- emmeans(trtmod, ~ trt * drought * year)
+## # Step 2: Obtain pairwise contrasts for the interaction
+## contrast_trt <- contrast(emm_trt, method = "pairwise")
+# Step 2: Generate the compact letter display using multcomp::cld
+letters <- multcomp::cld(emm_trt, alpha = 0.05, Letters = letters, adjust = "tukey")
+# Step 3: Convert the results to a data frame
+letters_df <- as.data.frame(letters)
+# Step 4: Create a temporary data frame with the desired y-position for plotting
+dttemp2 <- testno %>%
+  group_by(drought, trt, year) %>%
+  summarise(yposition = max(log.gr, na.rm=T), .groups = 'drop')
+# Step 5: Merge the letter results with the y-position data
+dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt","year"))
+# Merge with the original data to get the final dataset
+dttemp3 <- merge(testno, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
+
+#plot:
+dissboxca <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
-  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
-  facet_wrap(~year,scales="fixed")+
+  geom_text(aes(y=yposition,label = .group), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5,
+            size=3)+
+  scale_x_discrete(labels = c("Addition", "Reduction"))+
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
+                       labels = c("RC","DT","FD","IR"))+
+  facet_wrap(~year,scales="fixed", labeller = as_labeller(labelnames.ca))+
   geom_hline(yintercept =0,col="black")+
-  labs(y="", fill="seed trt")+
-  theme_ggeffects()
-testplot <- testno %>% filter(!is.na(log.gr))
-distdtca <- ggplot(testno, aes(y=log.gr,x=distfd,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x="DT target")+
-  facet_wrap(~year)+
-  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
-distirca <- ggplot(testno, aes(y=log.gr,x=distir,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x="IR target")+
-  facet_wrap(~year)+
-  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
-distfdca <- ggplot(testno, aes(y=log.gr,x=distfd,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x="FD target")+
-  facet_wrap(~year)+
-  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
-distrca <- ggplot(testno, aes(y=log.gr,x=distr,color=drought))+
-  geom_point()+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolsca)+
-  labs(y=" ", x=" ")+
-  facet_wrap(~year)+
-  stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-  geom_hline(yintercept =0,col="black")+
+  labs(y=" ", fill="Seeding 
+Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
+## ~ distance to DT traits
+distdtca <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
+  labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
+Treatment")+
+  geom_hline(yintercept =0,col="black")+
+  #geom_image(x=0, y=0 label=element_text("🎯"))+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+
+## ~ distance to IR traits
+distirca <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
+  labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
+Treatment")+
+  geom_hline(yintercept =0,col="black")+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+
+## ~ distance to FD traits
+distfdca <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
+  labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
+Treatment")+
+  geom_hline(yintercept =0,col="black")+
+  #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+  #geom_hline(yintercept =0,col="black")+
+  theme_ggeffects()
+
+# distrca <- ggplot(testno, aes(y=log.gr,x=distr,color=drought))+
+#   geom_point()+
+#   geom_smooth(method = "lm")+
+#   scale_color_manual(values=droughtcolsca)+
+#   labs(y=" ", x=" ")+
+#   facet_wrap(~year)+
+#   stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
+#   geom_hline(yintercept =0,col="black")+
+#   theme_ggeffects()
 
 #### combined figures
 library(ggpubr)
 cafigtop <- ggarrange(dissboxca,distdtca, 
                       common.legend = T, legend = "right",
-                      labels = c("a","b"),label.x = 1)
+                      labels = c("a","b"),label.x = .05)
 cafigbottom <-ggarrange(distfdca,distirca, 
                         common.legend = T, legend = "right",
-                        labels = c("c","d"),label.x = 1)
+                        labels = c("c","d"),label.x = .05)
 cafigdrought <- ggarrange(cafigtop,cafigbottom, nrow=2)
-cafigdrought <- annotate_figure(cafigdrought, bottom = "Euclidean distance to CWM target",
-                                left="Annual growth rate (log(lambda))")
+cafigdrought <- annotate_figure(cafigdrought, 
+                                left="log(annual growth rate)")
 
 tiff("figures/droughtfigca.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
 cafigdrought

@@ -857,13 +857,15 @@ alltemp <- merge(letters,alltemp, by = c("drought", "trt"))
 alltemp <- merge(alltemp,cadistsub, by = c("drought", "trt"), all=T)
 disttargetca <- ggplot(alltemp, aes(y=targetdist, x=trt, fill=drought))+
   geom_boxplot()+
-  scale_fill_manual(values = droughtcolsca)+
+  scale_fill_manual(values = droughtcolsca, labels=c("Ambient/ 
+Addition", "Reduction"))+
   scale_x_discrete(labels = c("DT", "FD", "IR"))+
   geom_text(aes(y=yposition,label = Letters), 
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="Euclidean distance from seeding treatment target", fill="Drought treatment")+  theme_classic()+
+  labs(x=" ",y="Euclidean distance from seeding treatment target", fill="Precipitation 
+treatment")+  theme_classic()+
   theme(legend.position = "bottom", legend.direction = "horizontal")+
   ylim(0,4)
 
@@ -1011,7 +1013,7 @@ wydisdist <- merge(wydist, bcdis.wy)
 #model and plot:
 ## CA
 summary(lm(targetdist~dist.ca*trt, cadisdist))
-bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist ,col=trt))+
+bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist, col=trt))+
   geom_point(pch=20)+
   geom_smooth(method="lm")+
   scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7, 

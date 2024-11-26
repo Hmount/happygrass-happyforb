@@ -8,6 +8,7 @@
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(ggeffects)
 
 ## read in all data and clean to create master dataframe
 comp.wy <- read.csv("data/comp_wy_plot.csv") # Wyoming species comp data 
@@ -90,61 +91,106 @@ testno <- test %>% filter(year!="2021")
 #testnoD <- testno %>% filter(drought=="cntl")
 
 #model
-anova(lmer(log.gr~trt*drought*year+ (1|block), testno))
+anova(trtmod<-lmer(log.gr~trt*drought*year+ (1|block), testno))
 summary(dtmod <- lmer(log.gr~distdt*drought*year+ (1|block), testno))
-summary(lmer(log.gr~distfd*drought*year+ (1|block), testno))
-summary(lmer(log.gr~distir*drought*year+ (1|block), testno))
+summary(fdmod <- lmer(log.gr~distfd*drought*year+ (1|block), testno))
+summary(irmod <- lmer(log.gr~distir*drought*year+ (1|block), testno))
 
-anova(lmer(log.gr~distdt*trt*distfd*drought*year+ (1|block), testno))
+#anova(lmer(log.gr~distdt*trt*distfd*drought*year+ (1|block), testno))
 
-dissboxwy <- ggplot(testno, aes(y=log.gr,x=drought,fill=trt))+
+
+#### Making plots
+## create label names for facets used in all plots:
+labelnames.wy <- c('2022' = "2021 - 2022 (dry)",
+                   '2023' = "2022 - 2023 (wet)")
+
+## ~ seeding treatment
+#create letters for plotting:
+library(emmeans)
+# Step 1: Get the emmeans for the interaction of trt, drought, and year
+emm_trt <- emmeans(trtmod, ~ trt * drought * year)
+## # Step 2: Obtain pairwise contrasts for the interaction
+## contrast_trt <- contrast(emm_trt, method = "pairwise")
+# Step 2: Generate the compact letter display using multcomp::cld
+letters <- multcomp::cld(emm_trt, alpha = 0.05, Letters = letters, adjust = "tukey")
+# Step 3: Convert the results to a data frame
+letters_df <- as.data.frame(letters)
+# Step 4: Create a temporary data frame with the desired y-position for plotting
+dttemp2 <- testno %>%
+  group_by(drought, trt, year) %>%
+  summarise(yposition = max(log.gr, na.rm=T), .groups = 'drop')
+# Step 5: Merge the letter results with the y-position data
+dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt","year"))
+# Merge with the original data to get the final dataset
+dttemp3 <- merge(testno, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
+
+#plot:
+dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
-  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
-  facet_wrap(~year,scales="fixed")+
+  geom_text(aes(y=yposition,label = .group), 
+            position = position_dodge(width = 1), 
+            vjust = -0.5,
+            size=3)+
+  scale_x_discrete(labels = c("Ambient", "Reduction"))+
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
+                       labels = c("RC","DT","FD","IR"))+
+  facet_wrap(~year,scales="fixed", labeller = as_labeller(labelnames.wy))+
   geom_hline(yintercept =0,col="black")+
-  labs(y=" ", fill="seed trt")+
+  labs(y=" ", fill="Seeding 
+Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
+
+## ~ distance to DT traits
 distdtwy <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  facet_wrap(~year)+
-  labs(y=" ", x="DT target")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
+  labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
+Treatment")+
   geom_hline(yintercept =0,col="black")+
+  #geom_image(x=0, y=0 label=element_text("🎯"))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
+
+## ~ distance to IR traits
 distirwy <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  facet_wrap(~year)+
-  labs(y=" ", x="IR target")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
+  labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
+Treatment")+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
+
+## ~ distance to FD traits
 distfdwy <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  facet_wrap(~year)+
-  labs(y=" ", x="FD target")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
+  labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
+Treatment")+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-distrwy <- ggplot(testno, aes(y=log.gr,x=distr,col=drought))+
-  geom_point(aes(y=log.gr,x=distr,col=drought, shape=year))+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  facet_wrap(~year)+
-  labs(y=" ", x="")+
-  geom_hline(yintercept =0,col="black")+
-  stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #geom_te
-  #geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
+
+# distrwy <- ggplot(testno, aes(y=log.gr,x=distr,col=drought))+
+#   geom_point(aes(y=log.gr,x=distr,col=drought, shape=year))+
+#   geom_smooth(method = "lm")+
+#   scale_color_manual(values=droughtcolswy)+
+#   facet_wrap(~year)+
+#   labs(y=" ", x="")+
+#   geom_hline(yintercept =0,col="black")+
+#   stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+#   #geom_te
+#   #geom_hline(yintercept =0,col="black")+
+#   theme_ggeffects()
 
 hist(test$log.gr)
 
@@ -152,15 +198,16 @@ difflsmeans(m3.ca, at = list(distdt = 0.58))
 
 
 #### combined figures
+library(ggpubr)
 wyfigtop <- ggarrange(dissboxwy,distdtwy, 
                       common.legend = T, legend = "right",
-                      labels = c("a","b"),label.x = 1)
+                      labels = c("a","b"),label.x = .05)
 wyfigbottom <-ggarrange(distfdwy,distirwy, 
                         common.legend = T, legend = "right",
-                        labels = c("c","d"),label.x = 1)
+                        labels = c("c","d"),label.x = .05)
 wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
-wyfigdrought <- annotate_figure(wyfigdrought, bottom = "Euclidean distance to CWM target",
-                                left="Annual growth rate (log(lambda))")
+wyfigdrought <- annotate_figure(wyfigdrought,
+                                left="log(annual growth rate)")
 
 
 tiff("figures/droughtfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
