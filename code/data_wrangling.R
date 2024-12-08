@@ -1,5 +1,5 @@
 #### Data wrangling
-#### take raw data (or compiled data from Jen/CA) and do some tidying to get in
+#### take raw data (or compiled data from JLF/CA) and do some tidying to get in
 #### order to work with for analyses. All covers are converted to relative 
 #### proportions of each species. 
 

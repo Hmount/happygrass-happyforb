@@ -1,6 +1,14 @@
-#### Calculating Euclidean distances to assess dissimilarity from targets and 
-#### traits maximums (as high values of most traits selected should only benefit
-#### species in those seeding treatments)
+#### NOT THE SCRIPT FOR MANUSCRIPT
+#### calculates single distance for everything
+#### repeated + slightly updated in "calc_distances.R" script
+
+#### Calculating Euclidean distances to assess dissimilarity of CWM  
+#### traits to trait target values. Traits are still considered as 
+#### achieving the target if they exceed the upper quantile or are 
+#### below the minimum quantile (because minimum + maximum trait 
+#### values should achieve their target even better than upper/lower 
+#### quantile, respectively.).
+#### California only on this script. 
 
 # packages used
 library(tidyverse)
@@ -25,7 +33,7 @@ FDdat$block <- as.factor(FDdat$block)
 FDdat$trt <- as.factor(FDdat$trt)
 FDdat$subplot <- as.factor(FDdat$water)
 # CSV of species-trait combinations (for OG 25)
-traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
+traits.ca <- read.csv("data/trait_data/annualgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
 traits.ca <- traits.ca %>% select(-c(Asat,WUE,RLD,RTD))
 # add graminoid
 traits.ca$graminoid <- c(0,0,0,0,1,0,1,0,0,0, #10
@@ -315,76 +323,69 @@ fddistances <- bind_rows(fddistances21,fddistances22)
 fddistances <- bind_rows(fddistances,fddistances23)
 fddistances <- fddistances %>% rownames_to_column("trt.b.y")
 
-
-## To assess similarity to random so it can be included in models, we consider the distances 
-## in CWM from target seeding CWM (could also look at community abundance/ composition from 
-## our expected probabilities from seeding, but the cwm matches other dist measures.)
-## this essentially uses the random community as a measure of how well be were at making any 
-## CWM we sought out to make by seeding and allows us to continue using random as a control. 
-# Rand
-
-# within each year subset the data
-rdist <- alldat %>% filter(trt=="rand") #%>% filter(year=="2021")
-
-#2021
-rdist21 <- rdist %>% filter(year=="2021"| year=="0")
-rdist21 <- rdist21 %>% select(-c(water, Treatments,subplot))
-rdist21 <- rdist21 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-rdist21 <- rdist21 %>% column_to_rownames("trt.b.y")
-randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
-rdist21 <-as.matrix(randdistmat)[,-c(1:53)]
-rdist21 <-rdist21[c(1:53),]
-rdist21<- data.frame(
-  dist=diag(as.matrix(rdist21)),
-  id=colnames(rdist21))
-
-#2022
-rdist22 <- rdist %>% filter(year=="2022"| year=="0")
-rdist22 <- rdist22 %>% select(-c(water, Treatments,subplot))
-rdist22 <- rdist22 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-rdist22 <- rdist22 %>% column_to_rownames("trt.b.y")
-randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", upper = T)
-rdist22 <-as.matrix(randdistmat)[,-c(1:53)]
-rdist22 <-rdist22[c(1:53),]
-rdist22<- data.frame(
-  dist=diag(as.matrix(rdist22)),
-  id=colnames(rdist22))
-
-#2023
-rdist23 <- rdist %>% filter(year=="2023"| year=="0")
-rdist23 <- rdist23 %>% select(-c(water, Treatments,subplot))
-rdist23 <- rdist23 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-rdist23 <- rdist23 %>% column_to_rownames("trt.b.y")
-randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", upper = T)
-rdist23 <-as.matrix(randdistmat)[,-c(1:53)]
-rdist23 <-rdist23[c(1:53),]
-rdist23<- data.frame(
-  dist=diag(as.matrix(rdist23)),
-  id=colnames(rdist23))
-
-# together 
-rdistances <- bind_rows(rdist21,rdist22)
-rdistances <- bind_rows(rdistances,rdist23)
-rdistances <- rdistances %>% column_to_rownames("id")
-colnames(rdistances) <- "dist"
-rdistances <- rdistances %>% rownames_to_column("trt.b.y")
-# rdistances$dist <- normalize(rdistances$dist)
+#### not doing this anymore, not really valid way to look at RC community
+# ## To assess similarity to random so it can be included in models, we consider the distances 
+# ## in CWM from target seeding CWM (could also look at community abundance/ composition from 
+# ## our expected probabilities from seeding, but the cwm matches other dist measures.)
+# ## this essentially uses the random community as a measure of how well be were at making any 
+# ## CWM we sought out to make by seeding and allows us to continue using random as a control. 
+# # Rand
 # 
-# irdistances$dist <- normalize(irdistances$dist)
-# dtdistances$dist <- normalize(dtdistances$dist)
+# # within each year subset the data
+# rdist <- alldat %>% filter(trt=="rand") #%>% filter(year=="2021")
 # 
-# irdistances.max$dist <- normalize(irdistances.max$dist)
-# dtdistances.max$dist <- normalize(dtdistances.max$dist)
+# #2021
+# rdist21 <- rdist %>% filter(year=="2021"| year=="0")
+# rdist21 <- rdist21 %>% select(-c(water, Treatments,subplot))
+# rdist21 <- rdist21 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
+# rdist21 <- rdist21 %>% column_to_rownames("trt.b.y")
+# randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
+# rdist21 <-as.matrix(randdistmat)[,-c(1:53)]
+# rdist21 <-rdist21[c(1:53),]
+# rdist21<- data.frame(
+#   dist=diag(as.matrix(rdist21)),
+#   id=colnames(rdist21))
+# 
+# #2022
+# rdist22 <- rdist %>% filter(year=="2022"| year=="0")
+# rdist22 <- rdist22 %>% select(-c(water, Treatments,subplot))
+# rdist22 <- rdist22 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
+# rdist22 <- rdist22 %>% column_to_rownames("trt.b.y")
+# randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", upper = T)
+# rdist22 <-as.matrix(randdistmat)[,-c(1:53)]
+# rdist22 <-rdist22[c(1:53),]
+# rdist22<- data.frame(
+#   dist=diag(as.matrix(rdist22)),
+#   id=colnames(rdist22))
+# 
+# #2023
+# rdist23 <- rdist %>% filter(year=="2023"| year=="0")
+# rdist23 <- rdist23 %>% select(-c(water, Treatments,subplot))
+# rdist23 <- rdist23 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
+# rdist23 <- rdist23 %>% column_to_rownames("trt.b.y")
+# randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", upper = T)
+# rdist23 <-as.matrix(randdistmat)[,-c(1:53)]
+# rdist23 <-rdist23[c(1:53),]
+# rdist23<- data.frame(
+#   dist=diag(as.matrix(rdist23)),
+#   id=colnames(rdist23))
+# 
+# # together 
+# rdistances <- bind_rows(rdist21,rdist22)
+# rdistances <- bind_rows(rdistances,rdist23)
+# rdistances <- rdistances %>% column_to_rownames("id")
+# colnames(rdistances) <- "dist"
+# rdistances <- rdistances %>% rownames_to_column("trt.b.y")
 
-#### combine all dissimilarities 
-cadist <- bind_rows(dtdistances,irdistances)
-cadist <- bind_rows(cadist,fddistances)
-cadist <- bind_rows(cadist,rdistances)
-
-#cadist$dist <- normalize(cadist$dist)
-
-#export csv
-write.csv(cadist, "data/cwm_distances_ca.csv")
+#### combine all dissimilarities (Not used in subsequent anlyses)
+# cadist <- bind_rows(dtdistances,irdistances)
+# cadist <- bind_rows(cadist,fddistances)
+# cadist <- bind_rows(cadist,rdistances)
+# 
+# #cadist$dist <- normalize(cadist$dist)
+# 
+# #export csv
+# write.csv(cadist, "data/cwm_distances_ca.csv")
 
 #### combine again using max in DT and IR 
 cadist2 <- bind_rows(dtdistances.max,irdistances.max)
@@ -392,97 +393,5 @@ cadist2 <- bind_rows(cadist2,fddistances)
 cadist2 <- bind_rows(cadist2,rdistances)
 
 #export csv
-write.csv(cadist2, "data/cwm_maxdistances_ca.csv")
-
-
-
-#### Figures
-#combine with CWM to plot
-cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
-cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
-cwm.ca$year <- as.factor(cwm.ca$year)
-cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
-                                      ifelse(year=="2022","2",
-                                      ifelse(year=="2023","3","0")))) #make new sequence column
-cwm.ca$yrorder <- as.numeric(cwm.ca$yrorder)
-cwm.ca <- cwm.ca %>% 
-  mutate(plot = paste(block, trt, sep = ".")) #add plot ID column (but give NA to target/predicted communities)
-cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
-# also combine CWM_distances dataframe to master df 
-#break apart distances ID to make wider and merge together
-cadist2 <- separate(cadist2, trt.b.y, into = c("trt", "block", "year"), sep = "\\.")
-cadist2 <- cadist2 %>% filter(trt!="target")
-#cadist <- cadist %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
-allca <- merge(cwm.ca,cadist2, by=c("year","trt","block"), all=T)
-allca$trt <- as.factor(allca$trt)
-allca$water <- as.factor(allca$water)
-
-#make dought column
-allca <- allca %>% mutate(drought = ifelse(water=="0.5","drt","cntl"))
-
-#set reference levels for modelling
-allca$trt <- relevel(allca$trt, ref = "rand") #make random communities the reference level
-allca$drought <- as.factor(allca$drought)
-allca$drought <- relevel(allca$drought, ref = "cntl") #make random communities the reference level
-
-ggplot(allca,(aes(x=dist)))+
-  geom_histogram()+
-  facet_wrap(~trt) #looks fiarly normal within groups
-hist(allca$dist)
-shapiro.test(allca$dist) #below .05 = not normal!
-# hist(sqrt(allca$dist))
-# shapiro.test(sqrt(allca$dist)) #still not normal, but closer
-# allca$dist_tran <- sqrt(allca$dist)
-### for now keeping dist untransformed 
-
-#transfomed
-# summary(t <- aov(dist_tran~trt*drought*year, allca))
-# tuktest <- TukeyHSD(t)
-# multcompView::multcompLetters4(t,tuktest)
-# ggplot(allca, aes(y=dist_tran, x=trt, fill=drought))+
-#   geom_boxplot()+
-#   #geom_smooth(method="lm")+
-#   facet_wrap(~year, scales="fixed")+
-#   labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
-#   theme_classic()+
-#   ylim(0,3)
-
-#w/o transform
-summary(t <- aov(dist~trt*drought*year, allca))
-tuktest <- TukeyHSD(t)
-multcompView::multcompLetters4(t,tuktest)
-ggplot(allca, aes(y=dist, x=trt, fill=drought))+
-  geom_boxplot()+
-  #geom_smooth(method="lm")+
-  facet_wrap(~year, scales="fixed")+
-  labs(x=" ",y="Distance from target (normalized)")+ #, fill="drought treatment")+
-  theme_classic()+
-  ylim(0,4)
-
-letterstest <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought:year'['Letters'])
-letterstest$trt <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\1", rownames(letterstest)))
-letterstest$drought <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\2", rownames(letterstest)))
-letterstest$year <- as.factor(sub("([a-z]+):([a-z]+):(\\d+)$", "\\3", rownames(letterstest)))
-test <- allca %>% group_by(year, drought, trt) %>% summarise(yposition = quantile(dist,.8))
-test <- merge(letterstest,test, by = c("year", "drought", "trt"))
-test2 <- merge(test,allca, by = c("year", "drought", "trt"), all=T)
-
-droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
-
-#export for short report
-tiff("figures/cwm ca/distanceplot_ca.tiff", res=400, height = 4,width =8.5, "in",compression = "lzw")
-ggplot(test2, aes(y=dist, x=trt, fill=drought))+
-  geom_boxplot()+
-  #geom_smooth(method="lm")+
-  geom_text(aes(y=yposition,label = Letters), 
-            position = position_dodge(width = 0.9), 
-            vjust = -0.5,
-            #angle = 15,
-            size=3) +
-  scale_fill_manual(values = droughtcolsca)+
-  #facet_wrap(~year, scales="fixed")+
-  labs(x=" ",y="Distance from target")+ #, fill="drought treatment")+
-  theme_classic()+
-  ylim(0,4)
-dev.off()
-
+write.csv(cadist2, "data/cwm_maxdistances_ca.csv") 
+## this dataframe (using min/max CWM targets) is used in subsequent analyses

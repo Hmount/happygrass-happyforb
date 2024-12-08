@@ -1,10 +1,12 @@
-#### Calculating Euclidean distances to assess dissimilarity from targets and 
-#### traits minimums/maximums (because we expect lower/higher values of most traits 
-#### selected to increase species qualities in a given seeding treatment).
-#### Distances are calculated for all communities to every possible target (to
-#### asses similarity to target + difference from other seeding trts) AND to
-#### each community and its specific target (to assess ability to hit different
-#### trait based targets).
+#### Calculating Euclidean distances to assess dissimilarity of community 
+#### CWM traits and Roa/Q traits from trait targets in each plot.
+#### Traits are still considered as achieving the target if they exceed the 
+#### upper quantile or are below the minimum quantile (because minimum + 
+#### maximum trait values should achieve their target even better than 
+#### upper/lower quantile, respectively.). Targets are calculated within 
+#### each year, and the functionally diverse goal was allowed to vary by 
+#### year because different maximum FD was possible at each site each year 
+#### by virtue of the species pool present. 
 
 # packages used
 library(tidyverse)
@@ -17,10 +19,9 @@ normalize <- function(x) {
   return ((x - min(x)) / (max(x) - min(x)))
 }
 
-#### Find distance  ####
-####
+
 #### CA first
-#### 
+#### load and clean data
 # read in CWM data, CWM_RaoQ data, and trait data
 alldat <- read.csv("data/cwm_ca.csv")
 alldat$year <- as.factor(alldat$year)
@@ -32,8 +33,8 @@ FDdat$year <- as.factor(FDdat$year)
 FDdat$block <- as.factor(FDdat$block)
 FDdat$trt <- as.factor(FDdat$trt)
 FDdat$subplot <- as.factor(FDdat$water)
-# CSV of species-trait combinations (for OG 25)
-traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
+# CSV of species-trait combinations (for OG 32)
+traits.ca <- read.csv("data/trait_data/annualgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
 traits.ca <- traits.ca %>% select(-c(Asat,WUE,RLD,RTD))
 # add graminoid
 traits.ca$graminoid <- c(0,0,0,0,1,0,1,0,0,0, #10
@@ -60,19 +61,20 @@ traits.ca <- traits.ca %>%
   filter(Code != "FEMY") %>%  # this one appears in communities, just not OG preds
   filter(Code != "BRMA")      # this one appears in communities, just not OG preds
 
-## select relevent CWM traits per DT or IR, rows are communities
+## select relevant CWM traits per DT or IR, rows are communities
 # remove predictor rows 
 pred <- alldat %>% filter(year=="0")#filter preds
 dat <- alldat %>% filter(year!="0")#filter preds
 FDpred <- FDdat %>% filter(year=="0")#filter preds
 FDdat <- FDdat %>% filter(year!="0")#filter preds
 
-
-#subset for just seeding trt of interest and calculate dissimilarity
-# first calculated for distance to target, but distance to target to be closer
-# or further from max/min of traits (ex. SRL above our target is even better
-# than hitting our target). So, distance from max/min by trt and year is also 
-# now calculated below.
+#### Find distance
+#### subset for just seeding trt of interest and calculate dissimilarity
+#### First distance to exact quantile-based target was used (commented out),
+#### but instead we now find distance to the max/min of trait quantiles 
+#### because communities still achieved the target is above the upper quantile
+#### or below the lower qualtile (ex. SRL above our target is even better
+#### than hitting our target). We use the max/min distances for subsequent analyses.
 
 ## IR (targets)
 distir.ca <- dat %>% select(c(block,trt,year,N,SRL,RMF))
@@ -240,7 +242,6 @@ dtdistances.max <- bind_rows(dtdistances.max,dtdistances23)
 dtdistances.max <- dtdistances.max %>% rownames_to_column("trt.b.y")
 
 
-
 ## To assess similarity to highest multivariate FD we use upper 95th percentile
 ## of each years FD as the target to compare to. 
 #FD
@@ -304,13 +305,14 @@ fddistances <- bind_rows(fddistances21,fddistances22)
 fddistances <- bind_rows(fddistances,fddistances23)
 fddistances <- fddistances %>% rownames_to_column("trt.b.y")
 
-
-## To assess similarity to random so it can be included in models, we consider the distances 
-## in CWM from target seeding CWM (could also look at community abundance/ composition from 
-## our expected probabilities from seeding, but the cwm matches other dist measures.)
-## this essentially uses the random community as a measure of how well be were at making any 
-## CWM we sought out to make by seeding and allows us to continue using random as a control. 
-# Rand
+#### for RC:
+#### We create an identical model for the random control communities to see how
+#### plant communities CWM changes when CWM's were not optimized. We use the CWM
+#### traits that the random control community should have produced based on the 
+#### relative abundance of species in the seed mix and compare that to the 
+#### realized CWM's for all six traits each year. This essentially uses the random
+#### community as a control for how functional composition changes when not
+#### using a trait-based restoration goal.
 
 # within each year subset the data
 #rdist <- alldat %>% filter(trt=="rand") #%>% filter(year=="2021")
@@ -357,13 +359,6 @@ rdistances <- bind_rows(rdistances,rdist23)
 rdistances <- rdistances %>% column_to_rownames("id")
 colnames(rdistances) <- "distr"
 rdistances <- rdistances %>% rownames_to_column("trt.b.y")
-# rdistances$dist <- normalize(rdistances$dist)
-# 
-# irdistances$dist <- normalize(irdistances$dist)
-# dtdistances$dist <- normalize(dtdistances$dist)
-# 
-# irdistances.max$dist <- normalize(irdistances.max$dist)
-# dtdistances.max$dist <- normalize(dtdistances.max$dist)
 
 # #### combine all dissimilarities 
 # cadist <- bind_rows(dtdistances,irdistances)
@@ -379,9 +374,6 @@ rdistances <- rdistances %>% rownames_to_column("trt.b.y")
 cadist2 <- merge(dtdistances.max,irdistances.max)
 cadist2 <- merge(cadist2,fddistances)
 cadist2 <- merge(cadist2,rdistances)
-# cadist2 <- bind_rows(dtdistances.max,irdistances.max)
-# cadist2 <- bind_rows(cadist2,fddistances)
-# cadist2 <- bind_rows(cadist2,rdistances)
 
 ## create a  column for the distance of each community to its specific target
 cadist2 <- cadist2 %>% mutate(targetdist = ifelse(str_sub(trt.b.y, 1, 2)=="ir", distir,
@@ -393,9 +385,8 @@ write.csv(cadist2, "data/cwm_maxdistances_ca.csv",row.names = F)
 
 
 
-####
-#### WY now
-####
+#### WY 
+#### load and clean data
 alldat <- read.csv("data/cwm_wy(plot).csv")
 alldat$year <- as.factor(alldat$year)
 alldat$block <- as.factor(alldat$block)
@@ -405,7 +396,7 @@ FDdat$year <- as.factor(FDdat$year)
 FDdat$block <- as.factor(FDdat$block)
 FDdat$trt <- as.factor(FDdat$trt)
 # CSV of species-trait combinations (for OG 25)
-traits.wy <- read.csv("data/mixedgrass.csv", header=TRUE, row.names=1)
+traits.wy <- read.csv("data/trait_data/mixedgrass.csv", header=TRUE, row.names=1)
 traits.wy <- traits.wy[traits.wy$use==1,] # subset use=1
 traits.wy$PLSg.m2.mono <- traits.wy$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
 #scale traits
@@ -424,12 +415,14 @@ dat <- alldat %>% filter(year!="0")#filter preds
 FDpred <- FDdat %>% filter(year=="0")#filter preds
 FDdat <- FDdat %>% filter(year!="0")#filter preds
 
-# #subset for just seeding trt of interest and calculate dissimilarity
-# # first calculated for distance to target, but distance to target to be closer
-# # or further from max/min of traits (ex. SRL above our target is even better
-# # than hitting our target). So, distance from max/min by trt and year is also
-# # now calculated below.
-#
+#### Find distance
+#### subset for just seeding trt of interest and calculate dissimilarity
+#### First distance to exact quantile-based target was used (commented out),
+#### but instead we now find distance to the max/min of trait quantiles 
+#### because communities still achieved the target is above the upper quantile
+#### or below the lower qualtile (ex. SRL above our target is even better
+#### than hitting our target). We use the max/min distances for subsequent analyses.
+
 ## IR
 distir.wy <- dat %>% select(c(block,trt,year,leafn,srl))
 distir.wy <- merge(distir.wy,FDdat[,c(2,4:6)], all.x = T)
@@ -663,12 +656,14 @@ fddistances <- bind_rows(fddistances,fddistances23)
 fddistances <- fddistances %>% rownames_to_column("trt.b.y")
 
 
-## To assess similarity to random so it can be included in models, we consider the distances
-## in CWM from target seeding CWM (could also look at community abundance/ composition from
-## our expected probabilities from seeding, but the cwm matches other dist measures.)
-## this essentially uses the random community as a measure of how well be were at making any
-## CWM we sought out to make by seeding and allows us to continue using random as a control.
-# Rand
+#### for RC:
+#### We create an identical model for the random control communities to see how
+#### plant communities CWM changes when CWM's were not optimized. We use the CWM
+#### traits that the random control community should have produced based on the 
+#### relative abundance of species in the seed mix and compare that to the 
+#### realized CWM's for all six traits each year. This essentially uses the random
+#### community as a control for how functional composition changes when not
+#### using a trait-based restoration goal.
 
 # within each year subset the data
 # rdist <- alldat %>% filter(trt=="rand") %>% arrange(year,block)#%>% filter(year=="2021")
@@ -788,31 +783,3 @@ wydist2 <- wydist2 %>% mutate(targetdist = ifelse(str_sub(trt.b.y, 1, 2)=="ir", 
 
 #export csv
 write.csv(wydist2, "data/cwm_maxdistances_wy(plot).csv", row.names = F)
-
-
-
-
-
-#library(patchwork)
-#wyplots <- (distdt+distfd+distir+distr)
-library(ggpubr)
-
-p1 <- ggarrange(distdt,distfd,distir,distr, common.legend = T)
-ggarrange(p1, alldistwy, common.legend = T, heights = c(1,2))
-tiff("figures/cwm wy/alldistance_wy.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
-p1
-dev.off()
-tiff("figures/cwm ca/alldistance_ca.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
-p2
-dev.off()
-
-tiff("figures/cwm ca/alldistance_ca.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
-caplots
-dev.off()
-
-tiff("figures/cwm wy/alldistance_wy.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
-wyplots
-dev.off()
-
-## for ESA publication
-esa1 <- ggarrange(distdt,distr, common.legend = T)
