@@ -8,6 +8,9 @@
 library(tidyverse)
 library(vegan)
 library(RColorBrewer)
+library(ggordiplots)
+library(ggpubr)
+
 
 #### WY
 ### Create PCA of species traits
@@ -76,14 +79,15 @@ traits.ca <- traits.ca %>%
   filter(Code != "FEPE") %>%  # this one appears in communities, just not OG preds
   filter(Code != "FEMY") %>%  # this one appears in communities, just not OG preds
   filter(Code != "BRMA")      # this one appears in communities, just not OG preds
-rownames(traits.ca)<-traits.ca$Code
+traits.ca2 <- traits.ca
+rownames(traits.ca2)<-traits.ca2$Code
 
 ### pca
-pca.ca <- princomp(traits.ca[,c(2:4,7,9,10)], cor=TRUE)
+pca.ca <- princomp(traits.ca2[,c(2:4,7,9,10)], cor=TRUE)
 summary(pca.ca)
 biplot(pca.ca)
-traits.ca$pc1 <- pca$scores[,1]
-traits.ca$pc2 <- pca$scores[,2]
+traits.ca$pc1 <- pca.ca$scores[,1]
+traits.ca$pc2 <- pca.ca$scores[,2]
 
 ca.pca.plot <- fviz_pca_biplot(pca.ca, geom = c("point","text"), ggtheme = theme_minimal(), 
                                alpha.ind=0.8, col.var = "black", repel=TRUE, labelsize = 3,
@@ -94,7 +98,6 @@ ca.pca.plot <- fviz_pca_biplot(pca.ca, geom = c("point","text"), ggtheme = theme
   labs(col="Lifeform")
 
 ### combine species PCA's
-library(ggpubr)
 #export for report
 tiff("figures/sp_pca_plots.tiff", res=400, height = 6,width =6, "in",compression = "lzw")
 ggarrange(wy.pca.plot,ca.pca.plot, nrow=2,common.legend = T)
@@ -133,88 +136,53 @@ cwm_p.wy
 subcwm_p.wy <- cwm_p.wy %>% select(-sla,-rdmc,-c4,-drought,-block,-trt) #[-c(7,10:13),]
 comms_p.wy <- comms_p.wy #community/species data
 
-## create PCA by year for each site
+## create PCA model-derived assemblages
 # pcawy <- princomp(cwm_p.wy)
 # biplot(pcawy)
-pca_result <- prcomp(subcwm_p.wy) #PCA traits
-pca_result2 <- prcomp(comms_p.wy) #PCA species
+pca_result.wy <- princomp(subcwm_p.wy) #PCA traits
 
 # Extract scores for the PCA plot
-pca_scores <- as.data.frame(pca_result$x)
-pca_scores2 <- as.data.frame(pca_result2$x)
+pca_scores.wy <- as.data.frame(pca_result.wy$scores)
 
-#Define block by extracting the numeric from the cwm rownames
-pca_scores$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(pca_scores)))
-pca_scores2$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(pca_scores2)))
 #Define trt by extracting the subplot from the cwm rownames
-pca_scores$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(pca_scores))))
-pca_scores2$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(pca_scores2))))
+pca_scores.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(pca_scores.wy))))
 # Define drought treatment at block level
 # covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
 # pca_result <- pca_result %>% mutate(drought = case_when(block %in% covered ~ "drt",
- 
-###don't make these plots ggplot does not make ellipses correctly
-# # Step 3: Plot PCA with ggplot2, adding ellipses by treatment group
-# ggplot(pca_scores, aes(x = PC1, y = PC2, color = trt)) +
-#   geom_point(alpha = 0.6) +  # Points for each plot
-#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-#   labs(x = "PC1", y = "PC2", title = "PCA of Functional Traits by Seeding Treatment") +
-#   theme_minimal() +
-#   scale_color_viridis_d() +
-#   scale_fill_viridis_d() +
-#   theme(legend.position = "right")
-# 
-# ggplot(pca_scores2, aes(x = PC1, y = PC2, color = trt)) +
-#   geom_point(alpha = 0.6) +  # Points for each plot
-#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-#   labs(x = "PC1", y = "PC2", title = "PCA of Species by Seeding Treatment") +
-#   theme_minimal() +
-#   scale_color_viridis_d() +
-#   scale_fill_viridis_d() +
-#   theme(legend.position = "right")
 
-### NMDS of communities;
-#run Bray-Curtis with vegan::vegdist() 
-testbray.wy <- vegdist(as.matrix(comms_p.wy), method = "bray")
-## make view-able matrix + subset so 2020 comms are rows and 2024 comms are columns 
-testbray.mat.wy <- as.matrix(testbray.wy)
-nmdstest.wy <- metaMDS(testbray.mat.wy, distance = "bray")
-# plot(nmdstest)
-# orditorp(nmdstest, "sites")
-ordiplot(testbray.wy, type = "points", main = "ellipses")
-points(testbray.wy, display = "sites", col = as.numeric(groupswy), pch = 16)
-ordiellipse(testbray.wy, groupswy, kind = "sd", conf = 0.95, display = "sites")
-groupswy<- as.factor(nmds_scores.wy$trt)
-ordiellipse(nmdstest.wy, groups = trt, draw = "polygon", lty = 1, col = "grey90")
-nmds_scores.wy <- as.data.frame(scores(nmdstest.wy))
+testoutput.wy<-gg_ordiplot(pca_result.wy, pca_scores.wy$trt, choices=c(1,2), ellipse = T)#
 
+df_ellipse.test.wy <- testoutput.wy$df_ellipse
+df_ellipse.test.wy$Group <- as.factor(df_ellipse.test.wy$Group)
+dt_ellipse.test.wy <- df_ellipse.test.wy %>% filter(Group == "dt ")
+fd_ellipse.test.wy <- subset(df_ellipse.test.wy, Group == "fd ", droplevels= TRUE)
+ir_ellipse.test.wy <- subset(df_ellipse.test.wy, Group == "ir ", droplevels= TRUE)
+r_ellipse.test.wy <- subset(df_ellipse.test.wy, Group == "r ", droplevels= TRUE)
 
-colnames(ellipses) <- c("NMDS1", "NMDS2", "trt")
+df_pt.test.wy <- testoutput.wy$df_ord
+df_pt.test.wy$Group <- as.factor(df_pt.test.wy$Group)
+dt_pt.test.wy <- df_pt.test.wy %>% filter(Group == "dt ")
+fd_pt.test.wy <- subset(df_pt.test.wy, Group == "fd ", droplevels= TRUE)
+ir_pt.test.wy <- subset(df_pt.test.wy, Group == "ir ", droplevels= TRUE)
+r_pt.test.wy <- subset(df_pt.test.wy, Group == "r ", droplevels= TRUE)
 
-# Plot
-ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
-  geom_point(alpha = 0.6) +
-  geom_path(data = ellipses, aes(x = NMDS1, y = NMDS2, color = trt), size = 1) +
-  labs(x = "NMDS1", y = "NMDS2", title = "NMDS with Ellipses") +
+WYpcafig <- ggplot(pca_scores.wy, aes(x = Comp.1, y = Comp.2, color = trt)) +
+  geom_point(data=dt_pt.test.wy, aes(x=x, y=y), color="#3E4A89", alpha = 0.6)+
+  geom_point(data=fd_pt.test.wy, aes(x=x, y=y), color="#35B779", alpha = 0.6)+
+  geom_point(data=ir_pt.test.wy, aes(x=x, y=y), color="#FDE725", alpha = 0.6)+
+  geom_point(data=r_pt.test.wy, aes(x=x, y=y), color="#440154", alpha = 0.6)+
+  geom_path(data=dt_ellipse.test.wy, aes(x=x, y=y), color="#3E4A89", linetype="solid", size=1) +
+  geom_path(data=fd_ellipse.test.wy, aes(x=x, y=y), color="#35B779", linetype="solid", size=1) +
+  geom_path(data=ir_ellipse.test.wy, aes(x=x, y=y), color="#FDE725", linetype="solid", size=1) +
+  geom_path(data=r_ellipse.test.wy, aes(x=x, y=y), color="#440154", linetype="solid", size=1)+
+  #geom_polygon(data = dt_ellipse, aes(x=x, y=y), fill="#3E4A89",group=trt, alpha = 0.3)+
+  # geom_polygon(data = fd_ellipse, aes(x=x, y=y), fill="#35B779", alpha = 0.2)+
+  # geom_polygon(data = ir_ellipse, aes(x=x, y=y), fill="#FDE725", alpha = 0.6)+
+  # geom_polygon(data = r_ellipse, aes(x=x, y=y), fill="#440154", alpha = 0.2)+
+  # scale_fill_viridis_d()+
+  #geom_polygon(data = dt_ellipse, aes(x = x, y = y, fill = Group, group = Group), alpha = 0.2) +
+  labs(x = "PCA1", y = "PCA2", title = "Community weighted mean traits by seeding treatment") +
   theme_minimal()
-##whatever ^
-
-
-#Define block by extracting the numeric from the cwm rownames
-nmds_scores.wy$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(nmds_scores.wy)))
-#Define trt by extracting the subplot from the cwm rownames
-nmds_scores.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(nmds_scores.wy))))
-
-# Create plot with ggplot2
-ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
-  geom_point(alpha = 0.6) +  # Points for each plot
-  stat_ellipse(aes(fill = trt), type = "norm", level = 0.95, alpha = 0.2) +  # Ellipses for each treatment
-  labs(x = "NMDS1", y = "NMDS2", title = "PCA of Species by Seeding Treatment") +
-  theme_minimal() +
-  scale_color_viridis_d() +
-  scale_fill_viridis_d() +
-  theme(legend.position = "right")
-
 
 
 #### CA
@@ -225,7 +193,7 @@ traits.ca$cols = c(colorRampPalette(colors)(nrow(traits.ca)))
 ## Subset monocots and dicots
 grams <- subset(traits.ca, graminoid==1)
 forbs <- subset(traits.ca, graminoid==0)
-traits.ca$graminoid<-as.factor(traits.ca$graminoid)
+#traits.ca$graminoid<-as.factor(traits.ca$graminoid)
 # Arrange trait matrix alphabetically
 trait.matrix.ca <- traits.ca[order(rownames(traits.ca)),]
 #Select columns of interest, make into matrix
@@ -247,6 +215,7 @@ comms_p.ca <- comms_p.ca[,order(colnames(comms_p.ca))]
 trait.matrix.ca.pred <- traits.ca[order(rownames(traits.ca)),]
 test <- data.frame(trait.matrix.ca.pred[,c(2:4,7,9,10:12)], row.names = trait.matrix.ca.pred[,1])
 rownames(test)
+
 trait.matrix.ca.pred <- as.matrix(test)
 trait.matrix.ca.pred <- trait.matrix.ca.pred[order(rownames(trait.matrix.ca.pred)),]
 cwm_p.ca <- FD::functcomp(as.matrix(trait.matrix.ca.pred), as.matrix(comms_p.ca), bin.num=c("graminoid"))
@@ -267,48 +236,56 @@ subcwm_p.ca <- cwm_p.ca %>% select(-RTD,-trt,-block)
 comms_p.ca <- comms_p.ca
 
 # ## create PCA by year for each site
-# pcaca <- princomp(ogcadat)
-# biplot(pcaca)
-pca_result <- prcomp(subcwm_p.ca) #traits PCA
-pca_result2 <- prcomp(comms_p.ca) #species PCA
+pca_result.ca <- princomp(subcwm_p.ca) #traits PCA [,1:6]
 
 # Extract scores for the PCA plot
-pca_scores <- as.data.frame(pca_result$x)
-pca_scores2 <- as.data.frame(pca_result2$x)
+pca_scores.ca <- as.data.frame(pca_result.ca$scores)
+#pca_scores.ca <- as.data.frame(pca_result.ca$x)
 
-#Define block by extracting the numeric from the cwm rownames
-pca_scores$block <- as.factor(sub("^[a-z]+ (\\d+)$", "\\1", rownames(pca_scores)))
-pca_scores2$block <- as.factor(sub("^[a-z]+ (\\d+)$", "\\1", rownames(pca_scores2)))
 #Define seeding trt by extracting the letters from the cwm rownames
-pca_scores$trt <- as.factor(sub("(^[a-z]+) \\d+$", "\\1", rownames(pca_scores)))
-pca_scores <- pca_scores %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
-pca_scores2$trt <- as.factor(sub("(^[a-z]+) \\d+$", "\\1", rownames(pca_scores2)))
-pca_scores2 <- pca_scores2 %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
-# covered <- as.character(c(3,4,6,7,9,11,14,15,18,20,22,24,26,29,30,32,34,35,36,39,41,45,47,50,53,54,56,58,59,61,62,63))
-# pca_result <- pca_result %>% mutate(drought = case_when(block %in% covered ~ "drt",
+pca_scores.ca$trt <- as.factor(sub("(^[a-z]+) \\d+$", "\\1", rownames(pca_scores.ca)))
+#pca_scores.ca <- pca_scores.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand 
 
-# # not using now.
-# # Step 3: Plot PCA with ggplot2, adding ellipses by treatment group
-# ggplot(pca_scores, aes(x = PC1, y = PC2, color = trt)) +
-#   geom_point(alpha = 0.6) +  # Points for each plot
-#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-#   labs(x = "PC1", y = "PC2", title = "PCA of Functional Traits by Seeding Treatment") +
-#   theme_minimal() +
-#   scale_color_viridis_d() +
-#   scale_fill_viridis_d() +
-#   theme(legend.position = "right")
-# 
-# ggplot(pca_scores2, aes(x = PC1, y = PC2, color = trt)) +
-#   geom_point(alpha = 0.6) +  # Points for each plot
-#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-#   labs(x = "PC1", y = "PC2", title = "PCA of Species by Seeding Treatment") +
-#   theme_minimal() +
-#   scale_color_viridis_d() +
-#   scale_fill_viridis_d() +
-#   theme(legend.position = "right")
+testoutput2<-gg_ordiplot(pca_result.ca, pca_scores.ca$trt, choices=c(1,2), ellipse = T)#+
+
+df_ellipse.test.ca <- testoutput2$df_ellipse
+df_ellipse.test.ca$Group <- as.factor(df_ellipse.test.ca$Group)
+dt_ellipse.test.ca <- df_ellipse.test.ca %>% filter(Group == "dt")
+fd_ellipse.test.ca <- subset(df_ellipse.test.ca, Group == "fd", droplevels= TRUE)
+ir_ellipse.test.ca <- subset(df_ellipse.test.ca, Group == "ir", droplevels= TRUE)
+r_ellipse.test.ca <- subset(df_ellipse.test.ca, Group == "r", droplevels= TRUE)
+
+df_pt.test.ca <- testoutput2$df_ord
+df_pt.test.ca$Group <- as.factor(df_pt.test.ca$Group)
+dt_pt.test.ca <- df_pt.test.ca %>% filter(Group == "dt")
+fd_pt.test.ca <- subset(df_pt.test.ca, Group == "fd", droplevels= TRUE)
+ir_pt.test.ca <- subset(df_pt.test.ca, Group == "ir", droplevels= TRUE)
+r_pt.test.ca <- subset(df_pt.test.ca, Group == "r", droplevels= TRUE)
+
+CApcafig <- ggplot(pca_scores.ca, aes(x = Comp.1, y = Comp.2, color = trt)) +
+  geom_point(data=dt_pt.test.ca, aes(x=x, y=y), color="#3E4A89", alpha = 0.6)+
+  geom_point(data=fd_pt.test.ca, aes(x=x, y=y), color="#35B779", alpha = 0.6)+
+  geom_point(data=ir_pt.test.ca, aes(x=x, y=y), color="#FDE725", alpha = 0.6)+
+  geom_point(data=r_pt.test.ca, aes(x=x, y=y), color="#440154", alpha = 0.6)+
+  geom_path(data=dt_ellipse.test.ca, aes(x=x, y=y), color="#3E4A89", linetype="solid", size=1) +
+  geom_path(data=fd_ellipse.test.ca, aes(x=x, y=y), color="#35B779", linetype="solid", size=1) +
+  geom_path(data=ir_ellipse.test.ca, aes(x=x, y=y), color="#FDE725", linetype="solid", size=1) +
+  geom_path(data=r_ellipse.test.ca, aes(x=x, y=y), color="#440154", linetype="solid", size=1)+
+  #geom_polygon(data = dt_ellipse, aes(x=x, y=y), fill="#3E4A89",group=trt, alpha = 0.3)+
+  # geom_polygon(data = fd_ellipse, aes(x=x, y=y), fill="#35B779", alpha = 0.2)+
+  # geom_polygon(data = ir_ellipse, aes(x=x, y=y), fill="#FDE725", alpha = 0.6)+
+  # geom_polygon(data = r_ellipse, aes(x=x, y=y), fill="#440154", alpha = 0.2)+
+  # scale_fill_viridis_d()+
+  #geom_polygon(data = dt_ellipse, aes(x = x, y = y, fill = Group, group = Group), alpha = 0.2) +
+  labs(x = "PCA1", y = "PCA2", title = " ") +
+  theme_minimal()
+
+###make pca
+### save for combo Figure S3
+commspca <- ggarrange(WYpcafig,CApcafig)
 
 
-######## NMDS 
+######## NMDS used in conceptual diagram + Figure S3
 #run Bray-Curtis with vegan::vegdist() 
 testbray.ca <- vegdist(as.matrix(comms_p.ca), method = "bray")
 testbray.wy <- vegdist(as.matrix(comms_p.wy), method = "bray")
@@ -330,42 +307,38 @@ nmds_scores.wy$block <- as.factor(sub(".*\\s(\\d+)$", "\\1", rownames(nmds_score
 nmds_scores.ca$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(nmds_scores.ca))))
 nmds_scores.wy$trt <- as.factor(as.character(sub("(.*\\s)\\d+$", "\\1", rownames(nmds_scores.wy))))
 
-# Create plot with ggplot2
-ggplot(nmds_scores, aes(x = NMDS1, y = NMDS2, color = as.factor(trt))) +
-  geom_point(size = 3, alpha = 0.8) +
-  stat_ellipse(type = "t", level = 0.95) +  # Add ellipses for confidence interval
-  scale_color_viridis_d(name = "Group") +
-  theme_classic() +
-  labs(
-    title = "NMDS of Plant Communities",
-    x = "NMDS1",
-    y = "NMDS2"
-  )
-
-ggplot(nmds_scores, aes(x = NMDS1, y = NMDS2, color = trt)) +
-  geom_point(alpha = 0.6) +  # Points for each plot
-  stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-  labs(x = "NMDS1", y = "NMDS2", title = "PCA of Species by Seeding Treatment") +
-  theme_minimal() +
-  scale_color_viridis_d() +
-  scale_fill_viridis_d() +
-  theme(legend.position = "right")
-
-ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
-  geom_point(alpha = 0.6) +  # Points for each plot
-  stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
-  labs(x = "NMDS1", y = "NMDS2", title = "PCA of Species by Seeding Treatment") +
-  theme_minimal() +
-  scale_color_viridis_d() +
-  scale_fill_viridis_d() +
-  theme(legend.position = "right")
+# # Create plot with ggplot2
+# ggplot(nmds_scores, aes(x = NMDS1, y = NMDS2, color = as.factor(trt))) +
+#   geom_point(size = 3, alpha = 0.8) +
+#   stat_ellipse(type = "t", level = 0.95) +  # Add ellipses for confidence interval
+#   scale_color_viridis_d(name = "Group") +
+#   theme_classic() +
+#   labs(
+#     title = "NMDS of Plant Communities",
+#     x = "NMDS1",
+#     y = "NMDS2"
+#   )
+# 
+# ggplot(nmds_scores, aes(x = NMDS1, y = NMDS2, color = trt)) +
+#   geom_point(alpha = 0.6) +  # Points for each plot
+#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
+#   labs(x = "NMDS1", y = "NMDS2", title = "PCA of Species by Seeding Treatment") +
+#   theme_minimal() +
+#   scale_color_viridis_d() +
+#   scale_fill_viridis_d() +
+#   theme(legend.position = "right")
+# 
+# ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
+#   geom_point(alpha = 0.6) +  # Points for each plot
+#   stat_ellipse(aes(fill = trt), geom = "polygon", alpha = 0.2) +  # Ellipses for each treatment
+#   labs(x = "NMDS1", y = "NMDS2", title = "PCA of Species by Seeding Treatment") +
+#   theme_minimal() +
+#   scale_color_viridis_d() +
+#   scale_fill_viridis_d() +
+#   theme(legend.position = "right")
 
 ### create plots
-library(ggordiplots)
-ordiplot_output<-gg_ordiplot(nmdstest.wy, nmds_scores.wy$trt, choices=c(1,2), ellipse = T)#+
-  scale_color_viridis_d()
-gg_ordiplot(nmdstest.ca, trtca)
-trtca <- nmds_scores.ca$trt
+ordiplot_output<-gg_ordiplot(nmdstest.wy, nmds_scores.wy$trt, choices=c(1,2), ellipse = T)
 
 df_ellipse <- ordiplot_output$df_ellipse
 df_ellipse$Group <- as.factor(df_ellipse$Group)
@@ -396,11 +369,11 @@ nmdsplot.wy <- ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
   # geom_polygon(data = r_ellipse, aes(x=x, y=y), fill="#440154", alpha = 0.2)+
   # scale_fill_viridis_d()+
   #geom_polygon(data = dt_ellipse, aes(x = x, y = y, fill = Group, group = Group), alpha = 0.2) +
-  labs(x = "NMDS1", y = "NMDS2", title = "PCA of communities by seeding treatment") +
+  labs(x = "NMDS1", y = "NMDS2", title = "Community taxonomic compsition by seeding treatment") +
   theme_minimal()
 
 
-ordiplot_output.ca<-gg_ordiplot(nmdstest.ca, nmds_scores.ca$trt, choices=c(1,2), ellipse = T)#+
+ordiplot_output.ca<-gg_ordiplot(nmdstest.ca, nmds_scores.ca$trt, choices=c(1,2), ellipse = T)
 
 df_ellipse.ca <- ordiplot_output.ca$df_ellipse
 df_ellipse.ca$Group <- as.factor(df_ellipse.ca$Group)
@@ -416,9 +389,6 @@ fd_pt.ca <- subset(df_pt.ca, Group == "fd ", droplevels= TRUE)
 ir_pt.ca <- subset(df_pt.ca, Group == "ir ", droplevels= TRUE)
 r_pt.ca <- subset(df_pt.ca, Group == "r ", droplevels= TRUE)
 
-tester <- ordiplot_output.ca$df_mean.ord
-tester$Group <- as.factor(tester$Group)
-tester2 <- tester %>% filter(Group == "dt ")
 
 nmdsplot.ca <- ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt)) +
   geom_point(data=dt_pt.ca, aes(x=x, y=y), color="#3E4A89", alpha = 0.6)+
@@ -436,11 +406,31 @@ nmdsplot.ca <- ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt)) +
   # geom_polygon(data = r_ellipse, aes(x=x, y=y), fill="#440154", alpha = 0.2)+
   # scale_fill_viridis_d()+
   #geom_polygon(data = dt_ellipse, aes(x = x, y = y, fill = Group, group = Group), alpha = 0.2) +
-  labs(x = "NMDS1", y = "NMDS2", title = "PCA of communities by seeding treatment") +
+  labs(x = "NMDS1", y = "NMDS2", title = " ") +
   theme_minimal()
 
 library(ggpubr)
 ggarrange(nmdsplot.wy,nmdsplot.ca)
 tiff("figures/NMDSplots.tiff", res=400, height = 2.5,width =5, "in",compression = "lzw")
 ggarrange(nmdsplot.wy,nmdsplot.ca, ncol=2, common.legend = T)
+dev.off()
+
+
+### make PCA + NMDS figure
+##make a legend for this plot:
+forlegend<-ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt))+
+  geom_point()+
+  scale_color_viridis_d(labels=c("Random control","Drought tolerant","Functionally diverse","Invasion resistant"))+
+  labs(color="Seeding treatment")+
+  guides(col=guide_legend(direction='horizontal'))+
+  theme_minimal()
+ordlegend <- as_ggplot(get_legend(forlegend))
+
+##combine plots
+ordsplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca)
+ordsplot <- ggarrange(ordsplot, ordlegend, nrow=2, heights = c(.9,.1))
+ordsplot<-annotate_figure(ordsplot, top = "Wyoming                                                          California")
+
+tiff("figures/pca.nmds.plot.tiff", res=400, height = 7,width =7, "in",compression = "lzw")
+ordsplot
 dev.off()

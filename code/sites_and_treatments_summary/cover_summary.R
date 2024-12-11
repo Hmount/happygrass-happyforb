@@ -31,14 +31,16 @@ tttw <- tttw %>% filter(year!="2020") #remove pre-treatment (2020)
 #pivot for plotting
 tttwwide <- tttw %>% pivot_longer(cols= c(nativemean,litmean,bgmean,brtemean), names_to = "covtype", values_to = "coverprop")
 tttwwide$drought <- as.factor(tttwwide$drought) #make drought a factor
+tttwwide <- tttwwide %>% mutate(coverper=coverprop*100)
+tttwwide$drought2 <- factor(tttwwide$drought, levels = c("1", "0"))
 #make a nice plot
-wycovplot <- ggplot(tttwwide, aes(x=drought,y=coverprop, fill=covtype))+
+wycovplot <- ggplot(tttwwide, aes(x=drought2,y=coverper, fill=covtype))+
   geom_col()+
   scale_fill_manual(values=c("grey60","salmon", "gold","darkgreen"),
                     labels=c("Bare ground","Invasive grass","Litter","Native cover"))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("Reduction", "Ambient"))+
-  labs(y="Proportion absolute cover", 
+  labs(y="Absolute cover (%)", 
        x="Precipitation treatment", 
        fill="Cover type",
        title = "Wyoming")+
@@ -52,21 +54,25 @@ comp.ca$bgunknown <- 1-comp.ca$native.cover-comp.ca$inv.grass.cov
 comp.ca$bgunknown[comp.ca$bgunknown <= 0] <- 0 #make negatives into 0 
 # group within year and precip treatment, find plot-level averages, prep data 
 tttc <- comp.ca %>% group_by(Year,water) %>%
-  summarise(d.nativemean = mean(native.cover),
-            c.PHCImean = mean(PHACIC, na.rm=T),
+  summarise(nativemean = mean(native.cover),
+            PHCImean = mean(PHACIC, na.rm=T),
+            AMMEmean = mean(AMSMEN, na.rm=T),
             a.bgmean = mean(bgunknown, na.rm=T),
             b.invmean = mean(inv.grass.cov))
+tttc <- tttc %>% mutate(c.weedyforbs = PHCImean+AMMEmean)
+tttc <- tttc %>% mutate(d.nativeadjusted = nativemean-c.weedyforbs)
 #pivot for plotting
-tttcwide <- tttc %>% pivot_longer(cols= c(d.nativemean,c.PHCImean,a.bgmean,b.invmean), names_to = "covtype", values_to = "coverprop")
+tttcwide <- tttc %>% pivot_longer(cols= c(d.nativeadjusted,c.weedyforbs,a.bgmean,b.invmean), names_to = "covtype", values_to = "coverprop")
 tttcwide$water <- as.factor(tttcwide$water) #make water a factor
+tttcwide <- tttcwide %>% mutate(coverper=coverprop*100)
 #make a nice plot
-cacovplot <-ggplot(tttcwide, aes(x=water,y=coverprop, fill=covtype))+
+cacovplot <-ggplot(tttcwide, aes(x=water,y=coverper, fill=covtype))+
   geom_col()+
   scale_fill_manual(values=c("grey60","salmon","gold","darkgreen"),
                     labels=c("Bare ground","Invasive grass","Weedy forbs","Native cover"))+
   facet_wrap(~Year)+
   scale_x_discrete(labels = c("Reduction", "Addition"))+
-  labs(y="Proportion absolute cover", 
+  labs(y="Absolute cover (%)", 
        x="Precipitation treatment", 
        fill="Cover type",
        title = "California")+
