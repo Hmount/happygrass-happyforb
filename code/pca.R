@@ -26,13 +26,13 @@ traits.wy$lop = scale(traits.wy$lop)
 traits.wy$rootdiam = scale(log(traits.wy$rootdiam))
 traits.wy$sla = scale(log(traits.wy$sla))
 traits.wy$rdmc = scale(log(traits.wy$rdmc))
-subtraits <- traits.wy %>% select(leafn,srl,rootdiam,lop,ldmc,veg)
+subtraits <- traits.wy %>% select(leafn,srl,rootdiam,lop,ldmc,veg) #, graminoid)
 #Subset monocots and dicots
 grams <- subset(traits.wy, graminoid==1)
 forbs <- subset(traits.wy, graminoid==0)
 
 ## Make pca
-pca.wy <- princomp(subtraits, cor=TRUE)
+pca.wy <- princomp(subtraits, cor=TRUE) #not including graminoid
 summary(pca.wy)
 biplot(pca.wy)
 traits.wy$pc1 <- pca.wy$scores[,1]
@@ -82,8 +82,12 @@ traits.ca <- traits.ca %>%
 traits.ca2 <- traits.ca
 rownames(traits.ca2)<-traits.ca2$Code
 
+#select and rename columns for plotting
+traits.ca3<-traits.ca2[,c(2:4,7,9,10)]
+colnames(traits.ca3) <- c("seedmass","lma","leafn","rmf","rootdiam","srl")
+
 ### pca
-pca.ca <- princomp(traits.ca2[,c(2:4,7,9,10)], cor=TRUE)
+pca.ca <- prcomp(traits.ca3, cor=TRUE) #not including graminoid
 summary(pca.ca)
 biplot(pca.ca)
 traits.ca$pc1 <- pca.ca$scores[,1]

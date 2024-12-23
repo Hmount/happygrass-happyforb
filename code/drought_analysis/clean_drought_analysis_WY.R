@@ -82,19 +82,19 @@ grate22 <- grate22 %>% select(c(block,trt,nativecov.plot))
 colnames(grate22) <- c("block", "trt","covprevyr")
 grate22$year <- "2023"
 forgrate <- bind_rows(grate21,grate22)
-test <- merge(suballwy, forgrate, all.x=T)
+wydat <- merge(suballwy, forgrate, all.x=T)
 
 #find annual growth rate
-test <- test %>% mutate(growrate = nativecov.plot/covprevyr)
-test$log.gr <- log(test$growrate) 
-testno <- test %>% filter(year!="2021")
+wydat <- wydat %>% mutate(growrate = nativecov.plot/covprevyr)
+wydat$log.gr <- log(wydat$growrate) 
+wydatno21 <- wydat %>% filter(year!="2021")
 #testnoD <- testno %>% filter(drought=="cntl")
 
 #model
-anova(trtmod<-lmer(log.gr~trt*drought*year+ (1|block), testno))
-summary(dtmod <- lmer(log.gr~distdt*drought*year+ (1|block), testno))
-summary(fdmod <- lmer(log.gr~distfd*drought*year+ (1|block), testno))
-summary(irmod <- lmer(log.gr~distir*drought*year+ (1|block), testno))
+summary(trtmod<-lmer(log.gr~trt*drought*year+ (1|block), wydatno21))
+summary(dtmod <- lmer(log.gr~distdt*drought*year+ (1|block), wydatno21))
+summary(fdmod <- lmer(log.gr~distfd*drought*year+ (1|block), wydatno21))
+summary(irmod <- lmer(log.gr~distir*drought*year+ (1|block), wydatno21))
 
 #anova(lmer(log.gr~distdt*trt*distfd*drought*year+ (1|block), testno))
 
@@ -132,6 +132,7 @@ dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
             vjust = -0.5,
             size=3)+
   scale_x_discrete(labels = c("Ambient", "Reduction"))+
+  ylim(c(-5,5))+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
                        labels = c("RC","DT","FD","IR"))+
   facet_wrap(~year,scales="fixed", labeller = as_labeller(labelnames.wy))+
@@ -148,6 +149,7 @@ distdtwy <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
+  ylim(c(-5,5))+
   geom_hline(yintercept =0,col="black")+
   #geom_image(x=0, y=0 label=element_text("🎯"))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
@@ -162,6 +164,7 @@ distirwy <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
+  ylim(c(-5,5))+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -175,6 +178,7 @@ distfdwy <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
+  ylim(c(-5,5))+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -207,7 +211,7 @@ wyfigbottom <-ggarrange(distfdwy,distirwy,
                         labels = c("c","d"),label.x = .05)
 wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
 wyfigdrought <- annotate_figure(wyfigdrought,
-                                left="log(annual growth rate)")
+                                left="Annual growth rate")
 
 
 tiff("figures/droughtfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")

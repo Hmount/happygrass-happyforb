@@ -96,7 +96,9 @@ allwy23 <- allwy23 %>% mutate(log.propbrte = log(propbrte)) %>%
 #   mutate(log.inv = ifelse(log.inv == -Inf, NA, log.inv))
 
 #### remove all plots where CWM could not be validly calculated
-suballwy23 <- allwy23 %>% filter(propnativebrte >= 80)
+#### not using this for invasion analysis because where there was
+#### high proportion of invasive species is relevant to our question
+#suballwy23 <- allwy23 %>% filter(propnativebrte >= 80)
 
 #model
 summary(trtmod <- lmer(log.propbrte~trt*drought+ (1|block), allwy23))
@@ -107,74 +109,106 @@ summary(fdmod <- lmer(log.propbrte~distfd*drought+ (1|block), allwy23))
 # summary(irmod <- glmer(BRTEpres~trt*drought+ (1|block), fortest, family = "binomial"))
 # x <- ggpredict(irmod,c("trt","drought")) 
 # plot(x, show.title = F)
+#anova(lmer(log.gr~distdt*trt*distfd*drought*year+ (1|block), testno))
 
-anova(lmer(log.gr~distdt*trt*distfd*drought*year+ (1|block), testno))
+#### Making plots
+## ~ seeding treatment
+#create letters for plotting:
+library(emmeans)
+# Step 1: Get the emmeans for the interaction of trt, drought, and year
+emm_trt <- emmeans(trtmod, ~ trt * drought)
+## # Step 2: Obtain pairwise contrasts for the interaction
+## contrast_trt <- contrast(emm_trt, method = "pairwise")
+# Step 2: Generate the compact letter display using multcomp::cld
+letters <- multcomp::cld(emm_trt, alpha = 0.05, Letters = letters, adjust = "tukey")
+# Step 3: Convert the results to a data frame
+letters_df <- as.data.frame(letters)
+# Step 4: Create a temporary data frame with the desired y-position for plotting
+dttemp2 <- allwy23 %>%
+  group_by(drought, trt) %>%
+  summarise(yposition = max(propbrte, na.rm=T), .groups = 'drop')
+# Step 5: Merge the letter results with the y-position data
+dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt"))
+# Merge with the original data to get the final dataset
+dttemp3 <- merge(allwy23, dttemp2, by = c("drought", "trt"), all = TRUE)
 
-invboxwy <- ggplot(allwy23, aes(y=log.propbrte,x=drought,fill=trt))+
+#plot:
+invboxwy <- ggplot(dttemp3, aes(y=propbrte,x=drought,fill=trt))+
   geom_boxplot()+
-  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7)+
-  #facet_wrap(~year,scales="fixed")+
-  geom_hline(yintercept =0,col="black")+
-  labs(y=" ", fill="seed trt")+
+  geom_text(aes(y=yposition,label = .group), 
+            position = position_dodge(width = .9), 
+            #vjust = -0.5,
+            size=3)+
+  scale_y_log10() +
+  scale_x_discrete(labels = c("Ambient", "Reduction"))+
+  scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
+                       labels = c("RC","DT","FD","IR"))+
+  labs(y=" ", fill="Seeding 
+Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
+
 suballwy23 <- suballwy23 %>% mutate(nativecovbin = cut(nativecov.plot, 
                                                        breaks = quantile(nativecov.plot, probs = seq(0, 1, length.out = 4), na.rm = TRUE), 
                                                        include.lowest = TRUE))
 # mutate(nativecovbin = bins.quantiles(nativecov.plot, 3, 3))
 #   nativecovbin = ifelse(nativecov.plot 
-invirwy <- ggplot(allwy23, aes(y=log.propbrte,x=distir,col=drought))+
+
+## ~ distance to IR traits
+invirwy <- ggplot(allwy23, aes(y=propbrte,x=distir,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  #facet_wrap(~year)+
-  labs(y=" ", x="IR target")+
-  geom_hline(yintercept =0,col="black")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
+Treatment")+
+  scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-invdtwy <- ggplot(allwy23, aes(y=log.propbrte,x=distdt,col=drought))+
+
+## ~ distance to DT traits
+invdtwy <- ggplot(allwy23, aes(y=propbrte,x=distdt,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  #facet_wrap(~year)+
-  labs(y=" ", x="DT target")+
-  geom_hline(yintercept =0,col="black")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
+Treatment")+
+  scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-invfdwy <- ggplot(allwy23, aes(y=log.propbrte,x=distfd,col=drought))+
+
+## ~ distance to FD traits
+invfdwy <- ggplot(allwy23, aes(y=propbrte,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  #facet_wrap(~year)+
-  labs(y=" ", x="FD target")+
-  geom_hline(yintercept =0,col="black")+
+  scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
+Treatment")+
+  scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
-distrwy <- ggplot(allwy23, aes(y=log.brte,x=distr,col=drought))+
-  geom_point(aes(y=log.brte,x=distr,col=drought, shape=year))+
-  geom_smooth(method = "lm")+
-  scale_color_manual(values=droughtcolswy)+
-  #facet_wrap(~year)+
-  labs(y=" ", x="")+
-  geom_hline(yintercept =0,col="black")+
-  stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #geom_te
-  #geom_hline(yintercept =0,col="black")+
-  theme_ggeffects()
+
+# distrwy <- ggplot(allwy23, aes(y=log.brte,x=distr,col=drought))+
+#   geom_point(aes(y=log.brte,x=distr,col=drought, shape=year))+
+#   geom_smooth(method = "lm")+
+#   scale_color_manual(values=droughtcolswy)+
+#   #facet_wrap(~year)+
+#   labs(y=" ", x="")+
+#   geom_hline(yintercept =0,col="black")+
+#   stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+#   #geom_te
+#   #geom_hline(yintercept =0,col="black")+
+#   theme_ggeffects()
 
 
 #### combined figures
 library(ggpubr)
 wyfigtop <- ggarrange(invboxwy,invirwy, 
                       common.legend = T, legend = "right",
-                      labels = c("a","b"),label.x = 1)
+                      labels = c("a","b"))#,label.x = .05)
 wyfigbottom <-ggarrange(invfdwy,invdtwy, 
                         common.legend = T, legend = "right",
-                        labels = c("c","d"),label.x = 1)
+                        labels = c("c","d"))#,label.x = .05)
 wyfiginvasion <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
-wyfiginvasion <- annotate_figure(wyfiginvasion, bottom = "Euclidean distance to CWM target",
+wyfiginvasion <- annotate_figure(wyfiginvasion,
                                  left="log(relative cover BRTE)")
 
 tiff("figures/invasionfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")

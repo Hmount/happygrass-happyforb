@@ -18,7 +18,10 @@ comp.ca$water <- as.factor(comp.ca$water)
 comp.ca$year<-as.factor(comp.ca$year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
+comp.ca$structure <- as.factor(comp.ca$structure)
 comp.ca <- comp.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
+#save comp.ca$struture to add onto other datframes and use as spatial variable
+ca.structure <- comp.ca %>% select(c("block","trt","structure"))
 
 cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
 cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
@@ -28,6 +31,7 @@ cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
                                              ifelse(year=="2022","2",
                                                     ifelse(year=="2023","3","0"))))
 cwm.ca$yrorder <- as.numeric(cwm.ca$yrorder)
+cwm.ca <- merge(cwm.ca, ca.structure, all.x = T)
 #add plot ID column (but give NA to target/predicted communities)
 cwm.ca <- cwm.ca %>% 
   mutate(plot = paste(block, trt, sep = "."))
@@ -36,6 +40,7 @@ cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
 cwm.ca <- cwm.ca %>% select(-Rdiam) #remove CWM rootdiam column to avoid confusion
 cwmFD <- read.csv("data/cwm_raoq_ca.csv") #add FD for traits that need it (rootdiam)
 cwmFD <- cwmFD %>% select(block,trt,year,water,rootdiam, full) #only columns we need
+cwmFD <- merge(cwmFD, ca.structure, all.x = T)
 cwm.ca <- merge(cwm.ca,cwmFD, all.x=T)
 
 # combine to master df (remove spp columns for now)
@@ -65,7 +70,7 @@ table(comp.ca$year)
 allca <- allca %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100)
 
-#make dought column
+#make precipitation treatment column
 allca <- allca %>% mutate(drought = ifelse(water=="0.5","drt","cntl"))
 
 ## Ensure levels are correctly compared in models
@@ -95,23 +100,19 @@ grate22 <- grate22 %>% select(c(block,trt,native.cover))
 colnames(grate22) <- c("block", "trt","covprevyr")
 grate22$year <- "2023"
 forgrate <- bind_rows(grate21,grate22)
-test <- merge(suballca, forgrate, all.x=T)
+cadat <- merge(suballca, forgrate, all.x=T)
 
 #find annual growth rate
-test <- test %>% mutate(growrate = native.cover/covprevyr)
-test$log.gr <- log(test$growrate) 
-testno <- test %>% filter(year!="2021")
+cadat <- cadat %>% mutate(growrate = native.cover/covprevyr)
+cadat$log.gr <- log(cadat$growrate) 
+cadatno21 <- cadat %>% filter(year!="2021")
 #test22 <- test %>% filter(year=="2022")
 
 #model
-summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|structure), testno))
-summary(trtmod <- lmer(log.gr~trt*drought*year+ (1|structure), testno))
-#anova(lmer(log.gr~distdt*drought*year+ (1|structure()), testno))
-summary(lmer(log.gr~distfd*drought*year+ (1|structure), testno))
-#anova(lmer(log.gr~trt*distir*drought*year+ (1|block), testno))
-
-# anova(lmer(log.gr~distdt*trt*drought+(1|year)+ (1|block), testno))
-# anova(lmer(log.gr~distdt*trt*drought*year+ (1|block), testno))
+summary(trtmod <- lmer(log.gr~trt*drought*year+ (1|structure), cadatno21))
+summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|structure), cadatno21))
+summary(fdmod<-lmer(log.gr~distfd*drought*year+ (1|structure), cadatno21))
+summary(irmod<-lmer(log.gr~distir*drought*year+ (1|structure), cadatno21))
 
 #### Making plots
 ## create label names for facets used in all plots:
@@ -145,6 +146,7 @@ dissboxca <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
             position = position_dodge(width = 1), 
             vjust = -0.5,
             size=3)+
+  ylim(c(NA,3.5))+
   scale_x_discrete(labels = c("Addition", "Reduction"))+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
                        labels = c("RC","DT","FD","IR"))+
@@ -162,6 +164,7 @@ distdtca <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
+  ylim(c(NA,3.5))+
   geom_hline(yintercept =0,col="black")+
   #geom_image(x=0, y=0 label=element_text("🎯"))+
   #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
@@ -176,6 +179,7 @@ distirca <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
+  ylim(c(NA,3.5))+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -189,6 +193,7 @@ distfdca <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
+  ylim(c(NA,3.5))+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -214,7 +219,7 @@ cafigbottom <-ggarrange(distfdca,distirca,
                         labels = c("c","d"),label.x = .05)
 cafigdrought <- ggarrange(cafigtop,cafigbottom, nrow=2)
 cafigdrought <- annotate_figure(cafigdrought, 
-                                left="log(annual growth rate)")
+                                left="Annual growth rate")
 
 tiff("figures/droughtfigca.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
 cafigdrought
