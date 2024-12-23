@@ -431,9 +431,10 @@ forlegend<-ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt))+
 ordlegend <- as_ggplot(get_legend(forlegend))
 
 ##combine plots
-ordsplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca)
+ordsplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca, 
+                      labels = c("a","b","c","d"), label.y = .9)
 ordsplot <- ggarrange(ordsplot, ordlegend, nrow=2, heights = c(.9,.1))
-ordsplot<-annotate_figure(ordsplot, top = "Wyoming                                                          California")
+ordsplot<-annotate_figure(ordsplot, top = "Wyoming                                                             California")
 
 tiff("figures/pca.nmds.plot.tiff", res=400, height = 7,width =7, "in",compression = "lzw")
 ordsplot

@@ -91,7 +91,7 @@ distdtca <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="DT target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -119,7 +119,7 @@ distirca <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="IR target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -147,7 +147,7 @@ distfdca <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="FD target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... FD target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -205,7 +205,7 @@ distdtwy <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="DT target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -232,7 +232,7 @@ distirwy <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="IR target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -259,7 +259,7 @@ distfdwy <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
             position = position_dodge(width = 1.2), 
             vjust = -0.5,
             size=3) +
-  labs(x=" ",y="FD target")+ #, fill="drought treatment")+
+  labs(x=" ",y="... FD target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
   ylim(0,4)
@@ -331,7 +331,8 @@ bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist, col=trt))+
                         labels = c("dt" = "DT", "fd" = "FD", 
                                    "ir" = "IR", "rand" = "RC")) +
   labs(x="Bray-Curtis dissimilarity", 
-       y="Seeding treatment target",
+       y="Euclidean distance to 
+seeding treatment target",
        col="Seeding 
 treatment")+
   theme_classic()+
@@ -346,7 +347,8 @@ bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
                         labels = c("dt" = "DT", "fd" = "FD", 
                                    "ir" = "IR", "rand" = "RC"))+
   labs(x="Bray-Curtis dissimilarity", 
-       y="Seeding treatment target",
+       y="Euclidean distance to 
+seeding treatment target",
        col="Seeding 
 treatment")+
   theme_classic()+
@@ -365,7 +367,8 @@ wydistplots <- ggarrange(distdtwy, distfdwy, distirwy, ncol=3, nrow=1,
 wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
                           widths = c(1,.5), 
                           legend = "none",
-                          labels = c(" ", "d"), hjust = -4)
+                          labels = c(" ", "d"), hjust = -5)
+wydistbcplot <- annotate_figure(wydistbcplot, right=text_grob("Wyoming", rot=270),fig.lab.face="bold")
 
 cadistplots <- ggarrange(distdtca, distfdca, distirca, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
@@ -373,10 +376,11 @@ cadistplots <- ggarrange(distdtca, distfdca, distirca, ncol=3, nrow=1,
 cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,
                           widths = c(1,.5), 
                           legend = "none",
-                          labels = c(" ", "h"), hjust = -4)
+                          labels = c(" ", "h"), hjust = -5)
+cadistbcplot <- annotate_figure(cadistbcplot, right=text_grob("California", rot=270), fig.lab.face="bold")
 
 alldistbcplot <- ggarrange(wydistbcplot, cadistbcplot, ncol=1, nrow=2)
-alldistbcplot <- annotate_figure(alldistbcplot, left=text_grob("Euclidean distance from...", rot=90))
+alldistbcplot <- annotate_figure(alldistbcplot, left=text_grob("Euclidean distance to...", rot=90))
 
 legend <- ggarrange(drought_legend, seed_legend, nrow = 1)
 
@@ -387,7 +391,7 @@ alldistbcplot
 # tiff("figures/alldistances_figure.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
 # alldistbcplot
 # dev.off()
-tiff("figures/alldistances_figure.tiff", res=800, height = 5,width =6.5, "in") #,compression = "lzw")
+tiff("figures/alldistances_figure.tiff", res=800, height = 5,width =7, "in") #,compression = "lzw")
 alldistbcplot
 dev.off()
 
