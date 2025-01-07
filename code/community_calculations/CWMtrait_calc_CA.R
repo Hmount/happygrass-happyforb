@@ -1,6 +1,7 @@
 #### Calculate the CWM traits for each plot in each year based on the 
-#### taxonomic compsition (compCWM traits calculations, each site and year are seperatley calculated
-#### WY first. 2021 ready, but 2022 & 2023 need trait data for volunteer invaders still
+#### taxonomic composition for California site. 
+#### Note: in 2022 & 2023 plots are removed that have >20% cover of non-native
+#### volunteer species for which we do not have traits data. 
 
 ## packages
 library(tidyverse)

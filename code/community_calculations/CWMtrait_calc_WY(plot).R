@@ -1,6 +1,7 @@
-#### CWM traits calculations, each site and year are seperatley calculated
-#### All subplots are calculate in "CWM_trait_calculation.R" script, but need to
-#### compare CWM at subplot level with plot level for CA comparisons. 
+#### Calculate the CWM traits for each plot in each year based on the 
+#### taxonomic composition for Wyoming site. 
+#### Note: all subplots were calculated in "CWM_trait_calculation.R" script, (not on
+#### Github) but needed to average subplots to plot level to compare with CA. 
 
 ## packages
 library(tidyverse)
