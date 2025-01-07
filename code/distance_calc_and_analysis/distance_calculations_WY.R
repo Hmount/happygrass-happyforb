@@ -53,7 +53,7 @@ FDdat <- FDdat %>% filter(year!="0")#filter preds
 #### subset for just seeding trt of interest and calculate dissimilarity
 #### First distance to exact quantile-based target was used (commented out),
 #### but instead we now find distance to the max/min of trait quantiles 
-#### because communities still achieved the target is above the upper quantile
+#### because communities still achieved if the target is above the upper quantile
 #### or below the lower qualtile (ex. SRL above our target is even better
 #### than hitting our target). We use the max/min distances for subsequent analyses.
 
@@ -291,13 +291,14 @@ fddistances <- fddistances %>% rownames_to_column("trt.b.y")
 
 
 #### for RC:
-#### We create an identical model for the random control communities to see how
-#### plant communities CWM changes when CWM's were not optimized. We use the CWM
-#### traits that the random control community should have produced based on the 
-#### relative abundance of species in the seed mix and compare that to the 
-#### realized CWM's for all six traits each year. This essentially uses the random
-#### community as a control for how functional composition changes when not
-#### using a trait-based restoration goal.
+#### We cannot compare the random community to a trait-based target because we
+#### established these communities with no target (using a log normal distribution).
+#### Instead, we use the CWM traits that the random control community should have 
+#### produced based on the relative abundance of species in the seed mix and 
+#### compare that to the realized CWM's for all six traits each year. 
+#### This is useful to calculate for RC because it provides a control relationship between
+#### functional change and taxonomic change (bray-curtis) like we examine with the other 
+#### treatment groups. 
 
 # within each year subset the data
 # rdist <- alldat %>% filter(trt=="rand") %>% arrange(year,block)#%>% filter(year=="2021")
