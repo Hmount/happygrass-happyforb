@@ -17,6 +17,10 @@
 #### - removed/dropped the CWM in random comparison (this is not actually valid because
 #### communities were chosen from log-normal distribution + not at all trait-based)
 
+#### updated 1/23/25 to include year as a fixed effect in all models. Changes
+#### are insignificant/marginal, but including year better accounts for the fact
+#### we saw large interannual differences. 
+
 ## packages used
 library(tidyverse)
 library(lme4)
@@ -44,6 +48,7 @@ cadist$trt <- as.factor(cadist$trt) #must be factor
 cadist$trt <- relevel(cadist$trt, ref = "rand") #make random communities the reference level
 cadist$drought <- as.factor(cadist$drought) #must be factor
 cadist$drought <- relevel(cadist$drought, ref = "cntl") #make random communities the reference level
+cadist$year <- as.factor(cadist$year) #must be factor
 droughtcolsca <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
 ## WY
@@ -62,6 +67,7 @@ wydist$trt <- as.factor(wydist$trt) #must be factor
 wydist$trt <- relevel(wydist$trt, ref = "rand") #make random communities the reference level
 wydist$drought <- as.factor(wydist$drought) #must be factor
 wydist$drought <- relevel(wydist$drought, ref = "cntl") #make random communities the reference level
+wydist$year <- as.factor(wydist$year) #must be factor
 droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 
 
@@ -94,7 +100,8 @@ distdtca <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
   labs(x=" ",y="... DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
-  ylim(0,4)
+  ylim(0,4)+
+  facet_wrap(~year)
 
 ## Invasion resistant 
 ## are invasion resistant plots significantly closer to our IR target than random?
@@ -122,12 +129,13 @@ distirca <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   labs(x=" ",y="... IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
-  ylim(0,4)
+  ylim(0,4)+
+  facet_
 
 ## Functionally Diverse
 ## are these plots significantly more functionally diverse (Rao) than random?
 cadist.fd <- cadist %>% filter(trt=="fd"|trt=="rand")# subset for only FD and RC communities
-summary(t <- aov(distfd~trt*drought, cadist.fd)) #run model *reported in ms*
+summary(t <- aov(distfd~trt*drought+year, cadist.fd)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t) #run post-hoc for letters
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -186,7 +194,7 @@ treatment")+  theme_classic()+
 ## Drought Tolerant
 ## are drought tolerant plots significantly closer to our DT target than random?
 wydist.dt <- wydist %>% filter(trt=="dt"|trt=="rand")# subset for only DT and RC communities
-summary(t <- aov(distdt~trt*drought, wydist.dt)) #run model *reported in ms*
+summary(t <- aov(distdt~trt*drought+year, wydist.dt)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -213,7 +221,7 @@ distdtwy <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
 ## Invasion resistant 
 ## are invasion resistant plots significantly closer to our IR target than random?
 wydist.ir <- wydist %>% filter(trt=="ir"|trt=="rand")# subset for only IR and RC communities
-summary(t <- aov(distir~trt*drought, wydist.ir)) #run model *reported in ms*
+summary(t <- aov(distir~trt*drought+year, wydist.ir)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -240,7 +248,7 @@ distirwy <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
 ## Functionally Diverse
 ## are these plots significantly more functionally diverse (Rao) than random?
 wydist.fd <- wydist %>% filter(trt=="fd"|trt=="rand")# subset for only FD and RC communities
-summary(t <- aov(distfd~trt*drought, wydist.fd)) #run model *reported in ms*
+summary(t <- aov(distfd~trt*drought+year, wydist.fd)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t) #run post-hoc for letters
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -269,7 +277,7 @@ distfdwy <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
 ## its intended target 
 ## Did seeding treatments differ in out ability to hit the target?
 wydistsub <- wydist %>% filter(trt!="rand")
-summary(t <- aov(targetdist~trt*drought, wydistsub))
+summary(t <- aov(targetdist~trt*drought+year, wydistsub))
 tuktest <- TukeyHSD(t)
 #multcompView::multcompLetters4(t,tuktest)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -324,6 +332,7 @@ wydisdist <- merge(wydist, bcdis.wy)
 #model and plot:
 ## CA
 summary(lm(targetdist~dist.ca*trt, cadisdist))
+confint(lm(targetdist~dist.ca*trt, cadisdist))
 bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist, col=trt))+
   geom_point(pch=20)+
   geom_smooth(method="lm")+
@@ -340,6 +349,7 @@ treatment")+
 #theme(legend.position = c(-.5,0), legend.direction = "horizontal")
 ## WY
 summary(lm(targetdist~dist.wy*trt, wydisdist))
+confint(lm(targetdist~dist.wy*trt, wydisdist))
 bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
   geom_point(pch=20)+
   geom_smooth(method="lm")+
