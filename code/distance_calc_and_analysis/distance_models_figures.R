@@ -9,7 +9,7 @@
 
 #### updated 11/7/24 for simpler analysis + figures:
 #### Initially, all communities were compared to each target (now commented 
-#### out and below L400), but we are only interested in how each target 
+#### out and below L412), but we are only interested in how each target 
 #### compared to random controls. This reduced clutter in figure and better
 #### highlights the important result of each figure.
 #### specific changes included:
@@ -77,7 +77,7 @@ droughtcolswy <- c("cntl"="skyblue", "drt"="tomato1") #create variable for color
 ## Drought Tolerant
 ## are drought tolerant plots significantly closer to our DT target than random?
 cadist.dt <- cadist %>% filter(trt=="dt"|trt=="rand")# subset for only DT and RC communities
-summary(t <- aov(distdt~trt*drought, cadist.dt)) #run model *reported in ms*
+summary(t <- aov(distdt~trt*drought+year, cadist.dt)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -100,13 +100,12 @@ distdtca <- ggplot(dttemp, aes(y=distdt, x=trt, fill=drought, alpha=trt))+
   labs(x=" ",y="... DT target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
-  ylim(0,4)+
-  facet_wrap(~year)
+  ylim(0,4)
 
 ## Invasion resistant 
 ## are invasion resistant plots significantly closer to our IR target than random?
 cadist.ir <- cadist %>% filter(trt=="ir"|trt=="rand")# subset for only IR and RC communities
-summary(t <- aov(distir~trt*drought, cadist.ir)) #run model *reported in ms*
+summary(t <- aov(distir~trt*drought+year, cadist.ir)) #run model *reported in ms*
 #create letters for plotting:
 tuktest <- TukeyHSD(t)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -129,8 +128,7 @@ distirca <- ggplot(irtemp, aes(y=distir, x=trt, fill=drought, alpha=trt))+
   labs(x=" ",y="... IR target")+ #, fill="drought treatment")+
   theme_classic()+
   theme(legend.position = "none")+
-  ylim(0,4)+
-  facet_
+  ylim(0,4)
 
 ## Functionally Diverse
 ## are these plots significantly more functionally diverse (Rao) than random?
@@ -165,7 +163,7 @@ distfdca <- ggplot(fdtemp, aes(y=distfd, x=trt, fill=drought, alpha=trt))+
 ## its intended target 
 ## Did seeding treatments differ in out ability to hit the target?
 cadistsub <- cadist %>% filter(trt!="rand")
-summary(t <- aov(targetdist~trt*drought, cadistsub))
+summary(t <- aov(targetdist~trt*drought+year, cadistsub))
 tuktest <- TukeyHSD(t)
 #multcompView::multcompLetters4(t,tuktest)
 letters <- data.frame(multcompView::multcompLetters4(t,tuktest)$'trt:drought'['Letters'])
@@ -371,7 +369,7 @@ drought_legend <- as_ggplot(get_legend(disttargetca))
 seed_legend <- as_ggplot(get_legend(bcplotca))
 
 #first the distance plots
-wydistplots <- ggarrange(distdtwy, distfdwy, distirwy, ncol=3, nrow=1, 
+wydistplots <- ggarrange(distdtwy, distirwy, distfdwy, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
                          labels = c("a","b","c"), hjust=c(-4,-4,-4))
 wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
@@ -380,7 +378,7 @@ wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
                           labels = c(" ", "d"), hjust = -5)
 wydistbcplot <- annotate_figure(wydistbcplot, right=text_grob("Wyoming", rot=270),fig.lab.face="bold")
 
-cadistplots <- ggarrange(distdtca, distfdca, distirca, ncol=3, nrow=1, 
+cadistplots <- ggarrange(distdtca, distirca, distfdca, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
                          labels = c("e","f","g"), hjust=c(-4,-8,-4))
 cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,

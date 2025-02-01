@@ -38,6 +38,7 @@ comp.ca.rel[is.na(comp.ca.rel)] <- NA # made into 0 here, but do not analyze the
 # confirm all communities sum to approximately 1 (except 3 empty plots listed above)
 rowSums(comp.ca.rel[,c(18:56)], na.rm=T)
 
+
 ## save data for all other analyses 
 # (changing columns to factors is not preserved so this needs to be repeated)
 # notice that the new dataframe of relative covers is saved and used in all 
@@ -149,6 +150,11 @@ fornativeplotcover <- fortotplotcover %>% group_by(year,block,trt,drought) %>%
   filter(native == "N") %>% #only native live veg
   group_by(year,block,trt) %>% 
   summarise(nativecov.plot = sum(tot.plotmean, na.rm=T)) #sum relative cover live native veg per PLOT
+forperrennielgrasscover <- fortotplotcover %>% group_by(year,block,trt,drought) %>% 
+  filter(native == "N") %>% #only native live veg
+  filter(graminoid == "1") %>%
+  group_by(year,block,trt) %>% 
+  summarise(pgrasscover.plot = sum(tot.plotmean, na.rm=T)) #sum relative cover live native veg per PLOT
 
 # find relative proportion per species
 fortotplotcover <- fortotplotcover %>% 
@@ -167,6 +173,7 @@ comp.wy.plot.wide <- merge(fortotplotcover[,c(1:4,9)],plotcovers)
 comp.wy.plot.wide <- merge(comp.wy.plot.wide, fornativeplotcover, all.x=T)
 comp.wy.plot.wide <- merge(comp.wy.plot.wide, forbg, all.x=T)
 comp.wy.plot.wide <- merge(comp.wy.plot.wide, forlit, all.x=T)
+comp.wy.plot.wide <- merge(comp.wy.plot.wide, forperrennielgrasscover, all.x=T)
 comp.wy.plot.wide <- distinct(comp.wy.plot.wide) #remove duplicate rows from merge
 # ensure all NA or NAN are NA that will sun to 0
 comp.wy.plot.wide[is.na(comp.wy.plot.wide)] <- NA # made into 0 here, but do not analyze these.

@@ -26,18 +26,21 @@ tttw <- compwy %>% group_by(year,drought) %>%
   summarise(nativemean = mean(nativecov.plot),
             litmean = mean(lit.plotmean, na.rm=T),
             bgmean = mean(bg.plotmean, na.rm=T),
-            brtemean = mean(BRTE))
+            brtemean = mean(BRTE),
+            pgrassmean = mean(pgrasscover.plot))
+tttw <- tttw %>% group_by(year,drought) %>%
+  mutate(nativeadj = nativemean-pgrassmean)
 tttw <- tttw %>% filter(year!="2020") #remove pre-treatment (2020)
 #pivot for plotting
-tttwwide <- tttw %>% pivot_longer(cols= c(nativemean,litmean,bgmean,brtemean), names_to = "covtype", values_to = "coverprop")
+tttwwide <- tttw %>% pivot_longer(cols= c(nativeadj,litmean,bgmean,brtemean,pgrassmean), names_to = "covtype", values_to = "coverprop")
 tttwwide$drought <- as.factor(tttwwide$drought) #make drought a factor
 tttwwide <- tttwwide %>% mutate(coverper=coverprop*100)
 tttwwide$drought2 <- factor(tttwwide$drought, levels = c("1", "0"))
 #make a nice plot
 wycovplot <- ggplot(tttwwide, aes(x=drought2,y=coverper, fill=covtype))+
   geom_col()+
-  scale_fill_manual(values=c("grey60","salmon", "gold","darkgreen"),
-                    labels=c("Bare ground","Invasive grass","Litter","Native cover"))+
+  scale_fill_manual(values=c("grey60","salmon", "gold","palegreen3","darkgreen"),
+                    labels=c("Bare ground","Invasive grass","Litter","Other native cover", "Native perrenial grass" ))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("Reduction", "Ambient"))+
   labs(y="Absolute cover (%)", 
@@ -52,24 +55,31 @@ wycovplot <- ggplot(tttwwide, aes(x=drought2,y=coverper, fill=covtype))+
 comp.ca <- read.csv("data/raw_cover/Species_Composition_allyears.csv") #read in California comp data
 comp.ca$bgunknown <- 1-comp.ca$native.cover-comp.ca$inv.grass.cov
 comp.ca$bgunknown[comp.ca$bgunknown <= 0] <- 0 #make negatives into 0 
+
+# make a new summed row for all the perrenial grasses only
+comp.ca <- comp.ca %>% group_by(Year, plot) %>%
+  mutate(pgrasscover = rowSums(across(c(ARIPUR, BROCAR, ELYCON, ELYGLA, KOEMAC, 
+                                        MELIMP, MUHRIG, POASEC, SPOAIR, STIPUL))))
+
 # group within year and precip treatment, find plot-level averages, prep data 
 tttc <- comp.ca %>% group_by(Year,water) %>%
   summarise(nativemean = mean(native.cover),
             PHCImean = mean(PHACIC, na.rm=T),
             AMMEmean = mean(AMSMEN, na.rm=T),
             a.bgmean = mean(bgunknown, na.rm=T),
-            b.invmean = mean(inv.grass.cov))
+            b.invmean = mean(inv.grass.cov),
+            pg.mean = mean(pgrasscover), na.rm=T)
 tttc <- tttc %>% mutate(c.weedyforbs = PHCImean+AMMEmean)
-tttc <- tttc %>% mutate(d.nativeadjusted = nativemean-c.weedyforbs)
+tttc <- tttc %>% mutate(d.nativeadjusted = nativemean-c.weedyforbs-pg.mean)
 #pivot for plotting
-tttcwide <- tttc %>% pivot_longer(cols= c(d.nativeadjusted,c.weedyforbs,a.bgmean,b.invmean), names_to = "covtype", values_to = "coverprop")
+tttcwide <- tttc %>% pivot_longer(cols= c(d.nativeadjusted,c.weedyforbs,a.bgmean,b.invmean, pg.mean), names_to = "covtype", values_to = "coverprop")
 tttcwide$water <- as.factor(tttcwide$water) #make water a factor
 tttcwide <- tttcwide %>% mutate(coverper=coverprop*100)
 #make a nice plot
 cacovplot <-ggplot(tttcwide, aes(x=water,y=coverper, fill=covtype))+
   geom_col()+
-  scale_fill_manual(values=c("grey60","salmon","gold","darkgreen"),
-                    labels=c("Bare ground","Invasive grass","Weedy forbs","Native cover"))+
+  scale_fill_manual(values=c("grey60","salmon","gold", "palegreen3","darkgreen"),
+                    labels=c("Bare ground","Invasive grass","Weedy forbs","Other native cover", "Native perrenial grass"))+
   facet_wrap(~Year)+
   scale_x_discrete(labels = c("Reduction", "Addition"))+
   labs(y="Absolute cover (%)", 
