@@ -116,13 +116,13 @@ letters <- multcomp::cld(emm_trt, alpha = 0.05, Letters = letters, adjust = "tuk
 # Step 3: Convert the results to a data frame
 letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
-dttemp2 <- testno %>%
+dttemp2 <- wydatno21 %>%
   group_by(drought, trt, year) %>%
   summarise(yposition = max(log.gr, na.rm=T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt","year"))
 # Merge with the original data to get the final dataset
-dttemp3 <- merge(testno, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
+dttemp3 <- merge(wydatno21, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
 
 #plot:
 dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
@@ -133,8 +133,10 @@ dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
             size=3)+
   scale_x_discrete(labels = c("Ambient", "Reduction"))+
   ylim(c(-5,5))+
+  #scale_fill_manual(values = c("#482576B3","#2A788EB3","#43BF71B3"),
+  #                  labels = c("RC","DT","FD"))+ #viridis::viridis(4, option="D",begin = .1, end = 1, alpha = 0.7)
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
-                       labels = c("RC","DT","FD","IR"))+
+                      labels = c("RC","DT","FD","IR"))+
   facet_wrap(~year,scales="fixed", labeller = as_labeller(labelnames.wy))+
   geom_hline(yintercept =0,col="black")+
   labs(y=" ", fill="Seeding 
@@ -142,7 +144,7 @@ Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
-distdtwy <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
+distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
@@ -157,7 +159,7 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
-distirwy <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
+distirwy <- ggplot(wydatno21, aes(y=log.gr,x=distir,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
@@ -171,11 +173,12 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
-distfdwy <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
+#wydatno21 <- wydatno21 %>% mutate(grass= ifelse(graminoid >= .51, "grassy","forby"))
+distfdwy <- ggplot(wydatno21, aes(y=log.gr,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
-  facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
+  facet_grid(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   ylim(c(-5,5))+

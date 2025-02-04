@@ -22,16 +22,18 @@ comp.ca$structure <- as.factor(comp.ca$structure)
 comp.ca <- comp.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
 #save comp.ca$struture to add onto other datframes and use as spatial variable
 ca.structure <- comp.ca %>% select(c("block","trt","structure"))
+ca.structure <- distinct(ca.structure)
 
 cwm.ca <- read.csv("data/cwm_ca.csv")# California CWM data
 cwm.ca <- cwm.ca %>% filter(year != "0") #remove predicted/target communities
 cwm.ca$year <- as.factor(cwm.ca$year)
+cwm.ca$block <- as.factor(cwm.ca$block)
 #make new sequence column
 cwm.ca <- cwm.ca %>% mutate(yrorder = ifelse(year=="2021","1",
                                              ifelse(year=="2022","2",
                                                     ifelse(year=="2023","3","0"))))
 cwm.ca$yrorder <- as.numeric(cwm.ca$yrorder)
-cwm.ca <- merge(cwm.ca, ca.structure, all.x = T)
+cwm.ca <- merge(cwm.ca, ca.structure, by=c("block", "trt"), all.x = T)
 #add plot ID column (but give NA to target/predicted communities)
 cwm.ca <- cwm.ca %>% 
   mutate(plot = paste(block, trt, sep = "."))
@@ -109,10 +111,10 @@ cadatno21 <- cadat %>% filter(year!="2021")
 #test22 <- test %>% filter(year=="2022")
 
 #model
-summary(trtmod <- lmer(log.gr~trt*drought*year+ (1|structure), cadatno21))
-summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|structure), cadatno21))
-summary(fdmod<-lmer(log.gr~distfd*drought*year+ (1|structure), cadatno21))
-summary(irmod<-lmer(log.gr~distir*drought*year+ (1|structure), cadatno21))
+summary(trtmod <- lmer(log.gr~trt*drought*year+ (1|structure.x), cadatno21))
+summary(dtmod<-lmer(log.gr~distdt*drought*year+ (1|structure.x), cadatno21))
+summary(fdmod<-lmer(log.gr~distfd*drought*year+ (1|structure.x), cadatno21))
+summary(irmod<-lmer(log.gr~distir*drought*year+ (1|structure.x), cadatno21))
 
 #### Making plots
 ## create label names for facets used in all plots:
@@ -131,13 +133,13 @@ letters <- multcomp::cld(emm_trt, alpha = 0.05, Letters = letters, adjust = "tuk
 # Step 3: Convert the results to a data frame
 letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
-dttemp2 <- testno %>%
+dttemp2 <- cadatno21 %>%
   group_by(drought, trt, year) %>%
   summarise(yposition = max(log.gr, na.rm=T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt","year"))
 # Merge with the original data to get the final dataset
-dttemp3 <- merge(testno, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
+dttemp3 <- merge(cadatno21, dttemp2, by = c("drought", "trt", "year"), all = TRUE)
 
 #plot:
 dissboxca <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
@@ -147,9 +149,10 @@ dissboxca <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
             vjust = -0.5,
             size=3)+
   ylim(c(NA,3.5))+
+  #scale_fill_manual(values = c("#482576B3","#2A788EB3","#43BF71B3"))+ #viridis::viridis(4, option="D",begin = .1, end = 1, alpha = 0.7)
   scale_x_discrete(labels = c("Addition", "Reduction"))+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
-                       labels = c("RC","DT","FD","IR"))+
+                      labels = c("RC","DT","FD","IR"))+
   facet_wrap(~year,scales="fixed", labeller = as_labeller(labelnames.ca))+
   geom_hline(yintercept =0,col="black")+
   labs(y=" ", fill="Seeding 
@@ -157,7 +160,7 @@ Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
-distdtca <- ggplot(testno, aes(y=log.gr,x=distdt,col=drought))+
+distdtca <- ggplot(cadatno21, aes(y=log.gr,x=distdt,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
@@ -172,7 +175,7 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
-distirca <- ggplot(testno, aes(y=log.gr,x=distir,col=drought))+
+distirca <- ggplot(cadatno21, aes(y=log.gr,x=distir,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
@@ -186,7 +189,7 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
-distfdca <- ggplot(testno, aes(y=log.gr,x=distfd,col=drought))+
+distfdca <- ggplot(cadatno21, aes(y=log.gr,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
