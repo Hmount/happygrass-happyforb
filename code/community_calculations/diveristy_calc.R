@@ -1,4 +1,6 @@
-#### Diveristy of community composition annually at both sites.
+#### Diversity of community composition annually at both sites.
+#### run "bray_curtis_calc.R" first to ensure all variables are in the environment
+#### CURRENTLY NOT RUNNING DO TO RSTUDIO UPDATES
 
 library(tidyverse)
 library(vegan)
@@ -10,45 +12,18 @@ comp.ca <- read.csv("data/comp_ca.csv") #read in California comp data
 comp.ca$fesper.seeded <- as.factor(comp.ca$fesper.seeded)
 comp.ca$fesper.present <- as.factor(comp.ca$fesper.present)
 comp.ca$water <- as.factor(comp.ca$water)
-comp.ca$year<-as.factor(comp.ca$Year)
+comp.ca$year<-as.factor(comp.ca$year)
 comp.ca$trt <- as.factor(comp.ca$trt)
 comp.ca$block <- as.factor(comp.ca$block)
 comp.ca$trt <- tolower(comp.ca$trt) #make these lower to match cwm dataframe
 comp.ca <- comp.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cwm df
-
-# # run on all communities comparing to target community(same code)
-# comms.ca <- comp.ca %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T)
-# comms.ca <- comms.ca %>% column_to_rownames("trt.b.y") #  comp.ca[,c(18:56)] 
-# comms.ca <- comms.ca[,c(16:54)]
-# 
-# # make comms.ca the long to add 4-letter codes
-# codes <- data.frame(sixletter = colnames(comms.ca))
-# codes <- codes %>% mutate(sppcodes = paste0(substr(sixletter, 1, 2), substr(sixletter, 4, 5))) # make 4 letter code to get cwm's
-# colnames(comms.ca) <- codes$sppcodes
-# colnames(comms.ca)[colnames(comms.ca) == "CACI"] <- "CAME" #change name of CACI to CAME
-
-## pretreatment/ seeding probability 
-# Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
-# preds.ca <- read.csv("data/calgrass.allplot.assemblages.csv") #data
-# preds.ca$trt.b <- paste(preds.ca$trt, preds.ca$block)
-# preds.ca <- preds.ca %>% arrange(trt.b,block)
-# comms_p.ca <- labdsv::matrify(data.frame(preds.ca$trt.b,preds.ca$species,preds.ca$prob))
-# comms_p.ca <- comms_p.ca[,order(colnames(comms_p.ca))]
-
-# #combine
-# allcomms <- bind_rows(comms.ca,comms_p.ca)
-# allcomms <- allcomms[,c(1:32)] #only OG 25 right now
-# 
-# #dissimilarity
-# bcdist.ca <- vegdist.ca(as.matrix(allcomms), method="bray")
-# bcdist.ca <-as.matrix(bcdist.ca)
 
 ##2021
 # within each year subset the data
 div.ca21 <- comp.ca %>% filter(year=="2021")
 div.ca21 <- div.ca21 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T)
 div.ca21 <- div.ca21 %>% column_to_rownames("trt.b.y")
-div.ca21 <- div.ca21[,c(16:54)]
+div.ca21 <- div.ca21[,c(16:53)]
 # make comms.ca the long to add 4-letter codes
 codes <- data.frame(sixletter = colnames(div.ca21))
 codes <- codes %>% mutate(sppcodes = paste0(substr(sixletter, 1, 2), substr(sixletter, 4, 5))) # make 4 letter code to get cwm's
@@ -69,7 +44,7 @@ div.camat21$plot <- rownames(div.camat21)
 div.ca22 <- comp.ca %>% filter(year=="2022")
 div.ca22 <- div.ca22 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T)
 div.ca22 <- div.ca22 %>% column_to_rownames("trt.b.y")
-div.ca22 <- div.ca22[,c(16:54)]
+div.ca22 <- div.ca22[,c(16:53)]
 # make comms.ca the long to add 4-letter codes
 #codes <- data.frame(sixletter = colnames(div.ca22))
 #codes <- codes %>% mutate(sppcodes = paste0(substr(sixletter, 1, 2), substr(sixletter, 4, 5))) # make 4 letter code to get cwm's
@@ -90,7 +65,7 @@ div.camat22$plot <- rownames(div.camat22)
 div.ca23 <- comp.ca %>% filter(year=="2023")
 div.ca23 <- div.ca23 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T)
 div.ca23 <- div.ca23 %>% column_to_rownames("trt.b.y")
-div.ca23 <- div.ca23[,c(16:54)]
+div.ca23 <- div.ca23[,c(16:53)]
 # make comms.ca the long to add 4-letter codes
 #codes <- data.frame(sixletter = colnames(div.ca23))
 #codes <- codes %>% mutate(sppcodes = paste0(substr(sixletter, 1, 2), substr(sixletter, 4, 5))) # make 4 letter code to get cwm's

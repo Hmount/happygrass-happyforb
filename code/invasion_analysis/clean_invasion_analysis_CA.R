@@ -61,7 +61,7 @@ allca23$plot.y <- as.factor(allca23$plot.y)
 allca23year <- as.factor(allca23$year)
 
 ### how many WY 2022+2023 data need to be dropped from CWM calculations 
-allca23 %>% 
+x<-allca23 %>% 
   mutate(propnative = native.cover/(native.cover+inv.grass.cov)*100) %>%
   filter(propnative < 80)
 18/204*100 # only 9% total observation to remove for inv. models
@@ -70,7 +70,7 @@ allca23 <- allca23 %>%
   mutate(propfesper = FESPER/(native.cover+inv.grass.cov)) %>% #this one is not converted to percent
   mutate(propnativefesper = propnative+(FESPER*100))
 
-#make dought column
+#make drought column
 allca23 <- allca23 %>% mutate(drought = as.factor(ifelse(water=="0.5","drt","cntl")))
 
 ## Ensure levels are correctly compared in models

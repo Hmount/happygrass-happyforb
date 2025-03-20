@@ -65,27 +65,8 @@ quantile(traits.wy$leafn,.25) #IR
 # -0.565257
 quantile(traits.wy$srl,.7557) #IR
 # 0.6536232
-# irdist <- distir.wy %>% filter(trt=="ir")
-# irdist <- irdist %>%
-#   unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-# irdist$veg <- normalize(irdist$veg)
-# # make row of targets
-# irdist <- irdist %>% add_row(trt.b.y = "target",
-#                              leafn = quantile(traits.wy$leafn,.25),
-#                              srl = quantile(traits.wy$srl,.7557),
-#                              veg = quantile(normalize(FDdat$veg),.99)) #this should be by year tho
-# irdist <- irdist %>% column_to_rownames("trt.b.y")
-# #mnake into matrix
-# #run dist or vegdist
-# library(vegan)
-# irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
-# irdistmat <-as.matrix(irdistmat)
-# # save only pairwise between target
-# irdistances <- as.data.frame(irdistmat["target",])
-# colnames(irdistances) <- "dist"
-# irdistances <- irdistances %>% rownames_to_column("trt.b.y")
 
-## IR (min/max)
+## (min/max)
 #irdist <- distir.wy %>% filter(trt=="ir")
 distir.wy$veg <- normalize(distir.wy$veg)
 ##2021
@@ -150,24 +131,6 @@ quantile(traits.wy$ldmc,.75) # DT
 # 0.6766338
 quantile(traits.wy$lop,.25) #DT
 # -0.7420366
-# dtdist <- distdt.wy %>% filter(trt=="dt")
-# dtdist <- dtdist %>%
-#   unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-# dtdist$rootdiam <- normalize(dtdist$rootdiam)
-# # make row of targets
-# dtdist <- dtdist %>% add_row(trt.b.y = "target",
-#                              ldmc = quantile(traits.wy$ldmc,.75),
-#                              lop = quantile(traits.wy$lop,.25),
-#                              rootdiam = quantile(normalize(FDdat$rootdiam),.99)) #this should be by year tho
-# dtdist <- dtdist %>% column_to_rownames("trt.b.y")
-# #mnake into matrix
-# #run dist or vegdist
-# dtdistmat <- vegdist(as.matrix(dtdist),method = "euclidean", upper=T)#,diag=T)
-# dtdistmat <-as.matrix(dtdistmat)
-# # save only pairwise between target
-# dtdistances <- as.data.frame(dtdistmat["target",])
-# colnames(dtdistances) <- "dist"
-# dtdistances <- dtdistances %>% rownames_to_column("trt.b.y")
 
 ## DT (min/max)
 #dtdist <- distdt.wy %>% filter(trt=="dt")'
@@ -320,18 +283,6 @@ rdist21<- data.frame(
   dist=diag(as.matrix(rdist21)),
   id=colnames(rdist21))
 
-# rdist21 <- rdist %>% filter(year=="2021"| year=="0")
-# rdist21 <- rdist21 %>% select(-c(drought, Treatments))
-# rdist21 <- rdist21 %>% unite(trt.b.y, c(trt, block,year), sep = ".", remove=T) # make unique plot variable
-# rdist21 <- rdist21 %>% column_to_rownames("trt.b.y")
-# randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
-# rdist21 <-as.matrix(randdistmat)[,-c(1:64)]
-# rdist21 <-rdist21[c(1:64),]
-# rdist21.n<- data.frame(
-#   dist=diag(as.matrix(rdist21)),
-#   id=colnames(rdist21))
-# rdist21 <- bind_rows(rdist21.n,rdist21.s)
-
 #2022
 rdist22 <- rdist %>% filter(year=="2022")
 rdist22 <- bind_rows(rdist0,rdist22)
@@ -344,17 +295,6 @@ rdist22 <-rdist22[c(1:256),]
 rdist22<- data.frame(
   dist=diag(as.matrix(rdist22)),
   id=colnames(rdist22))
-# rdist22 <- rdist %>% filter(year=="2022"| year=="0") %>% filter(subplot!="s"|is.na(subplot))
-# rdist22 <- rdist22 %>% select(-c(drought, Treatments))
-# rdist22 <- rdist22 %>% unite(trt.b.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
-# rdist22 <- rdist22 %>% column_to_rownames("trt.b.y")
-# randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", diag = T)
-# rdist22 <-as.matrix(randdistmat)[,-c(1:64)]
-# rdist22 <-rdist22[c(1:64),]
-# rdist22.n<- data.frame(
-#   dist=diag(as.matrix(rdist22)),
-#   id=colnames(rdist22))
-# rdist22 <- bind_rows(rdist22.n,rdist22.s)
 
 #2023
 rdist23 <- rdist %>% filter(year=="2023")
@@ -368,48 +308,16 @@ rdist23 <-rdist23[c(1:256),]
 rdist23<- data.frame(
   dist=diag(as.matrix(rdist23)),
   id=colnames(rdist23))
-# rdist23 <- rdist %>% filter(year=="2023"| year=="0") %>% filter(subplot!="s"|is.na(subplot))
-# rdist23 <- rdist23 %>% select(-c(drought, Treatments))
-# rdist23 <- rdist23 %>% unite(trt.b.y, c(trt, block, subplot,year), sep = ".", remove=T) # make unique plot variable
-# rdist23 <- rdist23 %>% column_to_rownames("trt.b.y")
-# randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", diag = T)
-# rdist23 <-as.matrix(randdistmat)[,-c(1:64)]
-# rdist23 <-rdist23[c(1:64),]
-# rdist23.n<- data.frame(
-#   dist=diag(as.matrix(rdist23)),
-#   id=colnames(rdist23))
-# rdist23 <- bind_rows(rdist23.n,rdist23.s)
 
 # together
 rdistances <- bind_rows(rdist21,rdist22)
 rdistances <- bind_rows(rdistances,rdist23)
-#rdistances <- rdistances %>% column_to_rownames("id")
 colnames(rdistances) <- c("distr","trt.b.y")
-# rdistances$dist <- normalize(rdistances$dist)
-#
-# irdistances$dist <- normalize(irdistances$dist)
-# dtdistances$dist <- normalize(dtdistances$dist)
-#
-# irdistances.max$dist <- normalize(irdistances.max$dist)
-# dtdistances.max$dist <- normalize(dtdistances.max$dist)
 
-# #### combine all dissimilarities
-# wydist <- bind_rows(dtdistances,irdistances)
-# wydist <- bind_rows(wydist,fddistances)
-# wydist <- bind_rows(wydist,rdistances)
-#
-# #wydist$dist <- normalize(wydist$dist)
-#
-# #export csv
-# write.csv(wydist, "data/cwm_distances_wy.csv")
-
-#### combine again using max in DT and IR
+#### combine using min/max in DT and IR
 wydist2 <- merge(dtdistances.max,irdistances.max)
 wydist2 <- merge(wydist2,fddistances)
 wydist2 <- merge(wydist2,rdistances)
-# wydist2 <- bind_rows(dtdistances.max,irdistances.max)
-# wydist2 <- bind_rows(wydist2,fddistances)
-# wydist2 <- bind_rows(wydist2,rdistances)
 
 ## create a  column for the distance of each community to its specific target
 wydist2 <- wydist2 %>% mutate(targetdist = ifelse(str_sub(trt.b.y, 1, 2)=="ir", distir,

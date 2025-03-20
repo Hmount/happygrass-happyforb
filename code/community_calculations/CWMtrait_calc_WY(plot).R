@@ -1,7 +1,5 @@
 #### Calculate the CWM traits for each plot in each year based on the 
 #### taxonomic composition for Wyoming site. 
-#### Note: all subplots were calculated in "CWM_trait_calculation.R" script, (not on
-#### Github) but needed to average subplots to plot level to compare with CA. 
 
 ## packages
 library(tidyverse)
@@ -25,20 +23,19 @@ comp.wy$trt <- as.factor(comp.wy$trt)
 comp.wy$block <- as.factor(comp.wy$block)
 comp.wy <- comp.wy %>% unite(plot, c(block, trt), sep = ".", remove=F) # make unique plot variable
 
-###how many WY 2022+2023 data need to be dropped from CWM calculations (until we get trait data)
+###how many WY 2022+2023 data need to be dropped from CWM calculations
 subwy <- comp.wy %>%
   mutate(propnative = nativecov.plot/totcov.plot*100) %>%
   filter(propnative < 80)
 table(subwy$year)
 table(comp.wy$year)
-132/512*100 #losing 25%
-#clean environment
+(17+132)/(256*3)*100 #losing 19% total across years
 
 # must load newSelectSpecies function
 # source("code/daniels_code/newSelectSpecies.R")
 
 # CSV of species-trait combinations (for OG 25)
-traits.wy <- read.csv("data/mixedgrass.csv", header=TRUE, row.names=1)
+traits.wy <- read.csv("data/trait_data/mixedgrass.csv", header=TRUE, row.names=1)
 traits.wy <- traits.wy[traits.wy$use==1,] # subset use=1
 traits.wy$PLSg.m2.mono <- traits.wy$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
 #scale traits
@@ -354,6 +351,7 @@ write.csv(cwm.wyfd, "data/cwm_raoq_wy(plot).csv", row.names = F)
 #### FIGURES ####
 #### CWM ANOVA's and figures for WY site
 #### How to CWM's differ by trt?
+#### Creates plots to visualize mean, variance, and target for each traits:
 
 #### Functions needed to normalizing RoaQ, making post-hoc letters, 
 #### and creating figures
@@ -412,7 +410,7 @@ dat$trt <- factor(dat$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE) #or
 datFD <- read.csv("data/cwm_raoq_wy(plot).csv") #cwm RoaQ data
 datFD$trt <- factor(datFD$trt, levels = c('ir','dt','fd','rand'),ordered = TRUE) #order trt levels
 #trait data
-traits.wy <- read.csv("data/mixedgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
+traits.wy <- read.csv("data/trait_data/mixedgrass.csv", header=TRUE, row.names=1) # CSV of species-trait combinations (for OG 25)
 traits.wy <- traits.wy[traits.wy$use==1,] # subset use=1
 traits.wy$PLSg.m2.mono <- traits.wy$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
 #scale traits

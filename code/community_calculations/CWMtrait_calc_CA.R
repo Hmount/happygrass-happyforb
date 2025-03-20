@@ -28,7 +28,7 @@ comp.ca$block <- as.factor(comp.ca$block)
 
 
 # CSV of species-trait combinations (for OG 25)
-traits.ca <- read.csv("data/annualgrass.csv", header=TRUE, row.names=1)
+traits.ca <- read.csv("data/trait_data/annualgrass.csv", header=TRUE, row.names=1)
 #traits.ca <- traits.ca[traits.ca$use==1,] # subset use=1
 #traits$PLSg.m2.mono <- traits$PLSlbs.acre.mono * (453.59237 / 4046.8564224) #convert lb/acre to g/m2
 #traits.ca <- traits.ca %>% select(-c(Asat,WUE,RLD,RTD))
@@ -89,7 +89,7 @@ trait.matrix.ca <- traits.ca[order(rownames(traits.ca)),]
 #   filter(Code != "SACO") 
 
 #Select columns of interest, make into matrix
-test <- data.frame(trait.matrix.ca[,2:8], row.names = trait.matrix.ca[,1])
+test <- data.frame(trait.matrix.ca[,c(2:4,7,9:10,12)], row.names = trait.matrix.ca[,1])
 rownames(test)
 trait.matrix.ca <- as.matrix(test)
 trait.matrix.ca <- trait.matrix.ca[order(rownames(trait.matrix.ca)),]
@@ -159,9 +159,8 @@ comms21.ca <- comms21.ca %>% select(-c("BRHO", "BRDI", "HOMU", "BRMA", "FEPE"))
 #Calculate community weighted means. Note that bin.num must bne specified for binary outcomes
 cwm21.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms21.ca), bin.num=c("graminoid"))
 
-##plots with all 0 need to be removed to run code, but this will change when we get weed trait data
+##plots with all 0 need to be removed to run code
 cwm21.ca <- cwm21.ca[rowSums(is.na(cwm21.ca)) != ncol(cwm21.ca), ]
-#right now, changing cwm data should be fine, but if these data are needed later, use removed22.wy to progogate figures. 
 #removed21.ca <- cwm21.ca[rowSums(is.na(cwm21.ca)) == ncol(cwm21.ca), ] # 2fd, 2ir, 2r, 1dt (see removed plots)
 # Building out treatment identification which was absent from our original csv.
 N <- 53
@@ -252,9 +251,8 @@ cwm22.ca <- FD::functcomp(as.matrix(trait.matrix.ca), as.matrix(comms22.ca), bin
 N <- 53
 # plots with all 0 (no spp in community) need to be removed to run nms2,
 cwm22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) != ncol(cwm22.ca), ] 
-#right now, changing cwm22.ca data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
 removed22.ca <- cwm22.ca[rowSums(is.na(cwm22.ca)) == ncol(cwm22.ca), ] # 2fd,3ir,1dt (see removed plots)
-groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-4), rep("rand",N)) # groups removing uncalculatable rows
+groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-4), rep("rand",N)) # groups removing uncalculable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms22.ca <- vegan::metaMDS(cwm22.ca, distance="euclidean")
@@ -339,9 +337,8 @@ N <- 53
 
 ##plots with all 0 (no spp in community) need to be removed to run nms2,
 cwm23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) != ncol(cwm23.ca), ] 
-#right now, changing cwm data should be fine, but if these data are needed later, use removed23.wy to propagate figures. 
 #removed23.ca <- cwm23.ca[rowSums(is.na(cwm23.ca)) == ncol(cwm23.ca), ] # fd.36 (see removed plot)
-groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-3), rep("rand",N-1)) # groups removing uncalculatable rows
+groups.ca <-c(rep("dt",N-1), rep("fd",N-3), rep("ir",N-3), rep("rand",N-1)) # groups removing uncalculable rows
 
 #nonmetric multidimensional scaling and ploting of ellipses by treatment
 nms23.ca <- vegan::metaMDS(cwm23.ca, distance="euclidean")
@@ -420,7 +417,6 @@ subca <- comp.ca %>% #[,-c(18:56)]
 table(subca$year)
 table(comp.ca$year)
 (13+22+62)/(210*3)*100 # only 15% total observation to remove
-(62)/(210)*100 # 30% total observation to remove for inv. models
 subca <- subca[,c(1,4,5,59)]
 subca$trt <- tolower(subca$trt) #make lowercase to match
 subca$block <- as.factor(subca$block) #make lowercase to match

@@ -85,23 +85,6 @@ quantile(traits.ca$SRL,.67) #IR
 # 0.6536232 
 quantile(traits.ca$RMF,.67) #IR
 # 0.4271784 
-# irdist <- distir.ca %>% filter(trt=="ir")
-# irdist <- irdist %>% 
-#   unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
-# # make row of targets
-# irdist <- irdist %>% add_row(trt.b.y = "target", 
-#                              N = quantile(traits.ca$N,.33),
-#                              SRL = quantile(traits.ca$SRL,.67),
-#                              RMF = quantile(traits.ca$RMF,.67)) #this should be by year tho
-# irdist <- irdist %>% column_to_rownames("trt.b.y")
-# #mnake into matrix
-# #run dist or vegdist
-# irdistmat <- vegdist(as.matrix(irdist),method = "euclidean", upper=T)#,diag=T)
-# irdistmat <-as.matrix(irdistmat)
-# # save only pairwise between target 
-# irdistances <- as.data.frame(irdistmat["target",])
-# colnames(irdistances) <- "dist"
-# irdistances <- irdistances %>% rownames_to_column("trt.b.y")
 
 ## IR (min/max)
 #irdist <- distir.ca %>% filter(trt=="ir")
@@ -166,25 +149,6 @@ quantile(traits.ca$lma,.67) # DT
 # 0.6766338 
 quantile(traits.ca$seed.mass,.67) #DT
 # -0.7420366
-# #dtdist <- distdt.ca %>% filter(trt=="dt")
-# dtdist <- distdt.ca %>% 
-#   unite(trt.b.y, c(trt, block, year),sep = ".", remove=T) # make unique plot variable
-# dtdist$rootdiam <- normalize(dtdist$rootdiam)
-# # make row of targets
-# dtdist <- dtdist %>% add_row(trt.b.y = "target", 
-#                              LMA = quantile(traits.ca$LMA,.67),
-#                              seed.mass = quantile(traits.ca$seed.mass,.67),
-#                              rootdiam = quantile(normalize(FDdat$rootdiam),.99))
-# dtdist <- dtdist %>% column_to_rownames("trt.b.y")
-# #mnake into matrix
-# #run dist or vegdist
-# dtdistmat <- vegdist(as.matrix(dtdist),method = "euclidean", upper=T)#,diag=T)
-# dtdistmat <-as.matrix(dtdistmat)
-# # save only pairwise between target 
-# dtdistances <- as.data.frame(dtdistmat["target",])
-# colnames(dtdistances) <- "dist"
-# dtdistances <- dtdistances %>% rownames_to_column("trt.b.y")
-
 
 ## DT (min/max)
 #dtdist <- distdt.ca %>% filter(trt=="dt")
@@ -320,7 +284,7 @@ fddistances <- fddistances %>% rownames_to_column("trt.b.y")
 
 #2021
 rdist21 <- alldat %>% filter(year=="2021"| year=="0")
-rdist21 <- rdist21 %>% select(-c(water, Treatments,subplot))
+rdist21 <- rdist21 %>% select(-c(water, Treatments,subplot, RTD))
 rdist21 <- rdist21 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
 rdist21 <- rdist21 %>% column_to_rownames("trt.b.y")
 randdistmat <- vegdist(as.matrix(rdist21),method = "euclidean", upper = T)
@@ -332,7 +296,7 @@ rdist21<- data.frame(
 
 #2022
 rdist22 <- alldat %>% filter(year=="2022"| year=="0")
-rdist22 <- rdist22 %>% select(-c(water, Treatments,subplot))
+rdist22 <- rdist22 %>% select(-c(water, Treatments,subplot,RTD))
 rdist22 <- rdist22 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
 rdist22 <- rdist22 %>% column_to_rownames("trt.b.y")
 randdistmat <- vegdist(as.matrix(rdist22),method = "euclidean", upper = T)
@@ -344,7 +308,7 @@ rdist22<- data.frame(
 
 #2023
 rdist23 <- alldat %>% filter(year=="2023"| year=="0")
-rdist23 <- rdist23 %>% select(-c(water, Treatments,subplot))
+rdist23 <- rdist23 %>% select(-c(water, Treatments,subplot,RTD))
 rdist23 <- rdist23 %>% unite(trt.b.y, c(trt, block, year), sep = ".", remove=T) # make unique plot variable
 rdist23 <- rdist23 %>% column_to_rownames("trt.b.y")
 randdistmat <- vegdist(as.matrix(rdist23),method = "euclidean", upper = T)
@@ -361,17 +325,7 @@ rdistances <- rdistances %>% column_to_rownames("id")
 colnames(rdistances) <- "distr"
 rdistances <- rdistances %>% rownames_to_column("trt.b.y")
 
-# #### combine all dissimilarities 
-# cadist <- bind_rows(dtdistances,irdistances)
-# cadist <- bind_rows(cadist,fddistances)
-# cadist <- bind_rows(cadist,rdistances)
-# 
-# #cadist$dist <- normalize(cadist$dist)
-# 
-# #export csv
-# write.csv(cadist, "data/cwm_distances_ca.csv")
-
-#### combine again using max in DT and IR 
+#### combine using min/max in DT and IR 
 cadist2 <- merge(dtdistances.max,irdistances.max)
 cadist2 <- merge(cadist2,fddistances)
 cadist2 <- merge(cadist2,rdistances)

@@ -1,4 +1,5 @@
 #### Relative cover of all species in each community by functional group
+#### Creates Figure S4
 
 library(tidyverse)
 
