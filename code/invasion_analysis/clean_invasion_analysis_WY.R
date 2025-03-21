@@ -150,35 +150,38 @@ Treatment", x = "Precipitation treatment")+
 
 ## ~ distance to IR traits
 invirwy <- ggplot(allwy23, aes(y=propbrte,x=distir,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
 invdtwy <- ggplot(allwy23, aes(y=propbrte,x=distdt,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
 invfdwy <- ggplot(allwy23, aes(y=propbrte,x=distfd,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 

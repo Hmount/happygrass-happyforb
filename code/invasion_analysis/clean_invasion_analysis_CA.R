@@ -159,35 +159,38 @@ Treatment", x = "Precipitation treatment")+
 
 ## ~ distance to IR traits
 invirca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distir,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
 invdtca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distdt,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
 invfdca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distfd,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_y_log10() +
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 #### combined figures

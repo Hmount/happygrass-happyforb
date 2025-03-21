@@ -147,7 +147,7 @@ Treatment", x = "Precipitation treatment")+
 
 ## ~ distance to DT traits
 distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
@@ -157,11 +157,12 @@ Treatment")+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
 distirwy <- ggplot(wydatno21, aes(y=log.gr,x=distir,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
@@ -171,12 +172,13 @@ Treatment")+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
 #wydatno21 <- wydatno21 %>% mutate(grass= ifelse(graminoid >= .51, "grassy","forby"))
 distfdwy <- ggplot(wydatno21, aes(y=log.gr,x=distfd,col=drought))+
-  geom_point()+
+  geom_point(aes(alpha=.8))+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   facet_grid(~year, labeller = as_labeller(labelnames.wy))+
@@ -186,6 +188,7 @@ Treatment")+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
+  guides(alpha = "none")+
   theme_ggeffects()
 
 #### combined figures
