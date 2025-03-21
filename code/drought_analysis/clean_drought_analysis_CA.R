@@ -145,7 +145,7 @@ dttemp3 <- merge(cadatno21, dttemp2, by = c("drought", "trt", "year"), all = TRU
 dissboxca <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
-            position = position_dodge(width = 1), 
+            position = position_dodge(width = .9), 
             vjust = -0.5,
             size=3)+
   ylim(c(NA,3.5))+
@@ -169,7 +169,6 @@ distdtca <- ggplot(cadatno21, aes(y=log.gr,x=distdt,col=drought))+
 Treatment")+
   ylim(c(NA,3.5))+
   geom_hline(yintercept =0,col="black")+
-  #geom_image(x=0, y=0 label=element_text("🎯"))+
   #stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
@@ -202,25 +201,15 @@ Treatment")+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
 
-# distrca <- ggplot(testno, aes(y=log.gr,x=distr,color=drought))+
-#   geom_point()+
-#   geom_smooth(method = "lm")+
-#   scale_color_manual(values=droughtcolsca)+
-#   labs(y=" ", x=" ")+
-#   facet_wrap(~year)+
-#   stat_cor(label.y = c(c(2.5,2.4),c(-2.5,-2.6)))+
-#   geom_hline(yintercept =0,col="black")+
-#   theme_ggeffects()
-
 #### combined figures
 library(ggpubr)
-cafigtop <- ggarrange(dissboxca,distdtca, 
-                      common.legend = T, legend = "right",
+cafigleft <- ggarrange(dissboxca,distfdca, nrow=2,
+                      common.legend = T, legend = "bottom",
                       labels = c("a","b"),label.x = .05)
-cafigbottom <-ggarrange(distfdca,distirca, 
-                        common.legend = T, legend = "right",
+cafigright <-ggarrange(distdtca,distirca, nrow=2,
+                        common.legend = T, legend = "bottom",
                         labels = c("c","d"),label.x = .05)
-cafigdrought <- ggarrange(cafigtop,cafigbottom, nrow=2)
+cafigdrought <- ggarrange(cafigleft,cafigright, ncol=2)
 cafigdrought <- annotate_figure(cafigdrought, 
                                 left="Annual growth rate")
 

@@ -118,7 +118,7 @@ letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
 dttemp2 <- wydatno21 %>%
   group_by(drought, trt, year) %>%
-  summarise(yposition = max(log.gr, na.rm=T), .groups = 'drop')
+  summarise(yposition = quantile(log.gr,.8, na.rm = T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt","year"))
 # Merge with the original data to get the final dataset
@@ -128,8 +128,9 @@ dttemp3 <- merge(wydatno21, dttemp2, by = c("drought", "trt", "year"), all = TRU
 dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
-            position = position_dodge(width = 1), 
-            vjust = -0.5,
+            position = position_dodge(width = .85), 
+            vjust = -1.75,
+            hjust = .6,
             size=3)+
   scale_x_discrete(labels = c("Ambient", "Reduction"))+
   ylim(c(-5,5))+
@@ -143,6 +144,7 @@ dissboxwy <- ggplot(dttemp3, aes(y=log.gr,x=drought,fill=trt))+
 Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
+
 ## ~ distance to DT traits
 distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
   geom_point()+
@@ -153,7 +155,6 @@ distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
 Treatment")+
   ylim(c(-5,5))+
   geom_hline(yintercept =0,col="black")+
-  #geom_image(x=0, y=0 label=element_text("🎯"))+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
@@ -187,23 +188,6 @@ Treatment")+
   #geom_hline(yintercept =0,col="black")+
   theme_ggeffects()
 
-# distrwy <- ggplot(testno, aes(y=log.gr,x=distr,col=drought))+
-#   geom_point(aes(y=log.gr,x=distr,col=drought, shape=year))+
-#   geom_smooth(method = "lm")+
-#   scale_color_manual(values=droughtcolswy)+
-#   facet_wrap(~year)+
-#   labs(y=" ", x="")+
-#   geom_hline(yintercept =0,col="black")+
-#   stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-#   #geom_te
-#   #geom_hline(yintercept =0,col="black")+
-#   theme_ggeffects()
-
-hist(test$log.gr)
-
-difflsmeans(m3.ca, at = list(distdt = 0.58))
-
-
 #### combined figures
 library(ggpubr)
 wyfigtop <- ggarrange(dissboxwy,distdtwy, 
@@ -216,36 +200,29 @@ wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
 wyfigdrought <- annotate_figure(wyfigdrought,
                                 left="Annual growth rate")
 
+#### combined figures AGAIN
+library(ggpubr)
+wyfigtop <- ggarrange(dissboxwy,distfdwy, nrow=2,
+                      common.legend = T, legend = "bottom",
+                      labels = c("a","c"),label.x = .05)
+wyfigbottom <-ggarrange(distdtwy,distirwy, nrow=2,
+                        common.legend = T, legend = "bottom",
+                        labels = c("c","d"),label.x = .05)
+wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, ncol=2)
+wyfigdrought <- annotate_figure(wyfigdrought,
+                                left="Annual growth rate")
 
 tiff("figures/droughtfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
 wyfigdrought
 dev.off()
 
-tiff("figures/ESAfig3.tiff", res=400, height = 6,width =8, "in",compression = "lzw")
-wyfigdrought
-dev.off()
-
-dissfig1 <-ggarrange(dissboxwy,distdtwy,distfdwy,distirwy, 
-                     common.legend = F, legend = "right")
-dissfig2 <- annotate_figure(dissfig1, bottom = "Euclidean distance to drought tolerant CWM targets")
-
-#### for ESA pres
-ESAdissfig1 <-ggarrange(dissboxwy,distdtwy, 
-                     common.legend = T, legend = "right")
-ESAdissfig2 <- annotate_figure(ESAdissfig1, bottom = "Euclidean distance to drought tolerant CWM targets")
 
 
 
 
-library(ggpubr)
-dissfig1 <-ggarrange(dissboxwy,dissboxca, common.legend = T, legend = "right")
-dissfig2 <-ggarrange(wyplotdiss, caplotdiss, common.legend = T,legend = "right")
-dissfig2 <- annotate_figure(dissfig2, bottom = "Euclidean distance to drought tolerant CWM targets")
-dissfig <-ggarrange(dissfig1,dissfig2, nrow=2)
-testfig <- annotate_figure(dissfig, left = "log(annual growth rate)", top = "WY                                                    CA")
 ################################################################
 
-#####output of models as formatted tables:
+#####output of models as formatted tables for supplemental:
 library(lme4)
 library(broom.mixed)
 library(knitr)

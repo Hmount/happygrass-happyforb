@@ -126,7 +126,7 @@ letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
 dttemp2 <- allwy23 %>%
   group_by(drought, trt) %>%
-  summarise(yposition = max(propbrte, na.rm=T), .groups = 'drop')
+  summarise(yposition = quantile(propbrte, .9, na.rm=T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt"))
 # Merge with the original data to get the final dataset
@@ -136,8 +136,8 @@ dttemp3 <- merge(allwy23, dttemp2, by = c("drought", "trt"), all = TRUE)
 invboxwy <- ggplot(dttemp3, aes(y=propbrte,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
-            position = position_dodge(width = .9), 
-            #vjust = -0.5,
+            position = position_dodge(width = .97), 
+            vjust = -2,
             size=3)+
   scale_y_log10() +
   scale_x_discrete(labels = c("Ambient", "Reduction"))+
@@ -147,11 +147,6 @@ invboxwy <- ggplot(dttemp3, aes(y=propbrte,x=drought,fill=trt))+
 Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
-suballwy23 <- suballwy23 %>% mutate(nativecovbin = cut(nativecov.plot, 
-                                                       breaks = quantile(nativecov.plot, probs = seq(0, 1, length.out = 4), na.rm = TRUE), 
-                                                       include.lowest = TRUE))
-# mutate(nativecovbin = bins.quantiles(nativecov.plot, 3, 3))
-#   nativecovbin = ifelse(nativecov.plot 
 
 ## ~ distance to IR traits
 invirwy <- ggplot(allwy23, aes(y=propbrte,x=distir,col=drought))+
@@ -186,30 +181,20 @@ Treatment")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   theme_ggeffects()
 
-# distrwy <- ggplot(allwy23, aes(y=log.brte,x=distr,col=drought))+
-#   geom_point(aes(y=log.brte,x=distr,col=drought, shape=year))+
-#   geom_smooth(method = "lm")+
-#   scale_color_manual(values=droughtcolswy)+
-#   #facet_wrap(~year)+
-#   labs(y=" ", x="")+
-#   geom_hline(yintercept =0,col="black")+
-#   stat_cor(geom = "label",label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-#   #geom_te
-#   #geom_hline(yintercept =0,col="black")+
-#   theme_ggeffects()
-
 
 #### combined figures
 library(ggpubr)
-wyfigtop <- ggarrange(invboxwy,invirwy, 
-                      common.legend = T, legend = "right",
+wyfigtop <- ggarrange(invboxwy,invfdwy, nrow=2,
+                      common.legend = T, legend = "bottom",
                       labels = c("a","b"))#,label.x = .05)
-wyfigbottom <-ggarrange(invfdwy,invdtwy, 
-                        common.legend = T, legend = "right",
+wyfigbottom <-ggarrange(invirwy,invdtwy, nrow=2,
+                        common.legend = T, legend = "bottom",
                         labels = c("c","d"))#,label.x = .05)
-wyfiginvasion <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
+wyfiginvasion <- ggarrange(wyfigtop,wyfigbottom, ncol=2)
 wyfiginvasion <- annotate_figure(wyfiginvasion,
-                                 left="log(relative cover BRTE)")
+                                 left = text_grob(bquote(log(relative~cover~italic("Bromus tectorum"))), rot=90))
+                                 #left = text_grob(?bquote(""*"log(relative cover "(italic(Bromus tectorum))*""), rot=90))
+                                 #left="log(relative cover *Bromus tectorum*)")
 
 tiff("figures/invasionfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
 wyfiginvasion

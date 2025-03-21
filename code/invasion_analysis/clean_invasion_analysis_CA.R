@@ -146,7 +146,7 @@ invboxca <- ggplot(dttemp3, aes(y=inv.grass.cov,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
             position = position_dodge(width = .9), 
-            #vjust = -0.5,
+            vjust = -0.3,
             size=3)+
   scale_y_log10() +
   scale_x_discrete(labels = c("Addition", "Reduction"))+
@@ -154,13 +154,8 @@ invboxca <- ggplot(dttemp3, aes(y=inv.grass.cov,x=drought,fill=trt))+
                        labels = c("RC","DT","FD","IR"))+
   labs(y=" ", fill="Seeding 
 Treatment", x = "Precipitation treatment")+
+  coord_cartesian(clip = "off")+
   theme_ggeffects()
-
-suballwy23 <- suballwy23 %>% mutate(nativecovbin = cut(nativecov.plot, 
-                                                       breaks = quantile(nativecov.plot, probs = seq(0, 1, length.out = 4), na.rm = TRUE), 
-                                                       include.lowest = TRUE))
-# mutate(nativecovbin = bins.quantiles(nativecov.plot, 3, 3))
-#   nativecovbin = ifelse(nativecov.plot 
 
 ## ~ distance to IR traits
 invirca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distir,col=drought))+
@@ -189,30 +184,21 @@ invfdca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distfd,col=drought))+
   geom_point()+
   geom_smooth(method = "lm")+
   scale_y_log10() +
-  #geom_text(aes(x = 0, y = "-inf"), label = "\u2605", size = 10, color = "gold") +
-  #annotate("text", x = 0, y = .01, label = "\u2605", size = 8, color = "gold") +
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
-  #scale_y_log10(labels = trans_format("log10", math_format(10^.x)))
-  #coord_trans(y = scales::transform_exp(10))+
-  #coord_trans(y = scales::transform_log(10))+
-  #scale_y_continuous(trans='log10')+
-  #scale_y_log10(guide = "axis_logticks")+
-  # scale_y_continuous(breaks = seq(-5, 0, by = 1), # Set breaks in log space
-  #   labels = scales::math_format(10^.x))+ # Format as powers of ten
   theme_ggeffects()
 
 #### combined figures
 library(ggpubr)
-cafigtop <- ggarrange(invboxca,invirca, 
-                      common.legend = T, legend = "right",
+cafigleft <- ggarrange(invboxca,invfdca, nrow=2, 
+                      common.legend = T, legend = "bottom",
                       labels = c("a","b"))
-cafigbottom <-ggarrange(invfdca,invdtca, 
-                        common.legend = T, legend = "right",
+cafigright <-ggarrange(invirca,invdtca, nrow=2, 
+                        common.legend = T, legend = "bottom",
                         labels = c("c","d"))
-cafiginvasion <- ggarrange(cafigtop,cafigbottom, nrow=2)
+cafiginvasion <- ggarrange(cafigleft,cafigright, ncol=2)
 cafiginvasion <- annotate_figure(cafiginvasion,
                                 left="log(relative cover invasive grass)")
 
