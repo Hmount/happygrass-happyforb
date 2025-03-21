@@ -194,10 +194,10 @@ Treatment")+
 library(ggpubr)
 cafigleft <- ggarrange(invboxca,invfdca, nrow=2, 
                       common.legend = T, legend = "bottom",
-                      labels = c("a","b"))
+                      labels = c("a","c"))
 cafigright <-ggarrange(invirca,invdtca, nrow=2, 
                         common.legend = T, legend = "bottom",
-                        labels = c("c","d"))
+                        labels = c("b","d"))
 cafiginvasion <- ggarrange(cafigleft,cafigright, ncol=2)
 cafiginvasion <- annotate_figure(cafiginvasion,
                                 left="log(relative cover invasive grass)")

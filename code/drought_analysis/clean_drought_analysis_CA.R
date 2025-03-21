@@ -205,10 +205,10 @@ Treatment")+
 library(ggpubr)
 cafigleft <- ggarrange(dissboxca,distfdca, nrow=2,
                       common.legend = T, legend = "bottom",
-                      labels = c("a","b"),label.x = .05)
+                      labels = c("a","c"),label.x = .05)
 cafigright <-ggarrange(distdtca,distirca, nrow=2,
                         common.legend = T, legend = "bottom",
-                        labels = c("c","d"),label.x = .05)
+                        labels = c("b","d"),label.x = .05)
 cafigdrought <- ggarrange(cafigleft,cafigright, ncol=2)
 cafigdrought <- annotate_figure(cafigdrought, 
                                 left="Annual growth rate")

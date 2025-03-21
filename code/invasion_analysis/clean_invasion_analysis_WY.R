@@ -186,10 +186,10 @@ Treatment")+
 library(ggpubr)
 wyfigtop <- ggarrange(invboxwy,invfdwy, nrow=2,
                       common.legend = T, legend = "bottom",
-                      labels = c("a","b"))#,label.x = .05)
+                      labels = c("a","c"))#,label.x = .05)
 wyfigbottom <-ggarrange(invirwy,invdtwy, nrow=2,
                         common.legend = T, legend = "bottom",
-                        labels = c("c","d"))#,label.x = .05)
+                        labels = c("b","d"))#,label.x = .05)
 wyfiginvasion <- ggarrange(wyfigtop,wyfigbottom, ncol=2)
 wyfiginvasion <- annotate_figure(wyfiginvasion,
                                  left = text_grob(bquote(log(relative~cover~italic("Bromus tectorum"))), rot=90))

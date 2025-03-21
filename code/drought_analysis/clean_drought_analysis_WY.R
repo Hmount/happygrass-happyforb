@@ -190,24 +190,12 @@ Treatment")+
 
 #### combined figures
 library(ggpubr)
-wyfigtop <- ggarrange(dissboxwy,distdtwy, 
-                      common.legend = T, legend = "right",
-                      labels = c("a","b"),label.x = .05)
-wyfigbottom <-ggarrange(distfdwy,distirwy, 
-                        common.legend = T, legend = "right",
-                        labels = c("c","d"),label.x = .05)
-wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, nrow=2)
-wyfigdrought <- annotate_figure(wyfigdrought,
-                                left="Annual growth rate")
-
-#### combined figures AGAIN
-library(ggpubr)
 wyfigtop <- ggarrange(dissboxwy,distfdwy, nrow=2,
                       common.legend = T, legend = "bottom",
                       labels = c("a","c"),label.x = .05)
 wyfigbottom <-ggarrange(distdtwy,distirwy, nrow=2,
                         common.legend = T, legend = "bottom",
-                        labels = c("c","d"),label.x = .05)
+                        labels = c("b","d"),label.x = .05)
 wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, ncol=2)
 wyfigdrought <- annotate_figure(wyfigdrought,
                                 left="Annual growth rate")
