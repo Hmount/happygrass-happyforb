@@ -58,7 +58,7 @@ wydist <- wydist %>%
 wydist$block <- as.numeric(wydist$block)
 wydist$year <- as.numeric(wydist$year)
 ## add drought column from cwm dataframe
-cwm.wy <- read.csv("data/cwm_wy.csv")# California CWM data
+cwm.wy <- read.csv("data/cwm_wy.csv")# Wyoming CWM data
 wydrought <- cwm.wy %>% select(block,trt,year,drought) #drought and ID column
 wydrought <- wydrought %>% distinct() #remove duplicates (from subplots)
 wydist <- merge(wydist,wydrought, by=c("block", "trt","year")) #add drought treatment column
@@ -291,100 +291,103 @@ disttargetwy <- ggplot(alltemp, aes(y=targetdist, x=trt, fill=drought))+
   theme(legend.position = c(.3,.9), legend.direction = "vertical")+
   ylim(0,4)
 
-## Last, plot bray-Curtis dissimilarity as it relates to Euclidean distance.
-## The relationship between our intended community composition and target CWM trait profile 
-## should be tight and highly correlated. A tight relationship suggests that
-## the replacement of species corresponds to the change in traits. But, a 
-## poor relationship between these suggests that the replacement of species did
-## not lead to consistent changes in CWM, possibly suggesting high functional 
-## redundancy.
-## See the "bray_curtis_calc.R script" for details on how these were calculated.
-
-## read in bray-curtis data, create separated id columns, and make factors match 
-## CA
-bcdis.ca <- read.csv("data/bc_dissimilarity_ca.csv") #CA data
-bcdis.ca <- bcdis.ca %>% 
-  separate(id, into = c("trt", "block", "year"), sep = "\\.")
-bcdis.ca$block <- as.numeric(bcdis.ca$block)
-bcdis.ca$year <- as.numeric(bcdis.ca$year)
-bcdis.ca <- bcdis.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
-## WY
-bcdis.wy <- read.csv("data/bc_dissimilarity_wy.csv") #WY data
-bcdis.wy <- bcdis.wy %>% 
-  separate(id, into = c("trt", "block", "year"), sep = "\\.")
-bcdis.wy$block <- as.numeric(bcdis.wy$block)
-bcdis.wy$year <- as.numeric(bcdis.wy$year)
-bcdis.wy <- bcdis.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
-
-## combine with Euclidean distance data (calculated above) 
-## (dis.site column = bray-curtis)
-cadisdist <- merge(cadist, bcdis.ca)
-wydisdist <- merge(wydist, bcdis.wy)
-
-#model and plot:
-## CA
-summary(lm(targetdist~dist.ca*trt, cadisdist))
-confint(lm(targetdist~dist.ca*trt, cadisdist))
-bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist, col=trt))+
-  geom_point(pch=20)+
-  geom_smooth(method="lm")+
-  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7, 
-                        labels = c("dt" = "DT", "fd" = "FD", 
-                                   "ir" = "IR", "rand" = "RC")) +
-  labs(x="Bray-Curtis dissimilarity", 
-       y="Euclidean distance to 
-seeding treatment target",
-       col="Seeding 
-treatment")+
-  theme_ggeffects()+
-  theme(legend.position = "bottom")
-#theme(legend.position = c(-.5,0), legend.direction = "horizontal")
-## WY
-summary(lm(targetdist~dist.wy*trt, wydisdist))
-confint(lm(targetdist~dist.wy*trt, wydisdist))
-bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
-  geom_point(pch=20)+
-  geom_smooth(method="lm")+
-  scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
-                        labels = c("dt" = "DT", "fd" = "FD", 
-                                   "ir" = "IR", "rand" = "RC"))+
-  labs(x="Bray-Curtis dissimilarity", 
-       y="Euclidean distance to 
-seeding treatment target",
-       col="Seeding 
-treatment")+
-  theme_ggeffects()+
-  theme(legend.position = "bottom")
-#theme(legend.position = c(.3,.8))#, legend.direction = "horizontal")
+# ### No longer included in Manuscript
+# ### this relationship describes how well we did at making the experiment, not 
+# ### so much how well we did at making communities
+# ## Last, plot bray-Curtis dissimilarity as it relates to Euclidean distance.
+# ## The relationship between our intended community composition and target CWM trait profile 
+# ## should be tight and highly correlated. A tight relationship suggests that
+# ## the replacement of species corresponds to the change in traits. But, a 
+# ## poor relationship between these suggests that the replacement of species did
+# ## not lead to consistent changes in CWM, possibly suggesting high functional 
+# ## redundancy.
+# ## See the "bray_curtis_calc.R script" for details on how these were calculated.
+# 
+# ## read in bray-curtis data, create separated id columns, and make factors match 
+# ## CA
+# bcdis.ca <- read.csv("data/bc_dissimilarity_ca.csv") #CA data
+# bcdis.ca <- bcdis.ca %>% 
+#   separate(id, into = c("trt", "block", "year"), sep = "\\.")
+# bcdis.ca$block <- as.numeric(bcdis.ca$block)
+# bcdis.ca$year <- as.numeric(bcdis.ca$year)
+# bcdis.ca <- bcdis.ca %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
+# ## WY
+# bcdis.wy <- read.csv("data/bc_dissimilarity_wy.csv") #WY data
+# bcdis.wy <- bcdis.wy %>% 
+#   separate(id, into = c("trt", "block", "year"), sep = "\\.")
+# bcdis.wy$block <- as.numeric(bcdis.wy$block)
+# bcdis.wy$year <- as.numeric(bcdis.wy$year)
+# bcdis.wy <- bcdis.wy %>% mutate(trt = str_replace(trt, "^r$", "rand")) #make r match rand in cadist
+# 
+# ## combine with Euclidean distance data (calculated above) 
+# ## (dis.site column = bray-curtis)
+# cadisdist <- merge(cadist, bcdis.ca)
+# wydisdist <- merge(wydist, bcdis.wy)
+# 
+# #model and plot:
+# ## CA
+# summary(lm(targetdist~dist.ca*trt, cadisdist))
+# confint(lm(targetdist~dist.ca*trt, cadisdist))
+# bcplotca <- ggplot(cadisdist, aes(x=dist.ca, y=targetdist, col=trt))+
+#   geom_point(pch=20)+
+#   geom_smooth(method="lm")+
+#   scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7, 
+#                         labels = c("dt" = "DT", "fd" = "FD", 
+#                                    "ir" = "IR", "rand" = "RC")) +
+#   labs(x="Bray-Curtis dissimilarity", 
+#        y="Euclidean distance to 
+# seeding treatment target",
+#        col="Seeding 
+# treatment")+
+#   theme_ggeffects()+
+#   theme(legend.position = "bottom")
+# #theme(legend.position = c(-.5,0), legend.direction = "horizontal")
+# ## WY
+# summary(lm(targetdist~dist.wy*trt, wydisdist))
+# confint(lm(targetdist~dist.wy*trt, wydisdist))
+# bcplotwy <- ggplot(wydisdist, aes(x=dist.wy, y=targetdist ,col=trt))+
+#   geom_point(pch=20)+
+#   geom_smooth(method="lm")+
+#   scale_color_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
+#                         labels = c("dt" = "DT", "fd" = "FD", 
+#                                    "ir" = "IR", "rand" = "RC"))+
+#   labs(x="Bray-Curtis dissimilarity", 
+#        y="Euclidean distance to 
+# seeding treatment target",
+#        col="Seeding 
+# treatment")+
+#   theme_ggeffects()+
+#   theme(legend.position = "bottom")
+# #theme(legend.position = c(.3,.8))#, legend.direction = "horizontal")
 
 ## Combining
 # get legends
 drought_legend <- as_ggplot(get_legend(disttargetca))
-seed_legend <- as_ggplot(get_legend(bcplotca))
+#seed_legend <- as_ggplot(get_legend(bcplotca))
 
 #first the distance plots
 wydistplots <- ggarrange(distdtwy, distirwy, distfdwy, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
                          labels = c("a","b","c"), hjust=c(-4,-4,-4))
-wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
-                          widths = c(1,.5), 
-                          legend = "none",
-                          labels = c(" ", "d"), hjust = -5)
-wydistbcplot <- annotate_figure(wydistbcplot, right=text_grob("Wyoming", rot=270, hjust = .8),fig.lab.face="bold")
+# wydistbcplot <- ggarrange(wydistplots, bcplotwy, ncol=2, nrow=1,
+#                           widths = c(1,.5), 
+#                           legend = "none",
+#                           labels = c(" ", "d"), hjust = -5)
+wydistbcplot <- annotate_figure(wydistplots, right=text_grob("Wyoming", rot=270, hjust = .8),fig.lab.face="bold")
 
 cadistplots <- ggarrange(distdtca, distirca, distfdca, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
-                         labels = c("e","f","g"), hjust=c(-4,-8,-4))
-cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,
-                          widths = c(1,.5), 
-                          legend = "none",
-                          labels = c(" ", "h"), hjust = -5)
-cadistbcplot <- annotate_figure(cadistbcplot, right=text_grob("California", rot=270, hjust = .8), fig.lab.face="bold")
+                         labels = c("d","e","f"), hjust=c(-4,-8,-4))
+# cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,
+#                           widths = c(1,.5), 
+#                           legend = "none",
+#                           labels = c(" ", "h"), hjust = -5)
+cadistbcplot <- annotate_figure(cadistplots, right=text_grob("California", rot=270, hjust = .8), fig.lab.face="bold")
 
 alldistbcplot <- ggarrange(wydistbcplot, cadistbcplot, ncol=1, nrow=2)
 alldistbcplot <- annotate_figure(alldistbcplot, left=text_grob("Euclidean distance to...", rot=90))
 
-legend <- ggarrange(drought_legend, seed_legend, nrow = 1)
+legend <- ggarrange(drought_legend, nrow = 1)
 
 alldistbcplot <- ggarrange(alldistbcplot, legend, nrow=2, heights = c(1.75,.25))
 alldistbcplot

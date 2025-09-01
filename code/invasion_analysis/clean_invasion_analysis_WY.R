@@ -155,6 +155,7 @@ invirwy <- ggplot(allwy23, aes(y=propbrte,x=distir,col=drought))+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
+  geom_vline(xintercept =0,col="yellow2", lty=2)+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
@@ -167,6 +168,7 @@ invdtwy <- ggplot(allwy23, aes(y=propbrte,x=distdt,col=drought))+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
+  geom_vline(xintercept =0,col="steelblue", lty=2)+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
@@ -179,6 +181,7 @@ invfdwy <- ggplot(allwy23, aes(y=propbrte,x=distfd,col=drought))+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
+  geom_vline(xintercept =0,col="35B779FF", lty=2)+
   scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+

@@ -165,6 +165,7 @@ invirca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distir,col=drought))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
+  geom_vline(xintercept =0,col="yellow2", lty=2)+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
@@ -177,6 +178,7 @@ invdtca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distdt,col=drought))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
   scale_y_log10() +
+  geom_vline(xintercept =0,col="steelblue", lty=2)+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
@@ -189,6 +191,7 @@ invfdca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distfd,col=drought))+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
+  geom_vline(xintercept =0,col="35B779FF", lty=2)+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()

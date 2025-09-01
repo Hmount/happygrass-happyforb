@@ -154,6 +154,7 @@ distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
   ylim(c(-5,5))+
+  geom_vline(xintercept =0,col="steelblue", lty=2)+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -169,6 +170,7 @@ distirwy <- ggplot(wydatno21, aes(y=log.gr,x=distir,col=drought))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
   ylim(c(-5,5))+
+  geom_vline(xintercept =0,col="yellow2", lty=2)+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+
@@ -185,6 +187,7 @@ distfdwy <- ggplot(wydatno21, aes(y=log.gr,x=distfd,col=drought))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   ylim(c(-5,5))+
+  geom_vline(xintercept =0,col="35B779FF", lty=2)+
   geom_hline(yintercept =0,col="black")+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   #geom_hline(yintercept =0,col="black")+

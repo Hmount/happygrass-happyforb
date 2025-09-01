@@ -16,7 +16,7 @@ library(erer)
 #### WY ####
 ## load in composition data, clean and modify columns as usual
 comp.wy <- read.csv("data/comp_wy_plot.csv") #Wyoming species comp data PLOT level
-comp.wy <- comp.wy %>% filter(year != "2020") #keep only 2023 data 
+comp.wy <- comp.wy %>% filter(year != "2020") #remove 2020 data 
 comp.wy$drought <- as.factor(comp.wy$drought)
 comp.wy$year<-as.factor(comp.wy$year)
 comp.wy$trt <- as.factor(comp.wy$trt)
