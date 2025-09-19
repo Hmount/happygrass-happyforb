@@ -135,20 +135,20 @@ letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
 dttemp2 <- suballca23 %>%
   group_by(drought, trt) %>%
-  summarise(yposition = max(inv.grass.cov, na.rm=T), .groups = 'drop')
+  summarise(yposition = max(log.invg, na.rm=T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt"))
 # Merge with the original data to get the final dataset
 dttemp3 <- merge(suballca23, dttemp2, by = c("drought", "trt"), all = TRUE)
 
 #plot:
-invboxca <- ggplot(dttemp3, aes(y=inv.grass.cov,x=drought,fill=trt))+
+invboxca <- ggplot(dttemp3, aes(y=log.invg,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
             position = position_dodge(width = .9), 
             vjust = -0.3,
             size=3)+
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_x_discrete(labels = c("Addition", "Reduction"))+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
                        labels = c("RC","DT","FD","IR"))+
@@ -158,36 +158,60 @@ Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
-invirca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distir,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+irpreds <- ggpredict(irmod, terms = c("distir", "drought"))  # or terms = c("xvar", "group")
+irdat <- merge(suballca23, irpreds, by.x = c("drought"), by.y = c("group"), all.x=T)
+#plot
+invirca <- ggplot(irdat, aes(y=log.invg,x=distir,col=drought,fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
-  scale_y_log10() +
+  #scale_y_log10() +
   geom_vline(xintercept =0,col="yellow2", lty=2)+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
-invdtca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distdt,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+dtpreds <- ggpredict(dtmod, terms = c("distdt", "drought"))  # or terms = c("xvar", "group")
+dtdat <- merge(suballca23, dtpreds, by.x = c("drought"), by.y = c("group"), all.x=T)
+#plot
+invdtca <- ggplot(dtdat, aes(y=log.invg,x=distdt,col=drought, fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
-  scale_y_log10() +
+  #scale_y_log10() +
   geom_vline(xintercept =0,col="steelblue", lty=2)+
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
-invfdca <- ggplot(suballca23, aes(y=inv.grass.cov,x=distfd,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
-  scale_y_log10() +
+#predict values to make ribbon for mixed effects models
+fdpreds <- ggpredict(fdmod, terms = c("distfd", "drought"))  # or terms = c("xvar", "group")
+fddat <- merge(suballca23, fdpreds, by.x = "drought", by.y = "group", all.x=T)
+#plot
+invfdca <- ggplot(fddat, aes(y=log.invg,x=distfd,col=drought, fill=drought))+
+  geom_point(alpha=.2)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
+  #scale_y_log10() +
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+

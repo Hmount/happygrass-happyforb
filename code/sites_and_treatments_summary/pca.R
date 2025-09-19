@@ -420,7 +420,7 @@ ggarrange(nmdsplot.wy,nmdsplot.ca, ncol=2, common.legend = T)
 dev.off()
 
 
-### make PCA + NMDS figure
+### make PCA + NMDS + BC-CWM model figure
 ##make a legend for this plot:
 forlegend<-ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt))+
   geom_point()+
@@ -430,12 +430,23 @@ forlegend<-ggplot(nmds_scores.ca, aes(x = NMDS1, y = NMDS2, color = trt))+
   theme_minimal()
 ordlegend <- as_ggplot(get_legend(forlegend))
 
-##combine plots
-ordsplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca, 
-                      labels = c("a","b","c","d"), label.y = .9)
-ordsplot <- ggarrange(ordsplot, ordlegend, nrow=2, heights = c(.9,.1))
-ordsplot<-annotate_figure(ordsplot, top = "Wyoming                                                             California")
+# ##combine plots
+# ordsplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca, 
+#                       labels = c("a","b","c","d"), label.y = .9)
+# ordsplot <- ggarrange(ordsplot, ordlegend, nrow=2, heights = c(.9,.1))
+# ordsplot<-annotate_figure(ordsplot, top = "Wyoming                                                             California")
 
-tiff("figures/pca.nmds.plot.tiff", res=400, height = 7,width =7, "in",compression = "lzw")
-ordsplot
+ordsBCplot <- ggarrange(WYpcafig,CApcafig,nmdsplot.wy,nmdsplot.ca,
+                        bcplotwy, bcplotca, 
+                        nrow=3,ncol=2, common.legend = T, legend = "none",
+                        labels = c("a","b","c","d","e","f"), 
+                        label.y = c(.9,.9,.9,.9,1,1))
+ordsBCplot <- ggarrange(ordsBCplot, ordlegend, nrow=2, heights = c(.9,.1))
+ordsBCplot <- annotate_figure(ordsBCplot, top = "Wyoming                                                             California")
+tiff("figures/pca_nmds_bc_plot.tiff", res=400, height = 9,width =7, "in",compression = "lzw")
+ordsBCplot
+dev.off()
+
+# tiff("figures/pca.nmds.plot.tiff", res=400, height = 7,width =7, "in",compression = "lzw")
+# ordsplot
 dev.off()

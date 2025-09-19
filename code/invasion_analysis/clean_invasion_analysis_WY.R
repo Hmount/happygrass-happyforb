@@ -126,20 +126,20 @@ letters_df <- as.data.frame(letters)
 # Step 4: Create a temporary data frame with the desired y-position for plotting
 dttemp2 <- allwy23 %>%
   group_by(drought, trt) %>%
-  summarise(yposition = quantile(propbrte, .9, na.rm=T), .groups = 'drop')
+  summarise(yposition = quantile(log.propbrte, .9, na.rm=T), .groups = 'drop')
 # Step 5: Merge the letter results with the y-position data
 dttemp2 <- merge(letters_df, dttemp2, by = c("drought", "trt"))
 # Merge with the original data to get the final dataset
 dttemp3 <- merge(allwy23, dttemp2, by = c("drought", "trt"), all = TRUE)
 
 #plot:
-invboxwy <- ggplot(dttemp3, aes(y=propbrte,x=drought,fill=trt))+
+invboxwy <- ggplot(dttemp3, aes(y=log.propbrte,x=drought,fill=trt))+
   geom_boxplot()+
   geom_text(aes(y=yposition,label = .group), 
             position = position_dodge(width = .97), 
             vjust = -2,
             size=3)+
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_x_discrete(labels = c("Ambient", "Reduction"))+
   scale_fill_viridis_d(option = "D", begin = .1, end = 1, alpha = 0.7,
                        labels = c("RC","DT","FD","IR"))+
@@ -149,40 +149,64 @@ Treatment", x = "Precipitation treatment")+
 
 
 ## ~ distance to IR traits
-invirwy <- ggplot(allwy23, aes(y=propbrte,x=distir,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+irpreds <- ggpredict(irmod, terms = c("distir", "drought"))  # or terms = c("xvar", "group")
+irdat <- merge(allwy23, irpreds, by.x = c("drought"), by.y = c("group"), all.x=T)
+#plot
+invirwy <- ggplot(irdat, aes(y=log.propbrte,x=distir,col=drought,fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
+  scale_fill_manual(values=droughtcolswy, guide="none")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
   geom_vline(xintercept =0,col="yellow2", lty=2)+
-  scale_y_log10() +
+ # scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
-invdtwy <- ggplot(allwy23, aes(y=propbrte,x=distdt,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+dtpreds <- ggpredict(dtmod, terms = c("distdt", "drought"))  # or terms = c("xvar", "group")
+dtdat <- merge(allwy23, dtpreds, by.x = c("drought"), by.y = c("group"), all.x=T)
+#plot
+invdtwy <- ggplot(dtdat, aes(y=log.propbrte,x=distdt,col=drought, fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  scale_fill_manual(values=droughtcolswy, guide="none")+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
   geom_vline(xintercept =0,col="steelblue", lty=2)+
-  scale_y_log10() +
+  #scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
-invfdwy <- ggplot(allwy23, aes(y=propbrte,x=distfd,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+fdpreds <- ggpredict(fdmod, terms = c("distfd", "drought"))  # or terms = c("xvar", "group")
+fddat <- merge(allwy23, fdpreds, by.x = "drought", by.y = "group", all.x=T)
+#plot
+invfdwy <- ggplot(fddat, aes(y=log.propbrte,x=distfd,col=drought, fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  scale_fill_manual(values=droughtcolswy, guide="none")+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
   geom_vline(xintercept =0,col="35B779FF", lty=2)+
-  scale_y_log10() +
+  #scale_y_log10() +
   #stat_cor(label.y = c(c(3,3.5),c(-2.5,-2.6)))+
   guides(alpha = "none")+
   theme_ggeffects()

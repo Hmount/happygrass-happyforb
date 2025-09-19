@@ -146,10 +146,18 @@ Treatment", x = "Precipitation treatment")+
 
 
 ## ~ distance to DT traits
-distdtwy <- ggplot(wydatno21, aes(y=log.gr,x=distdt,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+dtpreds <- ggpredict(dtmod, terms = c("distdt", "drought","year"))  # or terms = c("xvar", "group")
+dtdat <- merge(wydatno21, dtpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distdtwy <- ggplot(dtdat, aes(y=log.gr,x=distdt,col=drought, fill=drought))+
+  geom_point(alpha=0.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  scale_fill_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"),guide="none")+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
@@ -162,10 +170,18 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
-distirwy <- ggplot(wydatno21, aes(y=log.gr,x=distir,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+irpreds <- ggpredict(irmod, terms = c("distir", "drought","year"))  # or terms = c("xvar", "group")
+irdat <- merge(wydatno21, irpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distirwy <- ggplot(irdat, aes(y=log.gr,x=distir,col=drought, fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  scale_fill_manual(values=droughtcolswy, guide="none")+
   facet_wrap(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
@@ -179,10 +195,18 @@ Treatment")+
 
 ## ~ distance to FD traits
 #wydatno21 <- wydatno21 %>% mutate(grass= ifelse(graminoid >= .51, "grassy","forby"))
-distfdwy <- ggplot(wydatno21, aes(y=log.gr,x=distfd,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+fdpreds <- ggpredict(fdmod, terms = c("distfd", "drought","year"))  # or terms = c("xvar", "group")
+fddat <- merge(wydatno21, fdpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distfdwy <- ggplot(fddat, aes(y=log.gr,x=distfd,col=drought, fill=drought))+
+  geom_point(alpha=.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolswy, labels = c("Ambient", "Reduction"))+
+  scale_fill_manual(values=droughtcolswy, guide="none")+
   facet_grid(~year, labeller = as_labeller(labelnames.wy))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+

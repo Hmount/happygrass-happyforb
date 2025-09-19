@@ -160,10 +160,18 @@ Treatment", x = "Precipitation treatment")+
   theme_ggeffects()
 
 ## ~ distance to DT traits
-distdtca <- ggplot(cadatno21, aes(y=log.gr,x=distdt,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+dtpreds <- ggpredict(dtmod, terms = c("distdt", "drought","year"))  # or terms = c("xvar", "group")
+dtdat <- merge(cadatno21, dtpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distdtca <- ggplot(dtdat, aes(y=log.gr,x=distdt,col=drought, fill=drought))+
+  geom_point(alpha=0.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to DT target", col="Precipitation 
 Treatment")+
@@ -176,10 +184,18 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to IR traits
-distirca <- ggplot(cadatno21, aes(y=log.gr,x=distir,col=drought))+
-  geom_point(aes(alpha=.8))+
+#predict values to make ribbon for mixed effects models
+irpreds <- ggpredict(irmod, terms = c("distir", "drought","year"))  # or terms = c("xvar", "group")
+irdat <- merge(cadatno21, irpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distirca <- ggplot(irdat, aes(y=log.gr,x=distir,col=drought, fill=drought))+
+  geom_point(alpha=0.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
   geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to IR target", col="Precipitation 
 Treatment")+
