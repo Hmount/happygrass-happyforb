@@ -189,6 +189,14 @@ WYpcafig <- ggplot(pca_scores.wy, aes(x = Comp.1, y = Comp.2, color = trt)) +
   theme_minimal()
 
 
+# PERMANOVA directly on CWM traits
+library(vegan)
+adon_cwm_wy <- adonis2(subcwm_p.wy ~ trt, 
+                    data = cwm_p.wy, 
+                    permutations = 999, 
+                    method = "euclidean")   # since traits are continuous
+adon_cwm_wy
+
 #### CA
 ### continue wrangling trait data to use to create CWM pca
 #set color scheme
@@ -284,6 +292,15 @@ CApcafig <- ggplot(pca_scores.ca, aes(x = Comp.1, y = Comp.2, color = trt)) +
   labs(x = "PCA1", y = "PCA2", title = " ") +
   theme_minimal()
 
+# PERMANOVA directly on CWM traits
+library(vegan)
+adon_cwm_ca <- adonis2(subcwm_p.ca ~ trt, 
+                       data = cwm_p.ca, 
+                       permutations = 999, 
+                       method = "euclidean")   # since traits are continuous
+adon_cwm_ca
+
+
 ###make pca
 ### save for combo Figure S3
 commspca <- ggarrange(WYpcafig,CApcafig)
@@ -293,7 +310,22 @@ commspca <- ggarrange(WYpcafig,CApcafig)
 #run Bray-Curtis with vegan::vegdist() 
 testbray.ca <- vegdist(as.matrix(comms_p.ca), method = "bray")
 testbray.wy <- vegdist(as.matrix(comms_p.wy), method = "bray")
-
+# PERMANOVA NMDS by trt
+library(vegan)
+metadatwy <- as.data.frame(rownames(comms_p.wy)) %>% 
+  separate("rownames(comms_p.wy)", into = c("trt", "block"), sep = "\\ ")
+adon_nmds_wy <- adonis2(testbray.wy ~ trt, 
+                       data = metadatwy, 
+                       permutations = 999, 
+                       method = "bray")   # since traits are continuous
+adon_nmds_wy
+metadatca <- as.data.frame(rownames(comms_p.ca)) %>% 
+  separate("rownames(comms_p.ca)", into = c("trt", "block"), sep = "\\ ")
+adon_nmds_ca <- adonis2(testbray.ca ~ trt, 
+                        data = metadatca, 
+                        permutations = 999, 
+                        method = "bray")   # since traits are continuous
+adon_nmds_ca
 ## make view-able matrix + subset so 2020 comms are rows and 2024 comms are columns 
 testbray.mat.ca <- as.matrix(testbray.ca)
 testbray.mat.wy <- as.matrix(testbray.wy)

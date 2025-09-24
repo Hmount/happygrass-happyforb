@@ -208,10 +208,18 @@ Treatment")+
   theme_ggeffects()
 
 ## ~ distance to FD traits
-distfdca <- ggplot(cadatno21, aes(y=log.gr,x=distfd,col=drought))+
-  geom_point(aes(alpha=.8))+
-  geom_smooth(method = "lm")+
+#predict values to make ribbon for mixed effects models
+fdpreds <- ggpredict(fdmod, terms = c("distfd", "drought","year"))  # or terms = c("xvar", "group")
+fddat <- merge(cadatno21, fdpreds, by.x = c("year","drought"), by.y = c("facet","group"), all.x=T)
+#plot
+distfdca <- ggplot(fddat, aes(y=log.gr,x=distfd,col=drought, fill=drought))+
+  geom_point(alpha=0.08)+
+  geom_ribbon(aes(x = x, y=predicted, ymin = conf.low, ymax = conf.high),
+              alpha = 0.3, color = NA)+
+  geom_line(aes(x = x, y = predicted), size = 1)+
+  #geom_smooth(method = "lm")+
   scale_color_manual(values=droughtcolsca, labels = c("Addition", "Reduction"))+
+  scale_fill_manual(values=droughtcolsca, guide="none")+
   facet_wrap(~year, labeller = as_labeller(labelnames.ca))+
   labs(y=" ", x="Euclidean distance to FD target", col="Precipitation 
 Treatment")+
