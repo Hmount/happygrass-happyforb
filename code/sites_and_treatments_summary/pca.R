@@ -306,7 +306,7 @@ adon_cwm_ca
 commspca <- ggarrange(WYpcafig,CApcafig)
 
 
-######## NMDS used in conceptual diagram + Figure S3
+######## NMDS used in Figure S3
 #run Bray-Curtis with vegan::vegdist() 
 testbray.ca <- vegdist(as.matrix(comms_p.ca), method = "bray")
 testbray.wy <- vegdist(as.matrix(comms_p.wy), method = "bray")
@@ -405,7 +405,7 @@ nmdsplot.wy <- ggplot(nmds_scores.wy, aes(x = NMDS1, y = NMDS2, color = trt)) +
   # geom_polygon(data = r_ellipse, aes(x=x, y=y), fill="#440154", alpha = 0.2)+
   # scale_fill_viridis_d()+
   #geom_polygon(data = dt_ellipse, aes(x = x, y = y, fill = Group, group = Group), alpha = 0.2) +
-  labs(x = "NMDS1", y = "NMDS2", title = "Community taxonomic compsition by seeding treatment") +
+  labs(x = "NMDS1", y = "NMDS2", title = "Community taxonomic composition by seeding treatment") +
   theme_minimal()
 
 

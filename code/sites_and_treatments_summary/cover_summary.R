@@ -41,7 +41,7 @@ tttwwide$drought2 <- factor(tttwwide$drought, levels = c("1", "0"))
 wycovplot <- ggplot(tttwwide, aes(x=drought2,y=coverper, fill=covtype))+
   geom_col()+
   scale_fill_manual(values=c("grey60","salmon", "gold","palegreen3","darkgreen"),
-                    labels=c("Bare ground","Invasive grass","Litter","Other native cover", "Native perrenial grass" ))+
+                    labels=c("Bare ground","Invasive grass","Litter","Other native cover", "Native perennial grass" ))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("Reduction", "Ambient"))+
   labs(y="Absolute cover (%)", 
@@ -80,7 +80,7 @@ tttcwide <- tttcwide %>% mutate(coverper=coverprop*100)
 cacovplot <-ggplot(tttcwide, aes(x=water,y=coverper, fill=covtype))+
   geom_col()+
   scale_fill_manual(values=c("grey60","salmon","gold", "palegreen3","darkgreen"),
-                    labels=c("Bare ground","Invasive grass","Weedy forbs","Other native cover", "Native perrenial grass"))+
+                    labels=c("Bare ground","Invasive grass","Weedy forbs","Other native cover", "Native perennial grass"))+
   facet_wrap(~Year)+
   scale_x_discrete(labels = c("Reduction", "Addition"))+
   labs(y="Absolute cover (%)", 

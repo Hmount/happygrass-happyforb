@@ -230,7 +230,9 @@ wyfigdrought <- ggarrange(wyfigtop,wyfigbottom, ncol=2)
 wyfigdrought <- annotate_figure(wyfigdrought,
                                 left="Annual growth rate")
 
-tiff("figures/droughtfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
+wyfigdrought <- annotate_figure(wyfigdrought, top=text_grob("Figure 3", size=8, x=0.05))
+
+tiff("figures/droughtfigwy.tiff", res=400, height = 5.5,width =8, "in",compression = "lzw")
 wyfigdrought
 dev.off()
 

@@ -378,7 +378,7 @@ wydistbcplot <- annotate_figure(wydistplots, right=text_grob("Wyoming", rot=270,
 
 cadistplots <- ggarrange(distdtca, distirca, distfdca, ncol=3, nrow=1, 
                          common.legend = T, legend = "none", 
-                         labels = c("d","e","f"), hjust=c(-4,-8,-4))
+                         labels = c("d","e","f"), hjust=c(-4,-4,-7))
 # cadistbcplot <- ggarrange(cadistplots, bcplotca, ncol=2, nrow=1,
 #                           widths = c(1,.5), 
 #                           legend = "none",
@@ -393,6 +393,8 @@ legend <- ggarrange(drought_legend, nrow = 1)
 alldistbcplot <- ggarrange(alldistbcplot, legend, nrow=2, heights = c(1.75,.25))
 alldistbcplot
 
+alldistbcplot <- annotate_figure(alldistbcplot, top=text_grob("Figure 2", size=8, x=0.05))
+alldistbcplot
 ## export figure (add star and details in ppt.)
 # tiff("figures/alldistances_figure.tiff", res=400, height = 7,width =9, "in",compression = "lzw")
 # alldistbcplot

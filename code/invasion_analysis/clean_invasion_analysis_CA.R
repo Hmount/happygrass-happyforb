@@ -232,6 +232,8 @@ cafiginvasion <- ggarrange(cafigleft,cafigright, ncol=2)
 cafiginvasion <- annotate_figure(cafiginvasion,
                                 left="log(relative cover invasive grass)")
 
-tiff("figures/invasionfigca.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
+cafiginvasion <- annotate_figure(cafiginvasion, top=text_grob("Figure 6", size=8, x=0.05))
+
+tiff("figures/invasionfigca.tiff", res=400, height = 5.5,width =8, "in",compression = "lzw")
 cafiginvasion
 dev.off()

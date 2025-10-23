@@ -243,6 +243,8 @@ cafigdrought <- ggarrange(cafigleft,cafigright, ncol=2)
 cafigdrought <- annotate_figure(cafigdrought, 
                                 left="Annual growth rate")
 
-tiff("figures/droughtfigca.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
+cafigdrought <- annotate_figure(cafigdrought, top=text_grob("Figure 4", size=8, x=0.05))
+
+tiff("figures/droughtfigca.tiff", res=400, height = 5.5,width =8, "in",compression = "lzw")
 cafigdrought
 dev.off()

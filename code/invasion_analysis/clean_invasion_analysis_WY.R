@@ -226,7 +226,9 @@ wyfiginvasion <- annotate_figure(wyfiginvasion,
                                  #left = text_grob(?bquote(""*"log(relative cover "(italic(Bromus tectorum))*""), rot=90))
                                  #left="log(relative cover *Bromus tectorum*)")
 
-tiff("figures/invasionfigwy.tiff", res=400, height = 5,width =8, "in",compression = "lzw")
+wyfiginvasion <- annotate_figure(wyfiginvasion, top=text_grob("Figure 5", size=8, x=0.05))
+
+tiff("figures/invasionfigwy.tiff", res=400, height = 5.5,width =8, "in",compression = "lzw")
 wyfiginvasion
 dev.off()
 ################################################################
