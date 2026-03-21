@@ -96,7 +96,7 @@ trait.matrix.ca <- trait.matrix.ca[order(rownames(trait.matrix.ca)),]
 
 ## pretreatment/ seeding probability 
 # Calculating community weighted means for the seeded communities. Needed for determine proximity to our objective.
-preds.ca <- read.csv("data/calgrass.allplot.assemblages.csv") #data
+preds.ca <- read.csv("data/comp_targets/calgrass.allplot.assemblages.csv") #data
 preds.ca$trt.b <- paste(preds.ca$trt, preds.ca$block)
 preds.ca <- preds.ca %>% arrange(trt.b,block)
 comms_p.ca <- labdsv::matrify(data.frame(preds.ca$trt.b,preds.ca$species,preds.ca$prob))
